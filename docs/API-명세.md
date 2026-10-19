@@ -1,6 +1,6 @@
 # WMS Lite API 명세
 
-**상태:** 1단계 인증·회사 격리. 아래에 명시한 인증·사용자·품목 조회·상태 API를 제공한다. 품목 변경·전표·재고 API는 아직 없다.
+**상태:** 2단계 기준정보·전표 초안 구현. 재고 반영·원장·확정·확정 취소는 이후 단계다.
 
 ## 1. 구현된 API
 
@@ -31,7 +31,7 @@
 | `POST /api/auth/sign-out` | 세션 폐기, 정상 origin 필요 |
 | `GET /api/auth/get-session` | 라이브러리의 세션 조회, 만료·폐기된 세션은 유효 사용자로 인정하지 않음 |
 | `GET /api/me` | 로그인한 사용자와 활성 소속·역할 반환. 미인증 401, 소속이 없거나 비활성 회사 403 |
-| `GET /api/items` | 관리자·작업자의 자사 품목 조회. code/id 순서 최대 100개. 조회자는 403 |
+| `GET /api/items` | 관리자·작업자의 자사 품목 조회. code/id 순서 최대 1,000개. 조회자는 403 |
 | `GET /api/items/{id}` | 관리자·작업자의 자사 품목 상세. 없거나 타 회사 대상 또는 잘못된 UUID는 404 |
 
 `/api/me` 응답은 `{ user: { id, name, email }, tenant: { id, name }, role }`이며 role은 admin/worker/viewer다. 품목 응답은 `{ items: [...] }`, `{ item: {...} }`이고 각 항목은 id/code/name/active만 포함한다. 요청의 `tenant_id`나 역할 헤더는 권한 판단에 사용하지 않는다. 회사·역할은 매 요청 세션과 DB 소속으로 확인한다.
@@ -40,18 +40,18 @@
 
 회원가입은 비활성화한다. 인증 요청은 Better Auth의 출처·요청 제한 규칙을 유지하며 신뢰하지 않는 origin은 403, 요청 제한에 도달하면 429를 반환한다. 라이브러리 인증 경로의 오류 본문은 자체 형식을 따른다. 앱의 관리자 사용자 생성 API는 제공하지 않는다.
 
-## 2. 이후 확장할 업무 API
+## 2. 단계별 업무 API
 
-다음 표는 전체 개발 순서와 예정된 경로다. 위에서 구현 완료로 명시한 경로 외에는 해당 단계에서 요청·응답 스키마와 오류 코드를 확정한다.
+1~2단계 경로는 구현했다. 3단계 이후 경로는 예정이며 해당 단계에서 계약을 확정한다.
 
 | 단계 | API | 목적 |
 |---|---|---|
 | 1 | `/api/me`, 인증 라이브러리 경로 | 세션·사용자 소속·역할, 로그인·로그아웃 |
 | 2 | `/api/items`, `/api/warehouses`, `/api/locations` | 기준정보 관리 |
-| 2 | `/api/inventory-documents`, `/{id}`, `/{id}/cancel` | 전표 초안 작성·수정·조회·취소 |
-| 3~4 | `/api/inventory-documents/{id}/post` | 입고·출고 확정 |
+| 2 | `/api/documents`, `/{id}`, `/{id}/cancel` | 전표 초안 작성·수정·조회·취소 |
+| 3~4 | `/api/documents/{id}/post` | 입고·출고 확정 |
 | 3~6 | `/api/stock`, `/api/stock-ledger` | 현재고 및 원장 조회 |
-| 5 | `/api/inventory-documents/{id}/reverse` | 관리자 확정 취소 |
+| 5 | `/api/documents/{id}/reverse` | 관리자 확정 취소 |
 | 6 | `/api/dashboard`, `/api/audit-logs` | 집계 및 작업 이력 |
 
 ## 3. 업무 API 공통 설계 기준
@@ -66,4 +66,46 @@
 
 ## 4. 현재 검증 범위
 
-Playwright는 초기 화면·상태 API, 보호 화면의 로그인 필요 여부, 역할별 로그인·로그아웃, A→B 세션 전환, 가입·외부 origin 차단, 세션 만료, 역할 변경 즉시 반영, 회사 위조 요청과 품목 상세 404, 조회자 403을 검사한다. 실제 PostgreSQL에서는 비소유자·비관리자 역할로 RLS와 연결 재사용을 별도 검증한다. 전표·재고 업무 검증은 아직 실행하지 않는다.
+Playwright는 초기 화면·상태 API, 보호 화면의 로그인 필요 여부, 역할별 로그인·로그아웃, A→B 세션 전환, 가입·외부 origin 차단, 세션 만료, 역할 변경 즉시 반영, 회사 위조 요청과 품목 상세 404, 조회자 403을 검사한다. 실제 PostgreSQL에서는 비소유자·비관리자 역할로 RLS와 연결 재사용을 별도 검증한다. 전표 초안의 입력·참조·역할·회사 격리·동시 수정·취소와 브라우저 작성 흐름을 검증한다. 재고 업무 검증은 3단계부터 추가한다.
+
+
+## 5. 2단계 기준정보 계약
+
+`items`, `warehouses`, `locations` 모두 `GET /api/{종류}`, `POST /api/{종류}`, `GET /api/{종류}/{id}`, `PATCH /api/{종류}/{id}`를 제공한다. 조회는 관리자·작업자, 생성·변경은 관리자만 허용한다. 삭제 경로는 제공하지 않는다.
+
+- 목록은 `{ items: [...] }`처럼 복수형, 상세·변경은 `{ item: {...} }`처럼 단수형이다. 생성은 201, 나머지 성공은 200이다.
+- 생성 입력은 `{ code, name }`, 위치는 `warehouse_id`도 필요하다. 활성 상태는 true로 생성한다.
+- PATCH는 `code`, `name`, `active` 중 하나 이상을 받는다. 위치의 소속 창고는 변경할 수 없다. 알려지지 않은 필드는 거절한다.
+- 코드는 앞뒤 공백 제거·대문자 변환 후 1~64자, 이름은 앞뒤 공백 제거 후 1~128자다.
+- 응답은 id/code/name/active, 위치는 warehouse_id도 포함한다. 목록은 코드순 최대 1,000개이며 위치 목록에 `?warehouse_id=UUID` 필터를 지원한다.
+- 회사 내 품목·창고 코드와 회사·창고 내 위치 코드가 고유하다. 초안이 참조하는 기준정보는 비활성화할 수 없다. 활성 위치가 있는 창고도 비활성화할 수 없다. 비활성 창고에 위치를 생성·재활성화할 수 없다.
+
+## 6. 2단계 전표 계약
+
+관리자·작업자만 모든 전표 API를 이용한다. 조회자는 목록·상세·변경 모두 403이다.
+
+| 경로 | 입력 | 성공 응답 |
+|---|---|---|
+| `GET /api/documents` | 없음 | 200 `{ documents: [...] }`, 최신 변경순 최대 100개, 명세 제외 |
+| `GET /api/documents/{id}` | 없음 | 200 `{ document: {..., lines: [...] } }` |
+| `POST /api/documents` | 아래 전체 초안 | 201 `{ document: {..., lines: [...] } }` |
+| `PATCH /api/documents/{id}` | 전체 초안 + 현재 `version` | 200 갱신된 document |
+| `POST /api/documents/{id}/cancel` | `{ version }` | 200 취소된 document |
+
+```json
+{
+  "kind": "INBOUND",
+  "warehouse_id": "UUID",
+  "destination_location_id": "UUID",
+  "note": "입고 초안",
+  "lines": [{ "item_id": "UUID", "quantity": 10 }]
+}
+```
+
+입고는 도착 위치만, 출고는 출발 위치(`source_location_id`)만, 이동은 서로 다른 출발·도착 위치를 지정한다. 모든 위치는 선택한 창고에 속해야 한다. 품목은 중복 없이 1~20개이며 수량은 1~1,000,000,000 정수다. 메모는 최대 2,000자다. 생성·수정 시 모든 참조는 활성 상태여야 한다. 다른 회사·존재하지 않는·비활성 참조는 404 `REFERENCE_NOT_FOUND`로 처리한다.
+
+전표는 DRAFT/version=1로 생성된다. 수정·취소 시 행 잠금 후 버전을 비교하고 성공하면 1 증가한다. 오래된 버전은 409 `VERSION_CONFLICT`, 취소 전표 변경은 409 `INVALID_STATE`다. 취소는 DRAFT→CANCELLED이며 명세를 유지한다. 상세 헤더와 명세는 같은 잠금 범위에서 읽는다. 초안 작업은 재고·원장을 생성하거나 변경하지 않는다.
+
+업무 변경 요청은 `Content-Type: application/json`과 `BETTER_AUTH_URL`의 origin과 일치하는 `Origin` 헤더가 필요하다. 출처 불일치는 403 `ORIGIN_FORBIDDEN`, 잘못된 JSON/입력은 400 `INVALID_INPUT`, 코드 중복은 409 `CONFLICT`, 사용 중 비활성화는 409 `IN_USE`, 비활성 부모 창고는 409 `INACTIVE_REFERENCE`다. 인증된 회사만 사용하며 전표 본문에 넣은 `tenant_id`는 무시한다. 모든 업무 응답은 no-store다.
+
+목록 페이지네이션·검색은 현재 제공하지 않으며 위 개수 제한을 적용한다.

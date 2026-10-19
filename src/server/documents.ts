@@ -61,7 +61,8 @@ async function detail(client: PoolClient, id: string) {
   const result = await client.query("SELECT * FROM inventory_documents WHERE id = $1 FOR SHARE", [id]);
   if (!result.rows[0]) throw new DomainError(404, "NOT_FOUND");
   const lines = await client.query("SELECT id, tenant_id, document_id, item_id, quantity FROM inventory_document_lines WHERE document_id = $1 ORDER BY item_id, id", [id]);
-  return { ...result.rows[0], lines: lines.rows };
+  const reversal = await client.query("SELECT id FROM inventory_documents WHERE reversal_of_id = $1", [id]);
+  return { ...result.rows[0], reversal_document_id: reversal.rows[0]?.id ?? null, lines: lines.rows };
 }
 async function addLines(client: PoolClient, tenantId: string, id: string, input: DocumentInput) {
   for (const line of input.lines) {

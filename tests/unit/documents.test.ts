@@ -57,8 +57,9 @@ describe("document transition guards", () => {
     query.mockResolvedValueOnce({ rows: [{ version: 1, status: "DRAFT" }] })
       .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [{ id: source, version: 2, status: "CANCELLED" }] })
+      .mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: [] });
-    await expect(updateDocument(warehouse, source, 1)).resolves.toMatchObject({ status: "CANCELLED", version: 2, lines: [] });
+    await expect(updateDocument(warehouse, source, 1)).resolves.toMatchObject({ status: "CANCELLED", version: 2, reversal_document_id: null, lines: [] });
     expect(query.mock.calls.some(([sql]) => /FROM (warehouses|locations|items)/.test(String(sql)))).toBe(false);
   });
 });

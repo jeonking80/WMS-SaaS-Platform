@@ -75,10 +75,11 @@ describe("unified outbound posting", () => {
       .mockResolvedValueOnce({ rowCount: 1 }).mockResolvedValueOnce({ rowCount: 1 });
     for (const _line of lines) query.mockResolvedValueOnce({ rowCount: 1 });
   }
-  it("retains the inbound-only compatibility boundary and rejects transfers", async () => {
+  it("retains the inbound-only compatibility boundary and rejects invalid transfers", async () => {
     query.mockResolvedValueOnce({ rows: [{ ...document, kind: "OUTBOUND" }] });
     await expect(postInbound(identity, id, 1, "key")).rejects.toMatchObject({ code: "INVALID_STATE" });
-    query.mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [{ ...document, kind: "TRANSFER" }] });
+    query.mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [{ ...document, kind: "TRANSFER" }] })
+      .mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [{ item_id: id, quantity: 1 }] });
     await expect(postDocument(identity, id, 1, "key")).rejects.toMatchObject({ code: "INVALID_STATE" });
   });
   it.each([{ rows: [] }, { rows: [{ quantity: "2" }] }])("rejects missing or insufficient balances without any stock writes", async ({ rows }) => {
@@ -104,5 +105,29 @@ describe("unified outbound posting", () => {
     expect(calls.find(([sql]) => String(sql).startsWith("UPDATE stock_balances"))?.[1]).toEqual([id, secondId, id, -3]);
     expect(calls.find(([sql]) => String(sql).startsWith("INSERT INTO stock_ledger"))?.[1]).toEqual([id, id, id, secondId, id, -3]);
     expect(calls.find(([sql]) => String(sql).startsWith("INSERT INTO audit_logs"))?.[1]).toEqual([id, id, "user", "POST_OUTBOUND"]);
+  });
+});
+
+describe("transfer posting", () => {
+  it("locks both locations in UUID order and applies two ledger legs atomically", async () => {
+    const source = "10000000-0000-4000-8000-000000000003";
+    const destination = "10000000-0000-4000-8000-000000000002";
+    query.mockReset();
+    query.mockImplementation(async (sql: string, values: unknown[]) => {
+      if (sql.startsWith("SELECT * FROM inventory_documents")) return { rows: [{ ...document, kind: "TRANSFER", warehouse_id: id, source_location_id: source, destination_location_id: destination }] };
+      if (sql.startsWith("SELECT item_id, quantity")) return { rows: [{ item_id: id, quantity: 3 }] };
+      if (sql.includes("FOR SHARE")) return { rows: [{ id }], rowCount: 1 };
+      if (sql.startsWith("SELECT quantity")) return { rows: [{ quantity: values[1] === source ? "3" : "0" }] };
+      if (sql.startsWith("UPDATE inventory_documents")) return { rows: [{ id, status: "POSTED", version: 2, posted_at: "2026-10-19T00:00:00Z" }] };
+      return { rows: [] };
+    });
+    await expect(postDocument(identity, id, 1, "transfer")).resolves.toMatchObject({ ledger_entries: 2 });
+    const locations = query.mock.calls.filter(([sql]) => String(sql).startsWith("SELECT id FROM locations")).map(([, values]) => values[0]);
+    expect(locations).toEqual([destination, source]);
+    const legs = query.mock.calls.filter(([sql]) => String(sql).startsWith("INSERT INTO stock_ledger")).map(([, values]) => [values[3], values[5]]);
+    expect(legs).toEqual([[destination, 3], [source, -3]]);
+    const lastBalanceLock = query.mock.calls.findLastIndex(([sql]) => String(sql).includes("FROM stock_balances"));
+    const firstEffect = query.mock.calls.findIndex(([sql]) => String(sql).startsWith("UPDATE stock_balances"));
+    expect(lastBalanceLock).toBeLessThan(firstEffect);
   });
 });

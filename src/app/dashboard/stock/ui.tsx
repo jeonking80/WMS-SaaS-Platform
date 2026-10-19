@@ -1,0 +1,98 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { control, errorText, request } from "../api-client";
+
+type StockRow = {
+  warehouse_id: string;
+  warehouse_name: string;
+  location_id: string;
+  location_code: string;
+  item_id: string;
+  item_code: string;
+  item_name: string;
+  quantity: string;
+};
+type LedgerRow = {
+  id: string;
+  document_id: string;
+  warehouse_name: string;
+  location_code: string;
+  item_code: string;
+  item_name: string;
+  quantity_delta: string;
+  created_at: string;
+};
+type Reconciliation = {
+  consistent: boolean;
+  mismatches: {
+    location_id: string;
+    item_id: string;
+    balance_quantity: string;
+    ledger_quantity: string;
+  }[];
+};
+
+export default function Stock() {
+  const [stock, setStock] = useState<StockRow[]>([]);
+  const [entries, setEntries] = useState<LedgerRow[]>([]);
+  const [reconciliation, setReconciliation] = useState<Reconciliation | null>(null);
+  const [pending, setPending] = useState(true);
+  const [error, setError] = useState("");
+
+  async function reload() {
+    setPending(true);
+    setError("");
+    try {
+      const [balances, ledger, check] = await Promise.all([
+        request<{ stock: StockRow[] }>("/api/stock"),
+        request<{ entries: LedgerRow[] }>("/api/stock-ledger"),
+        request<Reconciliation>("/api/stock/reconcile"),
+      ]);
+      setStock(balances.stock);
+      setEntries(ledger.entries);
+      setReconciliation(check);
+    } catch (e) {
+      setError(errorText(e));
+    } finally {
+      setPending(false);
+    }
+  }
+
+  useEffect(() => { void reload(); }, []);
+
+  return <>
+    <h1 className="text-3xl font-bold">재고 조회</h1>
+    <p className="my-4">로케이션별 현재 수량과 확정된 전표에 따른 수량 변동을 확인하세요. 변동 수량의 +는 증가, −는 감소를 의미합니다.</p>
+    <button className={control} disabled={pending} onClick={() => void reload()}>재고 새로고침</button>
+    {pending && <p role="status" className="my-4">불러오는 중…</p>}
+    {error && <p role="alert" className="my-4 text-red-700">{error}</p>}
+    <section className="my-6 overflow-x-auto rounded-xl border bg-white p-5">
+      <h2 className="mb-4 text-xl font-bold">현재 재고</h2>
+      {!pending && stock.length === 0 ? <p>등록된 재고가 없습니다.</p> : <table className="w-full text-left">
+        <thead><tr><th>창고</th><th>로케이션</th><th>품목 코드</th><th>품목명</th><th>수량</th></tr></thead>
+        <tbody>{stock.map(row => <tr className="border-t" key={`${row.location_id}:${row.item_id}`}>
+          <td className="py-3">{row.warehouse_name}</td><td>{row.location_code}</td><td>{row.item_code}</td><td>{row.item_name}</td><td>{row.quantity}</td>
+        </tr>)}</tbody>
+      </table>}
+    </section>
+    <section className="my-6 overflow-x-auto rounded-xl border bg-white p-5">
+      <h2 className="mb-4 text-xl font-bold">재고 변동 이력</h2>
+      {!pending && entries.length === 0 ? <p>재고 변동 이력이 없습니다.</p> : <table className="w-full text-left">
+        <thead><tr><th>처리 시각</th><th>전표 ID</th><th>창고</th><th>로케이션</th><th>품목</th><th>변동 수량</th></tr></thead>
+        <tbody>{entries.map(row => <tr className="border-t" key={row.id}>
+          <td className="py-3">{new Date(row.created_at).toLocaleString("ko-KR")}</td><td>{row.document_id}</td><td>{row.warehouse_name}</td><td>{row.location_code}</td><td>{row.item_code} · {row.item_name}</td><td>{row.quantity_delta.startsWith("-") || row.quantity_delta === "0" ? row.quantity_delta : `+${row.quantity_delta}`}</td>
+        </tr>)}</tbody>
+      </table>}
+    </section>
+    <section className="rounded-xl border bg-white p-5">
+      <h2 className="mb-4 text-xl font-bold">재고 일치 확인</h2>
+      {reconciliation && (reconciliation.consistent ? <p>현재 재고와 변동 이력의 수량이 일치합니다.</p> : <>
+        <p role="alert" className="text-red-700">현재 재고와 변동 이력의 수량이 일치하지 않습니다. 관리자에게 확인을 요청하세요.</p>
+        <ul className="mt-3">{reconciliation.mismatches.map(row => <li key={`${row.location_id}:${row.item_id}`}>
+          로케이션 {row.location_id} · 품목 {row.item_id}: 현재 수량 {row.balance_quantity}, 변동 이력 합계 {row.ledger_quantity}
+        </li>)}</ul>
+      </>)}
+    </section>
+  </>;
+}

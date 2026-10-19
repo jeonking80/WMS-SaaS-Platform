@@ -3,6 +3,13 @@ import { apiError, readBody, requireMutationOrigin } from "../../src/server/api"
 
 afterEach(() => vi.unstubAllEnvs());
 describe("Business API request boundary", () => {
+  it("marks rolled-back lock and transaction failures as retryable", async () => {
+    for (const code of ["40001", "40P01", "55P03", "57014"]) {
+      const response = apiError({ code });
+      expect(response.status).toBe(503);
+      expect(await response.json()).toEqual({ error: "RETRYABLE_TRANSACTION" });
+    }
+  });
   it("requires the configured origin, rejecting missing and forged origins", () => {
     vi.stubEnv("BETTER_AUTH_URL", "https://wms.example.test");
     for (const origin of [undefined, "null", "https://attacker.example.test", "https://wms.example.test.attacker.test"]) {

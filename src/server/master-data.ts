@@ -36,6 +36,10 @@ async function activeWarehouse(client: PoolClient, id: string) {
   if (!result.rows[0].active) throw new DomainError(409, "INACTIVE_REFERENCE");
 }
 async function ensureUnused(client: PoolClient, kind: MasterKind, id: string) {
+  const stockColumn = { items: "item_id", warehouses: "warehouse_id", locations: "location_id" }[kind];
+  if ((await client.query(`SELECT 1 FROM stock_balances WHERE ${stockColumn} = $1 AND quantity > 0 LIMIT 1`, [id])).rowCount) {
+    throw new DomainError(409, "IN_USE");
+  }
   const reference = kind === "items"
     ? "SELECT 1 FROM inventory_documents d JOIN inventory_document_lines l ON l.document_id = d.id AND l.tenant_id = d.tenant_id WHERE d.status = 'DRAFT' AND l.item_id = $1 LIMIT 1"
     : kind === "warehouses"

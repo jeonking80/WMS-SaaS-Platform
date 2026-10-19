@@ -36,6 +36,9 @@ export function apiError(error: unknown): Response {
     return json({ error: error.code }, error.status);
   }
   const code = error && typeof error === "object" && "code" in error ? error.code : undefined;
+  if (["40001", "40P01", "55P03", "57014"].includes(String(code))) {
+    return json({ error: "RETRYABLE_TRANSACTION" }, 503);
+  }
   if (code === "23505") return json({ error: "CONFLICT" }, 409);
   if (code === "23503") return json({ error: "REFERENCE_CONFLICT" }, 409);
   if (code === "23514" || code === "22P02") return json({ error: "INVALID_INPUT" }, 400);

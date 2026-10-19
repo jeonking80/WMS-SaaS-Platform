@@ -11,12 +11,17 @@ describe("database configuration", () => {
   });
 
   it("accepts a PostgreSQL URL without changing its connection parameters", () => {
-    const url = "postgresql://localhost/wms_lite?application_name=wms";
+    const url = "postgresql://wms_app@localhost/wms_lite?application_name=wms";
     expect(getDatabaseUrl({ DATABASE_URL: ` ${url} ` })).toBe(url);
   });
 
   it("does not include connection credentials in configuration errors", () => {
     const value = "https://user:local-test-only@localhost/wms_lite";
     expect(() => getDatabaseUrl({ DATABASE_URL: value })).toThrow(/^DATABASE_URL must specify a PostgreSQL host and database\.$/);
+  });
+
+  it("rejects an administrator connection for application requests", () => {
+    expect(() => getDatabaseUrl({ DATABASE_URL: "postgresql://postgres@localhost/wms_lite" }))
+      .toThrow("DATABASE_URL must use the restricted wms_app role");
   });
 });

@@ -10,5 +10,8 @@ export function getDatabaseUrl(environment: Record<string, string | undefined> =
   if (!["postgres:", "postgresql:"].includes(parsed.protocol) || !parsed.hostname || parsed.pathname.length < 2) {
     throw new Error("DATABASE_URL must specify a PostgreSQL host and database.");
   }
+  if (decodeURIComponent(parsed.username) !== "wms_app") {
+    throw new Error("DATABASE_URL must use the restricted wms_app role.");
+  }
   return value;
 }

@@ -14,11 +14,14 @@
     "typecheck": "next typegen && tsc --noEmit",
     "test:unit": "vitest run --project unit",
     "test:integration": "node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run --project integration",
-    "test:e2e": "playwright test",
+    "test:e2e": "node --env-file-if-exists=.env.local node_modules/@playwright/test/cli.js test",
     "db:migrate": "node --env-file-if-exists=.env.local scripts/db-migrate.mjs",
     "db:check": "node --env-file-if-exists=.env.local scripts/db-check.mjs",
     "db:seed": "node --env-file-if-exists=.env.local scripts/db-seed.mjs",
-    "env:init": "node scripts/env-init.mjs"
+    "env:init": "node scripts/env-init.mjs",
+    "db:bootstrap": "node --env-file-if-exists=.env.local scripts/db-bootstrap.mjs",
+    "auth:seed": "node --env-file-if-exists=.env.local scripts/auth-seed.mjs",
+    "db:setup": "npm run db:bootstrap && npm run db:migrate && npm run db:bootstrap -- --grant && npm run db:seed && npm run auth:seed"
   },
   "dependencies": {
     "better-auth": "1.7.11",

@@ -1,8 +1,8 @@
 # WMS Lite DB 설계
 
-## 0단계 구현 범위
+## 구현 범위
 
-PostgreSQL 17, `pg` SQL 접근, `node-pg-migrate` SQL 마이그레이션으로 시작한다. 이번 단계는 실제 DB 연결·최초 테이블·재실행을 검증하는 기반이다. 인증·회사별 접근 제한·재고 처리의 구현 완료를 의미하지 않는다.
+PostgreSQL 17, `pg` SQL 접근, `node-pg-migrate` SQL 마이그레이션을 사용한다. 1단계에서 인증·소속·역할과 최초 업무 테이블의 회사 격리를 구현했다. 전표·재고 테이블은 아직 없다.
 
 | 테이블 | 컬럼 | 제약·기본값 |
 |---|---|---|
@@ -11,6 +11,9 @@ PostgreSQL 17, `pg` SQL 접근, `node-pg-migrate` SQL 마이그레이션으로 �
 | | `active` | boolean, NOT NULL, 기본 true |
 | | `created_at` | timestamptz, NOT NULL, 현재 시각 |
 | `pgmigrations` | 도구 관리 이력 | 적용한 버전 기록, 동일 버전 재적용 방지 |
+| `user`, `session`, `account`, `verification` | Better Auth 기본 스키마 | 계정·비밀번호 해시·세션·검증 데이터, 라이브러리 관례의 camelCase 컬럼 |
+| `memberships` | user_id, tenant_id, role | 사용자당 소속 하나, 역할은 admin/worker/viewer, 실제 사용자·회사 FK |
+| `items` | id, tenant_id, code, name, active, created_at | 회사별 코드 고유, (tenant_id,id) 복합 고유키, 이름·코드 공백 금지, FORCE RLS |
 
 회사명은 고유 식별자로 사용하지 않는다. 모든 참조는 UUID를 사용한다. 시각은 `timestamptz`로 저장하고 사용자 표시는 `Asia/Seoul` 기준으로 처리한다.
 
@@ -20,45 +23,46 @@ PostgreSQL 17, `pg` SQL 접근, `node-pg-migrate` SQL 마이그레이션으로 �
 
 ```sh
 docker compose --env-file .env.local --profile test up -d --wait
-npm run db:migrate
+npm run db:setup
 npm run db:check
-npm run db:seed
 npm run test:integration
 ```
 
 - 개발 DB: `wms_lite`, 기본 포트 5432, 영속 볼륨.
 - 테스트 DB: `wms_lite_test`, 기본 포트 5433, `test` 프로필과 임시 메모리 볼륨. 컨테이너를 재생성하면 테스트 데이터가 초기화된다.
 - 두 포트는 localhost에만 노출한다. 다른 프로젝트의 DB와 연결하지 않는다.
-- `MIGRATION_DATABASE_URL`: 마이그레이션·개발 시드 접속. 현재 로컬 bootstrap은 Compose의 `postgres` 계정이다.
-- `DATABASE_URL`: 앱 연결·연결 확인용. 0단계에서는 연결 상태만 검사한다.
+- `BOOTSTRAP_DATABASE_URL`: 로컬 관리자 연결. 역할 생성·소유권·권한 준비에만 사용한다.
+- `MIGRATION_DATABASE_URL`: `wms_migrator` 연결. 마이그레이션·개발 시드를 실행하며 스키마·테이블을 소유한다.
+- `DATABASE_URL`: `wms_app` 연결. 일반 앱 요청을 처리한다. 관리자 계정 URL을 지정하면 앱 설정 검사가 거절한다.
 - `TEST_DATABASE_URL`: 통합 테스트 전용. DB명이 `_test`로 끝나야 실행된다.
 - `POSTGRES_PASSWORD`: Compose 초기 DB 암호. 이미 초기화된 개발 볼륨에서는 이 변수를 바꿔도 기존 역할의 암호가 바뀌지 않는다.
 
 마이그레이션은 한 트랜잭션에서 실행되고 도구의 잠금 기능을 유지한다. `npm run db:migrate`는 순방향 적용만 제공한다. 이미 적용한 파일을 수정하지 말고 새 버전의 파일을 추가한다. Down SQL은 별도 복구 검토를 위한 것이며 기본 실행 흐름에 포함하지 않는다.
 
-개발 시드는 합성 회사 A/B만 생성하며, 고정 UUID와 `ON CONFLICT DO NOTHING`으로 반복 실행할 수 있다. 비밀번호·사용자·재고는 생성하지 않는다. 회사 ID를 고정한 이 시드는 독립 개발 DB에서만 실행한다. production 모드에서는 실행을 거절한다. 실제 초기 재고는 후속 입고 확정 서비스로 생성한다.
+`db:setup`은 `db:bootstrap → db:migrate → db:bootstrap -- --grant → db:seed → auth:seed` 순서다. 실행 중 앱 권한을 재설정하므로 서버를 시작하기 전에 실행한다. 반복해도 기존 데이터와 계정 비밀번호·소속·역할을 덮어쓰지 않는다.
+
+`db:seed`는 합성 회사 A/B, `auth:seed`는 회사별 관리자·작업자·조회자 계정을 만든다. 비밀번호는 `DEMO_PASSWORD`에서 읽고 Better Auth의 공식 `hashPassword`로 처리한다. 앱에 관리자 계정 생성 플러그인이나 공개 회원가입은 노출하지 않는다. 기존 계정의 소속과 시드 기대값이 다르면 자동 재배정하지 않고 중단한다. production 모드의 개발 시드 실행은 거절한다. 실제 초기 재고는 후속 입고 확정 서비스로 생성한다.
 
 ## 통합 검증
 
 실제 PostgreSQL 테스트 DB에 임의 이름의 전용 스키마를 만들고 아래를 확인한 후 해당 스키마만 삭제한다. 테스트 DB나 public 스키마를 초기화하지 않는다.
 
-1. 빈 스키마에 마이그레이션 적용 시 최초 버전 한 개가 실행된다.
+1. 빈 스키마에 회사·인증·업무 격리 마이그레이션 세 개가 실행된다.
 2. 회사 삽입 시 UUID·활성값·생성 시각이 생성된다.
 3. 다시 마이그레이션하면 적용 건수는 0이며 기존 데이터와 이력이 유지된다.
 4. 공백뿐인 회사명·NULL 회사명은 DB 제약으로 거절된다.
 
-환경변수가 없거나 실제 DB에 접속할 수 없으면 검증을 건너뛰지 않고 실패한다. 테스트 통과는 1단계의 RLS·인증 검증과 구분한다.
+환경변수가 없거나 실제 DB에 접속할 수 없으면 검증을 건너뛰지 않고 실패한다. RLS 테스트는 별도의 제한된 LOGIN 역할을 만들고 실제 `withTenant` 헬퍼와 최대 연결 수 1인 풀을 사용한다. 테스트가 만든 역할과 스키마만 종료 시 삭제한다.
 
-## 1단계로 이어질 권한 설계
+## 1단계 권한과 회사 격리
 
-현재 Compose `postgres`는 로컬 DB 초기화를 위한 관리자 계정이다. 이 계정을 운영 앱 연결에 사용하지 않는다. 인증/업무 API를 구현하기 전에 다음을 함께 완료한다.
+Compose의 `postgres`는 초기화용 관리자다. `wms_migrator`는 테이블 소유자이고 `wms_app`은 소유자가 아닌 `NOSUPERUSER`, `NOBYPASSRLS` 역할이다. bootstrap은 앱 역할의 다른 역할 상속을 제거하고 public 스키마 CREATE와 불필요한 테이블 권한을 거둔다. `db:check`는 실제 앱 계정의 관리자·RLS 우회·테이블 소유 여부를 검사한다.
 
-- 마이그레이션용 소유자 역할과 앱 로그인 역할 분리. 앱 역할은 `NOSUPERUSER`, `NOBYPASSRLS`이며 테이블 소유자가 아니어야 한다.
-- 역할 암호는 안전한 환경 설정에서 제공하고 SQL 마이그레이션 파일에 기록하지 않는다.
-- 일반 앱에 스키마 생성이나 마이그레이션 이력 쓰기 권한을 부여하지 않는다.
-- 회사 업무 테이블에 `tenant_id`, 복합 참조 제약과 RLS 적용. 회사 컨텍스트는 체크아웃한 연결의 트랜잭션에서 `SET LOCAL` 범위로만 설정한다.
-- 인증·회사·소속 조회는 인증 라이브러리와 결정한 신뢰 경계에 맞춰 별도 설계한다. `tenants`를 모든 로그인 사용자에게 무제한 조회하도록 공개하지 않는다.
-- A/B 회사 교차 요청, 회사 컨텍스트 누락, 커밋·롤백 후 연결 재사용을 실제 앱 역할로 검증한다.
-- 원장 테이블은 필요한 SELECT/INSERT만 허용하고 UPDATE/DELETE/TRUNCATE는 허용하지 않는다.
+- 앱에 인증 테이블 SELECT/INSERT/UPDATE/DELETE, 회사·소속 SELECT, items SELECT/INSERT/UPDATE/DELETE만 부여한다. 마이그레이션 이력 쓰기, DDL, TRUNCATE는 허용하지 않는다.
+- 인증 세션에서 사용자 ID를 얻고, 신뢰된 소속 조회가 사용자 ID를 기준으로 활성 회사와 역할을 결정한다. 회사·인증 등록부는 회사 컨텍스트 이전의 내부 인증 경로이며 공개 목록 API가 없다.
+- `items`의 읽기·변경·삽입은 `tenant_id = NULLIF(current_setting('app.tenant_id', true), '')::uuid` 정책으로 제한한다. 컨텍스트가 없으면 읽을 행이 없고 삽입은 거절된다. FORCE RLS로 테이블 소유자도 정책 대상이다.
+- `withTenant`는 하나의 연결에서 BEGIN, 트랜잭션 범위 `set_config`, 업무 쿼리, COMMIT을 수행한다. 오류 시 ROLLBACK하고 연결을 반환하며, 롤백에 실패한 연결은 폐기한다.
+- 회사 ID는 API에서 인증된 소속을 전달한다. 쿼리 매개변수·요청 본문·헤더에서 회사나 역할을 채택하지 않는다.
+- A/B 교차 요청, 회사 컨텍스트 누락, 같은 물리 연결의 커밋·롤백 후 재사용, 권한 상승·DDL·TRUNCATE 거절을 실제 제한 계정으로 검증했다.
 
-아직 `tenants`에는 RLS나 앱 권한을 부여하지 않았다. 외부 업무 엔드포인트가 생기기 전 위 사항을 구현하며, 지금 단계의 관리자 DB 테스트를 회사 격리 테스트로 보고하지 않는다.
+현재 검증 대상 업무 테이블은 `items`다. 앞으로 추가하는 전표·위치·원장에도 회사 포함 복합 참조와 RLS를 적용하고 각각 검증한다. 원장의 앱 권한은 SELECT/INSERT만 허용할 계획이며 아직 구현 전이다.

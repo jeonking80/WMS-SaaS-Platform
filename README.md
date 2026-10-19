@@ -180,7 +180,7 @@ PostgreSQL
 | 인증 | 인증 라이브러리를 활용한 세션 인증 |
 | 테스트 | 단위 테스트, PostgreSQL 통합 테스트, Playwright |
 | 로컬 환경 | Docker Compose 기반 PostgreSQL |
-| CI | GitHub Actions |
+| 자동 검증 | 로컬 `npm run verify` (GitHub Actions 사용 금지) |
 | 개발 방식 | AI 코딩 에이전트 활용 |
 | 데모 배포 | 기존 프로젝트와 분리된 환경, 배포 대상 추후 확정 |
 
@@ -348,7 +348,7 @@ Playwright는 프로덕션 서버를 포트 3100에서 자동 실행하고 종�
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run test:e2e
 ```
 
-설치된 브라우저 경로는 환경에 맞게 지정합니다. CI에서는 Playwright가 지정한 Chromium을 내려받도록 구성했습니다. npm 기본 캐시 경로에 쓰기 권한이 없는 클라우드에서는 `npm --cache /workspace/.npm-cache ci`를 사용합니다.
+설치된 브라우저 경로는 환경에 맞게 지정합니다. GitHub Actions는 사용하지 않습니다. npm 기본 캐시 경로에 쓰기 권한이 없는 클라우드에서는 `npm --cache /workspace/.npm-cache ci`를 사용합니다.
 
 ### 현재 제공 범위
 
@@ -367,3 +367,7 @@ DB만 중지하려면 `docker compose --env-file .env.local --profile test stop`
 **여러 회사가 서로의 데이터를 볼 수 없고, 재고가 정확하게 반영되며, 모든 재고 변경의 원인을 전표와 이력으로 추적할 수 있어야 합니다.**
 
 화면의 개수보다 업무 규칙의 정확성, 재현 가능한 검증, 설명 가능한 시스템 구조를 우선합니다.
+
+## 로컬 검증 정책
+
+2026-10-20부터 GitHub Actions 워크플로를 제거하고 로컬 검증만 사용합니다. 개발 서버를 중지하고 DB 준비 후 `npm run verify`를 실행합니다. 현재 클라우드에서는 `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run verify`를 사용합니다. 이 명령은 타입·단위·DB 통합·빌드·브라우저 검사를 순서대로 수행하고 실패하면 중단합니다.

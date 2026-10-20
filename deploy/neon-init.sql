@@ -297,6 +297,20 @@ CREATE INDEX inventory_document_lines_tenant_item_document_idx ON inventory_docu
 
 INSERT INTO public.pgmigrations(name, run_on) VALUES ('1792368000006_p6-dashboard', CURRENT_TIMESTAMP);
 
+-- 1792368000007_outbound-delivery.sql
+ALTER TABLE inventory_documents
+  ADD COLUMN recipient_name varchar(128),
+  ADD COLUMN delivery_address varchar(500),
+  ADD CONSTRAINT inventory_documents_delivery_check CHECK (
+    (recipient_name IS NULL AND delivery_address IS NULL)
+    OR (kind = 'OUTBOUND'
+      AND recipient_name IS NOT NULL AND delivery_address IS NOT NULL
+      AND recipient_name = btrim(recipient_name) AND length(recipient_name) > 0
+      AND delivery_address = btrim(delivery_address) AND length(delivery_address) > 0)
+  );
+
+INSERT INTO public.pgmigrations(name, run_on) VALUES ('1792368000007_outbound-delivery', CURRENT_TIMESTAMP);
+
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, wms_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public."user", public.session, public.account,
   public.verification, public.items, public.warehouses, public.locations,
@@ -312,7 +326,7 @@ BEGIN
     OR pg_has_role('wms_app', 'wms_migrator', 'MEMBER') THEN
     RAISE EXCEPTION 'Unexpected application role privileges';
   END IF;
-  IF (SELECT count(*) FROM public.pgmigrations) <> 7
+  IF (SELECT count(*) FROM public.pgmigrations) <> 8
     OR (SELECT count(*) FROM pg_tables WHERE schemaname='public') <> 16
     OR (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
       WHERE n.nspname='public' AND c.relrowsecurity AND c.relforcerowsecurity) <> 9

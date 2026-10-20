@@ -30,8 +30,8 @@ export function fixturePlan(hashes) {
   ];
   for (const [n,kind,source,destination,item,quantity] of documents) {
     const posted = n !== 25;
-    add(`INSERT INTO inventory_documents(id,tenant_id,kind,status,warehouse_id,source_location_id,destination_location_id,note,posted_at)
-      VALUES($1,$2,$3,$4,$5,$6,$7,'P7 synthetic demo fixture',CASE WHEN $8 THEN CURRENT_TIMESTAMP ELSE NULL END)`, [id(n),tenant,kind,posted?'POSTED':'DRAFT',warehouse,source,destination,posted]);
+    add(`INSERT INTO inventory_documents(id,tenant_id,kind,status,warehouse_id,source_location_id,destination_location_id,note,posted_at,recipient_name,delivery_address)
+      VALUES($1,$2,$3,$4,$5,$6,$7,'P7 synthetic demo fixture',CASE WHEN $8 THEN CURRENT_TIMESTAMP ELSE NULL END,$9,$10)`, [id(n),tenant,kind,posted?'POSTED':'DRAFT',warehouse,source,destination,posted,kind==='OUTBOUND'?'합성 시연 납품처':null,kind==='OUTBOUND'?'서울 시연구 물류로 100 (합성 배송지)':null]);
     add('INSERT INTO inventory_document_lines(tenant_id,document_id,item_id,quantity) VALUES($1,$2,$3,$4)', [tenant,id(n),id(item),quantity]);
     if (!posted) continue;
     for (const [location,delta] of [[source,-quantity],[destination,quantity]].filter(([location]) => location)) {

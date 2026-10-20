@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import pg from 'pg';
 import { renderNeonInit } from './generate-neon-sql.mjs';
 import { migrate } from './db-migrate.mjs';
+import { renderDeliveryUpgrade } from './generate-neon-delivery-upgrade.mjs';
 
 const container = 'wms-neon-init-' + randomUUID().slice(0,8);
 const password = randomUUID() + randomUUID();
@@ -22,8 +23,9 @@ async function connect(url) {
   await client.connect(); clients.push(client); return client;
 }
 try {
-  const sql = await renderNeonInit();
-  assert.equal(sql, await readFile(new URL('../deploy/neon-init.sql',import.meta.url),'utf8'));
+  const upgradeMode = process.argv.includes('--upgrade');
+  const sql = await renderNeonInit(upgradeMode ? {through:7} : {});
+  if (!upgradeMode) assert.equal(sql, await readFile(new URL('../deploy/neon-init.sql',import.meta.url),'utf8'));
   docker(['run','-d','--name',container,'--tmpfs','/var/lib/postgresql/data',
     '-e','POSTGRES_PASSWORD','-p','127.0.0.1::5432','postgres:17.9-bookworm'],
     {...process.env,POSTGRES_PASSWORD:password});
@@ -43,7 +45,30 @@ try {
   const owner = await connect(ownerUrl.href);
   assert.equal((await owner.query("SELECT rolsuper FROM pg_roles WHERE rolname=current_user")).rows[0].rolsuper,false);
   const result = await owner.query(sql);
-  assert.deepEqual(result.at(-1).rows[0], {database_name:'wms_demo',migrations_applied:'7',tables_created:'16',forced_rls_tables:'9'});
+  assert.deepEqual(result.at(-1).rows[0], {database_name:'wms_demo',migrations_applied:upgradeMode?'7':'8',tables_created:'16',forced_rls_tables:'9'});
+  if (upgradeMode) {
+    await owner.query(`BEGIN; SET LOCAL ROLE wms_migrator;
+      SELECT set_config('app.tenant_id','70000000-0000-4000-8000-000000000001',true);
+      INSERT INTO tenants(id,name) VALUES('70000000-0000-4000-8000-000000000001','Legacy test company');
+      INSERT INTO warehouses(id,tenant_id,code,name) VALUES('70000000-0000-4000-8000-000000000002','70000000-0000-4000-8000-000000000001','LEGACY','Legacy warehouse');
+      INSERT INTO locations(id,tenant_id,warehouse_id,code,name) VALUES('70000000-0000-4000-8000-000000000003','70000000-0000-4000-8000-000000000001','70000000-0000-4000-8000-000000000002','A','Legacy location');
+      INSERT INTO inventory_documents(id,tenant_id,kind,status,warehouse_id,source_location_id,note,posted_at)
+        VALUES('70000000-0000-4000-8000-000000000004','70000000-0000-4000-8000-000000000001','OUTBOUND','POSTED','70000000-0000-4000-8000-000000000002','70000000-0000-4000-8000-000000000003','Preserve existing outbound',CURRENT_TIMESTAMP);
+      COMMIT;`);
+    // Read as migrator with the same transaction-local tenant as the legacy row.
+    const legacy = await owner.query(`BEGIN; SET LOCAL ROLE wms_migrator; SELECT set_config('app.tenant_id','70000000-0000-4000-8000-000000000001',true);
+      SELECT to_jsonb(d) AS row FROM inventory_documents d; COMMIT;`);
+    const original = legacy.find(entry=>entry.rows[0]?.row).rows[0].row;
+    const upgrade = await renderDeliveryUpgrade();
+    assert.equal(upgrade,await readFile(new URL('../deploy/neon-outbound-delivery.sql',import.meta.url),'utf8'));
+    const applied = await owner.query(upgrade);
+    assert.deepEqual(applied.at(-1).rows[0],{delivery_ready:true,delivery_columns:'2'});
+    const after = await owner.query(`BEGIN; SET LOCAL ROLE wms_migrator; SELECT set_config('app.tenant_id','70000000-0000-4000-8000-000000000001',true);
+      SELECT to_jsonb(d)-'recipient_name'-'delivery_address' AS row FROM inventory_documents d; COMMIT;`);
+    assert.deepEqual(after.find(entry=>entry.rows[0]?.row).rows[0].row,original);
+    await owner.query(upgrade);
+    assert.equal((await owner.query('SELECT count(*)::int count FROM pgmigrations')).rows[0].count,8);
+  }
   assert.equal((await migrate(ownerUrl.href,{log:()=>{}})).length,0);
   await assert.rejects(owner.query(sql), {code:'P0001'});
   await owner.query('ROLLBACK');
@@ -59,7 +84,7 @@ try {
   await assert.rejects(app.query("UPDATE audit_logs SET action='CHANGED'"),{code:'42501'});
   await assert.rejects(app.query("UPDATE idempotency_requests SET response='{}'::jsonb"),{code:'42501'});
   await assert.rejects(app.query('DELETE FROM stock_balances'),{code:'42501'});
-  console.log('PASS: limited-owner initialization; 7 tracked migrations; 16 tables; 9 FORCE RLS tables; migration rerun=0; overwrite refused; authenticated restricted app permissions.');
+  console.log('PASS: limited-owner initialization; 8 tracked migrations; 16 tables; 9 FORCE RLS tables; migration rerun=0; overwrite refused; authenticated restricted app permissions.' + (upgradeMode ? ' Legacy outbound unchanged; additive upgrade and repeat verified.' : ''));
 } catch (error) {
   console.error('Neon SQL verification failed (' + (error.code ?? error.name) + ').');
   process.exitCode=1;

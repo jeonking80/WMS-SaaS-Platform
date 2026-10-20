@@ -27,9 +27,9 @@ SET LOCAL search_path = public;
 SELECT pg_advisory_xact_lock(hashtext('wms-p7-synthetic-demo'));
 SELECT set_config('app.tenant_id', '${tenant}', true);
 DO $guard$ BEGIN
-  IF (SELECT count(*) FROM pgmigrations) <> 7 OR
-     NOT EXISTS (SELECT 1 FROM pgmigrations WHERE name='1792368000006_p6-dashboard') THEN
-    RAISE EXCEPTION 'Requires complete seven-migration schema';
+  IF (SELECT count(*) FROM pgmigrations) < 8 OR
+     NOT EXISTS (SELECT 1 FROM pgmigrations WHERE name='1792368000007_outbound-delivery') THEN
+    RAISE EXCEPTION 'Requires outbound delivery migration';
   END IF;
   IF EXISTS (SELECT 1 FROM tenants WHERE id='${tenant}') OR
      EXISTS (SELECT 1 FROM "user" WHERE id IN ('p7-demo-viewer','p7-demo-worker','p7-demo-admin')

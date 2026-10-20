@@ -40,7 +40,7 @@ try {
   await client.query('REVOKE CREATE ON SCHEMA public FROM wms_app');
   await client.query('GRANT USAGE ON SCHEMA public TO wms_app');
   // Restrict ownership changes to this application's known tables, preserving other data.
-  const tables = ['pgmigrations', 'tenants', 'user', 'session', 'account', 'verification', 'memberships', 'items', 'warehouses', 'locations', 'inventory_documents', 'inventory_document_lines', 'stock_balances', 'stock_ledger', 'idempotency_requests', 'audit_logs'];
+  const tables = ['pgmigrations', 'tenants', 'user', 'session', 'account', 'verification', 'memberships', 'items', 'warehouses', 'locations', 'inventory_documents', 'inventory_document_lines', 'stock_balances', 'stock_ledger', 'idempotency_requests', 'audit_logs', 'delivery_destinations'];
   for (const table of tables) {
     const exists = await client.query('SELECT to_regclass($1) AS relation', [`public.${quote(table)}`]);
     if (exists.rows[0].relation) {
@@ -49,6 +49,7 @@ try {
     }
   }
   if (process.argv.includes('--grant')) {
+    await client.query('GRANT SELECT, INSERT, UPDATE ON public.delivery_destinations TO wms_app');
     await client.query('GRANT SELECT, INSERT, UPDATE, DELETE ON public."user", public.session, public.account, public.verification, public.items, public.warehouses, public.locations, public.inventory_documents, public.inventory_document_lines TO wms_app');
     await client.query('GRANT SELECT, INSERT, UPDATE ON public.stock_balances TO wms_app');
     await client.query('GRANT SELECT, INSERT ON public.stock_ledger, public.idempotency_requests, public.audit_logs TO wms_app');

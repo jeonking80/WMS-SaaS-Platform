@@ -63,10 +63,10 @@ function fixtures(request: APIRequestContext) {
 }
 
 async function assertStock(request: APIRequestContext, item: string, location: string, document: string) {
-  const stockResponse = await request.get("/api/stock"); expect(stockResponse.status()).toBe(200);
+  const stockResponse = await request.get(`/api/stock?item_id=${item}&page_size=100`); expect(stockResponse.status()).toBe(200);
   const stock = (await stockResponse.json()).stock as Stock[];
   expect(stock.filter(row => row.item_id === item && row.location_id === location)).toEqual([expect.objectContaining({ quantity: "100" })]);
-  const ledgerResponse = await request.get("/api/stock-ledger"); expect(ledgerResponse.status()).toBe(200);
+  const ledgerResponse = await request.get(`/api/stock-ledger?item_id=${item}&page_size=100`); expect(ledgerResponse.status()).toBe(200);
   const ledger = (await ledgerResponse.json()).entries as Ledger[];
   expect(ledger.filter(row => row.document_id === document)).toEqual([expect.objectContaining({ quantity_delta: "100" })]);
   const reconcile = await request.get("/api/stock/reconcile"); expect(reconcile.status()).toBe(200);
@@ -100,8 +100,8 @@ test("P3 posting is idempotent, immutable, tenant isolated and role protected", 
     await assertStock(request, item, location, document.id);
     await login(request, "admin.b@example.test");
     expect((await request.post(path, { headers, data })).status()).toBe(404);
-    const stock = await (await request.get("/api/stock")).json(); expect(stock.stock.some((row: Stock) => row.item_id === item)).toBe(false);
-    const ledger = await (await request.get("/api/stock-ledger")).json(); expect(ledger.entries.some((row: Ledger) => row.document_id === document.id)).toBe(false);
+    const stock = await (await request.get(`/api/stock?item_id=${item}&page_size=100`)).json(); expect(stock.stock.some((row: Stock) => row.item_id === item)).toBe(false);
+    const ledger = await (await request.get(`/api/stock-ledger?item_id=${item}&page_size=100`)).json(); expect(ledger.entries.some((row: Ledger) => row.document_id === document.id)).toBe(false);
   } finally { await fixture.cleanup(); }
 });
 
@@ -120,6 +120,7 @@ for (const loseResponse of [false, true]) test(`P3 browser posts 100 units${lose
       if (keys.length === 1) await route.abort("connectionreset"); else await route.fulfill({ response });
     });
     await page.getByRole("button", { name: "입고 확정", exact: true }).click();
+    await page.getByRole("button", { name: "확정 실행", exact: true }).click();
     if (loseResponse) {
       await page.getByRole("button", { name: "입고 확정 다시 시도", exact: true }).click();
       await expect.poll(() => keys.length).toBe(2); expect(keys[0]).toBeTruthy(); expect(keys[1]).toBe(keys[0]);

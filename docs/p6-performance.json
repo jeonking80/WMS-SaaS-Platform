@@ -1,0 +1,595 @@
+{
+  "started_at": "2026-10-20T01:31:34.639Z",
+  "fixture": {
+    "tenant": "de4ab34e-04e1-4c57-be71-8b3aaeaa7f65",
+    "documents": 10000,
+    "ledger": 10000,
+    "balances": 10000,
+    "items": 100,
+    "locations": 100,
+    "audits": 10000,
+    "actual_counts": {
+      "inventory_documents": 10000,
+      "inventory_document_lines": 10000,
+      "stock_ledger": 10000,
+      "stock_balances": 10000,
+      "audit_logs": 10000,
+      "items": 100,
+      "locations": 100
+    }
+  },
+  "method": {
+    "production_build": "prebuilt .next; this script never builds",
+    "concurrency": 1,
+    "warmups": 1,
+    "measured_repeats": 5,
+    "target_ms": 2000,
+    "statistic": "nearest-rank p95; 5 samples means p95=max",
+    "browser_timing": "full navigation until populated table rows visible and two animation frames",
+    "exclusions": [
+      "fixture seed",
+      "server startup",
+      "login",
+      "warmup"
+    ],
+    "scope": "local latency measurement, not a load test; all synthetic documents are original posted INBOUND quantity=1 across 7 days",
+    "planner_statistics": "ANALYZE after bulk fixture seed, before warmup"
+  },
+  "machine": {
+    "platform": "linux 6.18.55",
+    "cpu": "AMD EPYC 9V74 80-Core Processor",
+    "logical_cpus": 5,
+    "ram_bytes": 35743760384,
+    "node": "v24.19.0",
+    "postgresql": "17.9 (Debian 17.9-1.pgdg12+1)",
+    "cgroup": {
+      "memory.max": "34359738368",
+      "cpu.max": "400000 100000"
+    },
+    "chromium": "154.0.8037.57"
+  },
+  "api": {
+    "/api/stock": {
+      "samples": [
+        {
+          "ms": 21.55574200000001,
+          "status": 200,
+          "rows": {
+            "stock": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 21.82674700000007,
+          "status": 200,
+          "rows": {
+            "stock": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 22.118749000000207,
+          "status": 200,
+          "rows": {
+            "stock": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 28.650337000000036,
+          "status": 200,
+          "rows": {
+            "stock": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 21.332192999999734,
+          "status": 200,
+          "rows": {
+            "stock": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        }
+      ],
+      "median_ms": 21.82674700000007,
+      "p95_ms": 28.650337000000036,
+      "max_ms": 28.650337000000036,
+      "target_met": true
+    },
+    "/api/stock-ledger": {
+      "samples": [
+        {
+          "ms": 37.866827000000285,
+          "status": 200,
+          "rows": {
+            "entries": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 35.454011000000264,
+          "status": 200,
+          "rows": {
+            "entries": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 38.30470100000002,
+          "status": 200,
+          "rows": {
+            "entries": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 28.871603999999934,
+          "status": 200,
+          "rows": {
+            "entries": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 32.490671999999904,
+          "status": 200,
+          "rows": {
+            "entries": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        }
+      ],
+      "median_ms": 35.454011000000264,
+      "p95_ms": 38.30470100000002,
+      "max_ms": 38.30470100000002,
+      "target_met": true
+    },
+    "/api/documents": {
+      "samples": [
+        {
+          "ms": 26.57400000000007,
+          "status": 200,
+          "rows": {
+            "documents": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 26.052370999999766,
+          "status": 200,
+          "rows": {
+            "documents": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 28.148854999999912,
+          "status": 200,
+          "rows": {
+            "documents": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 26.929471999999805,
+          "status": 200,
+          "rows": {
+            "documents": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 28.454541000000063,
+          "status": 200,
+          "rows": {
+            "documents": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        }
+      ],
+      "median_ms": 26.929471999999805,
+      "p95_ms": 28.454541000000063,
+      "max_ms": 28.454541000000063,
+      "target_met": true
+    },
+    "/api/dashboard": {
+      "samples": [
+        {
+          "ms": 31.88766200000009,
+          "status": 200,
+          "rows": {
+            "daily": 7,
+            "recent": 10,
+            "low_stock": 0
+          },
+          "pagination": null
+        },
+        {
+          "ms": 27.705191000000013,
+          "status": 200,
+          "rows": {
+            "daily": 7,
+            "recent": 10,
+            "low_stock": 0
+          },
+          "pagination": null
+        },
+        {
+          "ms": 31.447724000000107,
+          "status": 200,
+          "rows": {
+            "daily": 7,
+            "recent": 10,
+            "low_stock": 0
+          },
+          "pagination": null
+        },
+        {
+          "ms": 29.549786999999924,
+          "status": 200,
+          "rows": {
+            "daily": 7,
+            "recent": 10,
+            "low_stock": 0
+          },
+          "pagination": null
+        },
+        {
+          "ms": 23.188281000000188,
+          "status": 200,
+          "rows": {
+            "daily": 7,
+            "recent": 10,
+            "low_stock": 0
+          },
+          "pagination": null
+        }
+      ],
+      "median_ms": 29.549786999999924,
+      "p95_ms": 31.88766200000009,
+      "max_ms": 31.88766200000009,
+      "target_met": true
+    },
+    "/api/audit-logs": {
+      "samples": [
+        {
+          "ms": 18.54006500000014,
+          "status": 200,
+          "rows": {
+            "entries": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 15.894631000000118,
+          "status": 200,
+          "rows": {
+            "entries": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 17.01752899999974,
+          "status": 200,
+          "rows": {
+            "entries": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 14.452256999999918,
+          "status": 200,
+          "rows": {
+            "entries": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        },
+        {
+          "ms": 16.359004999999797,
+          "status": 200,
+          "rows": {
+            "entries": 25
+          },
+          "pagination": {
+            "page": 1,
+            "page_size": 25,
+            "total": 10000,
+            "total_pages": 400
+          }
+        }
+      ],
+      "median_ms": 16.359004999999797,
+      "p95_ms": 18.54006500000014,
+      "max_ms": 18.54006500000014,
+      "target_met": true
+    },
+    "/api/stock/reconcile": {
+      "samples": [
+        {
+          "ms": 24.33414400000038,
+          "status": 200,
+          "rows": {
+            "mismatches": 0
+          },
+          "pagination": null
+        },
+        {
+          "ms": 32.020939,
+          "status": 200,
+          "rows": {
+            "mismatches": 0
+          },
+          "pagination": null
+        },
+        {
+          "ms": 35.209469000000354,
+          "status": 200,
+          "rows": {
+            "mismatches": 0
+          },
+          "pagination": null
+        },
+        {
+          "ms": 26.367276000000402,
+          "status": 200,
+          "rows": {
+            "mismatches": 0
+          },
+          "pagination": null
+        },
+        {
+          "ms": 24.4358000000002,
+          "status": 200,
+          "rows": {
+            "mismatches": 0
+          },
+          "pagination": null
+        }
+      ],
+      "median_ms": 26.367276000000402,
+      "p95_ms": 35.209469000000354,
+      "max_ms": 35.209469000000354,
+      "target_met": true
+    }
+  },
+  "browser": {
+    "/dashboard/stock": {
+      "samples": [
+        {
+          "ms": 233.2646480000003,
+          "rendered_rows": 50
+        },
+        {
+          "ms": 264.41002500000013,
+          "rendered_rows": 50
+        },
+        {
+          "ms": 314.92889599999944,
+          "rendered_rows": 50
+        },
+        {
+          "ms": 261.70262400000047,
+          "rendered_rows": 50
+        },
+        {
+          "ms": 212.86763299999984,
+          "rendered_rows": 50
+        }
+      ],
+      "median_ms": 261.70262400000047,
+      "p95_ms": 314.92889599999944,
+      "max_ms": 314.92889599999944,
+      "target_met": true
+    },
+    "/dashboard/documents": {
+      "samples": [
+        {
+          "ms": 183.51878100000067,
+          "rendered_rows": 25
+        },
+        {
+          "ms": 164.06853200000023,
+          "rendered_rows": 25
+        },
+        {
+          "ms": 180.0811249999997,
+          "rendered_rows": 25
+        },
+        {
+          "ms": 178.84020099999998,
+          "rendered_rows": 25
+        },
+        {
+          "ms": 197.99337599999944,
+          "rendered_rows": 25
+        }
+      ],
+      "median_ms": 180.0811249999997,
+      "p95_ms": 197.99337599999944,
+      "max_ms": 197.99337599999944,
+      "target_met": true
+    },
+    "/dashboard/history": {
+      "samples": [
+        {
+          "ms": 149.83865699999933,
+          "rendered_rows": 25
+        },
+        {
+          "ms": 130.68778500000008,
+          "rendered_rows": 25
+        },
+        {
+          "ms": 166.15994300000057,
+          "rendered_rows": 25
+        },
+        {
+          "ms": 162.98531399999956,
+          "rendered_rows": 25
+        },
+        {
+          "ms": 181.90711900000042,
+          "rendered_rows": 25
+        }
+      ],
+      "median_ms": 162.98531399999956,
+      "p95_ms": 181.90711900000042,
+      "max_ms": 181.90711900000042,
+      "target_met": true
+    },
+    "/dashboard/audit": {
+      "samples": [
+        {
+          "ms": 150.21423400000003,
+          "rendered_rows": 25
+        },
+        {
+          "ms": 147.90884000000005,
+          "rendered_rows": 25
+        },
+        {
+          "ms": 149.2370030000011,
+          "rendered_rows": 25
+        },
+        {
+          "ms": 146.1811120000002,
+          "rendered_rows": 25
+        },
+        {
+          "ms": 147.10921899999994,
+          "rendered_rows": 25
+        }
+      ],
+      "median_ms": 147.90884000000005,
+      "p95_ms": 150.21423400000003,
+      "max_ms": 150.21423400000003,
+      "target_met": true
+    },
+    "/dashboard": {
+      "samples": [
+        {
+          "ms": 145.92057900000145,
+          "rendered_rows": 7
+        },
+        {
+          "ms": 130.09008599999834,
+          "rendered_rows": 7
+        },
+        {
+          "ms": 147.8088489999991,
+          "rendered_rows": 7
+        },
+        {
+          "ms": 131.68339899999955,
+          "rendered_rows": 7
+        },
+        {
+          "ms": 150.98556199999985,
+          "rendered_rows": 7
+        }
+      ],
+      "median_ms": 145.92057900000145,
+      "p95_ms": 150.98556199999985,
+      "max_ms": 150.98556199999985,
+      "target_met": true
+    }
+  },
+  "finished_at": "2026-10-20T01:31:43.686Z",
+  "cleanup": "dedicated tenant and synthetic identity removed"
+}

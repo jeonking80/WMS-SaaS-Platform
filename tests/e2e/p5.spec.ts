@@ -135,7 +135,7 @@ test("P5 transfer and linked reversal are atomic, idempotent and protected", asy
     expect(await detail(request, original.id)).toMatchObject({ status: "REVERSED", reversal_document_id: reversal.id });
     expect(await detail(request, reversal.id)).toMatchObject({ status: "POSTED", reversal_of_id: original.id });
     await transferBalances(request, item, location, destination, [100, 0]);
-    const ledgerResponse = await request.get("/api/stock-ledger"); expect(ledgerResponse.status()).toBe(200);
+    const ledgerResponse = await request.get(`/api/stock-ledger?item_id=${item}&page_size=100`); expect(ledgerResponse.status()).toBe(200);
     const entries = (await ledgerResponse.json()).entries as { document_id: string; quantity_delta: string }[];
     expect(entries.filter(row => row.document_id === original.id).map(row => Number(row.quantity_delta)).sort((a, b) => a - b)).toEqual([-60, 60]);
     expect(entries.filter(row => row.document_id === reversal.id).map(row => Number(row.quantity_delta)).sort((a, b) => a - b)).toEqual([-60, 60]);
@@ -168,6 +168,7 @@ for (const loseResponse of [false, true]) test(`P5 browser transfers and reverse
     await page.getByRole("button", { name: "전표 저장", exact: true }).click();
     await expect(page.getByRole("status")).toHaveText("전표를 저장했습니다.");
     await page.getByRole("button", { name: "이동 확정", exact: true }).click();
+    await page.getByRole("button", { name: "확정 실행", exact: true }).click();
     await expect(page.getByLabel("수량 1", { exact: true })).toBeDisabled();
     await transferBalances(page.request, item, location, destination, [40, 60]);
     const keys: string[] = [];
@@ -177,6 +178,7 @@ for (const loseResponse of [false, true]) test(`P5 browser transfers and reverse
       if (keys.length === 1) await route.abort("connectionreset"); else await route.fulfill({ response });
     });
     await page.getByRole("button", { name: "확정 취소", exact: true }).click();
+    await page.getByRole("button", { name: "취소 실행", exact: true }).click();
     if (loseResponse) {
       await page.getByRole("button", { name: "확정 취소 다시 시도", exact: true }).click();
       await expect.poll(() => keys.length).toBe(2); expect(keys[0]).toBeTruthy(); expect(keys[1]).toBe(keys[0]);

@@ -85,7 +85,7 @@ async function assertEffects(request: APIRequestContext, item: string, location:
   const response = await request.get(`/api/stock?location_id=${location}&item_id=${item}`);
   expect(response.status()).toBe(200);
   expect((await response.json()).stock).toEqual([expect.objectContaining({ item_id: item, location_id: location, quantity })]);
-  const ledger = await request.get("/api/stock-ledger"); expect(ledger.status()).toBe(200);
+  const ledger = await request.get(`/api/stock-ledger?item_id=${item}&page_size=100`); expect(ledger.status()).toBe(200);
   const entries = ((await ledger.json()).entries as Ledger[]).filter(row => row.document_id === document);
   expect(entries).toEqual(delta === undefined ? [] : [expect.objectContaining({ quantity_delta: delta })]);
   const reconcile = await request.get("/api/stock/reconcile"); expect(reconcile.status()).toBe(200);
@@ -154,6 +154,7 @@ for (const loseResponse of [false, true]) test(`P4 browser posts outbound and ha
       if (keys.length === 1) await route.abort("connectionreset"); else await route.fulfill({ response });
     });
     await page.getByRole("button", { name: "출고 확정", exact: true }).click();
+    await page.getByRole("button", { name: "확정 실행", exact: true }).click();
     if (loseResponse) {
       await page.getByRole("button", { name: "출고 확정 다시 시도", exact: true }).click();
       await expect.poll(() => keys.length).toBe(2); expect(keys[0]).toBeTruthy(); expect(keys[1]).toBe(keys[0]);
@@ -167,6 +168,7 @@ for (const loseResponse of [false, true]) test(`P4 browser posts outbound and ha
     await page.getByRole("button", { name: `전표 ${shortage.id} 열기`, exact: true }).click();
     await expect(page.getByText(/참고 재고.*20/)).toBeVisible();
     await page.getByRole("button", { name: "출고 확정", exact: true }).click();
+    await page.getByRole("button", { name: "확정 실행", exact: true }).click();
     await expect(page.getByRole("alert").filter({ hasText: "재고가 부족합니다." })).toBeVisible();
     await expect(page.getByLabel("수량 1", { exact: true })).toBeEnabled();
     await expect(page.getByRole("button", { name: "전표 저장", exact: true })).toBeEnabled();

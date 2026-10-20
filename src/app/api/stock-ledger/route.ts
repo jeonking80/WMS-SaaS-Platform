@@ -1,11 +1,11 @@
 import { apiError, json } from "@/server/api";
 import { requireIdentity } from "@/server/auth/access";
-import { listLedger } from "@/server/stock";
+import { pagedLedger, parseQuery } from "@/server/queries";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export async function GET(request: Request) {
   try {
     const identity = await requireIdentity(request.headers);
-    return json({ entries: await listLedger(identity.tenant.id) });
+    return json(await pagedLedger(identity.tenant.id, parseQuery(new URL(request.url).searchParams)));
   } catch (error) { return apiError(error); }
 }

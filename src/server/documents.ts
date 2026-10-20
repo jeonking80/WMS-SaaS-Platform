@@ -72,8 +72,27 @@ async function addLines(client: PoolClient, tenantId: string, id: string, input:
 export function listDocuments(tenantId: string) {
   return withTenant(tenantId, async (client) => (await client.query("SELECT * FROM inventory_documents ORDER BY updated_at DESC, id DESC LIMIT 100")).rows);
 }
-export function getDocument(tenantId: string, id: string) {
-  return withTenant(tenantId, (client) => detail(client, documentId(id)));
+export function getDocument(tenantId: string, id: string, history = false) {
+  return withTenant(tenantId, async (client) => {
+    const parsedId = documentId(id);
+    if (history) {
+      const result = await client.query("SELECT status FROM inventory_documents WHERE id=$1 FOR SHARE", [parsedId]);
+      if (!result.rows[0]) throw new DomainError(404, "NOT_FOUND");
+      if (!["POSTED", "REVERSED"].includes(result.rows[0].status)) throw new DomainError(403, "ROLE_FORBIDDEN");
+    }
+    const document = await detail(client, parsedId);
+    const labels = await client.query(`SELECT w.name AS warehouse_name, sl.code AS source_location_code,
+      dl.code AS destination_location_code FROM inventory_documents d
+      JOIN warehouses w ON (w.tenant_id,w.id)=(d.tenant_id,d.warehouse_id)
+      LEFT JOIN locations sl ON (sl.tenant_id,sl.id)=(d.tenant_id,d.source_location_id)
+      LEFT JOIN locations dl ON (dl.tenant_id,dl.id)=(d.tenant_id,d.destination_location_id)
+      WHERE d.id=$1`, [parsedId]);
+    const lines = await client.query(`SELECT dl.id,dl.tenant_id,dl.document_id,dl.item_id,dl.quantity,
+      i.code AS item_code,i.name AS item_name FROM inventory_document_lines dl
+      JOIN items i ON (i.tenant_id,i.id)=(dl.tenant_id,dl.item_id)
+      WHERE dl.document_id=$1 ORDER BY dl.item_id,dl.id`, [parsedId]);
+    return { ...document, ...labels.rows[0], lines: lines.rows };
+  });
 }
 export function createDocument(tenantId: string, input: DocumentInput) {
   return withTenant(tenantId, async (client) => {

@@ -2,7 +2,7 @@
 
 ## 구현 범위
 
-PostgreSQL 17, `pg` SQL 접근, `node-pg-migrate` SQL 마이그레이션을 사용한다. 5단계에서 입고·출고·이동 확정과 원본 연결 반대 전표를 통한 확정 취소를 구현했다.
+PostgreSQL 17, `pg` SQL 접근, `node-pg-migrate` SQL 마이그레이션을 사용한다. 6단계까지 입고·출고·이동·확정 취소와 조회·대시보드·최소재고를 구현했다. 마이그레이션은 총 7개다.
 
 | 테이블 | 컬럼 | 제약·기본값 |
 |---|---|---|
@@ -47,7 +47,7 @@ npm run test:integration
 
 실제 PostgreSQL 테스트 DB에 임의 이름의 전용 스키마를 만들고 아래를 확인한 후 해당 스키마만 삭제한다. 테스트 DB나 public 스키마를 초기화하지 않는다.
 
-1. 빈 스키마에 회사·인증·업무 격리 마이그레이션 세 개가 실행된다.
+1. 빈 스키마에 회사·인증·업무 격리·초안·확정·취소·대시보드 마이그레이션 7개가 실행된다.
 2. 회사 삽입 시 UUID·활성값·생성 시각이 생성된다.
 3. 다시 마이그레이션하면 적용 건수는 0이며 기존 데이터와 이력이 유지된다.
 4. 공백뿐인 회사명·NULL 회사명은 DB 제약으로 거절된다.
@@ -120,3 +120,24 @@ Compose의 `postgres`는 초기화용 관리자다. `wms_migrator`는 테이블 
 취소 수량은 원본 원장으로부터 결정한다. 유형별 위치·부호·수량·이동 양쪽 수량 일치를 검사하고 반대 부호의 효과를 생성한다. 원본 명세·원장·posted_at은 변경하지 않는다. 반대 전표와 양수 명세, 반대 원장, 원본 REVERSED 상태·reversed_at·버전, 감사 및 요청 응답을 한 트랜잭션으로 저장한다.
 
 과거 확정 취소는 비활성 기준정보도 참조하되 같은 FOR SHARE 잠금을 사용한다. 원장을 수정하거나 재고를 직접 덮어쓰는 복구 경로는 만들지 않는다. 잠금 대기 1초와 전체 롤백·멱등 재시도 규칙을 유지한다.
+
+
+## 6단계 최소재고·조회 인덱스와 집계
+
+`1792368000006_p6-dashboard.sql`은 일곱 번째 마이그레이션이다. items.min_stock은 bigint NOT NULL DEFAULT 0이며 CHECK로 0~1,000,000,000을 제한한다. API는 JSON 숫자 정수로 입력받고 조회 시 문자열로 반환한다. 관리자의 품목 POST/PATCH에만 이 필드를 허용한다.
+
+| 인덱스 대상 | 컬럼 순서 | 목적 |
+|---|---|---|
+| inventory_documents | tenant_id, created_at DESC, id DESC | 회사별 전표 페이지 |
+| inventory_documents | tenant_id, posted_at DESC | 확정일 범위·일별 실적 |
+| inventory_documents | tenant_id, reversed_at DESC, WHERE reversed_at IS NOT NULL | 취소일 범위·일별 취소 |
+| stock_ledger | tenant_id, created_at DESC, id DESC | 회사별 최신 원장 |
+| stock_balances | tenant_id, item_id | 회사 전체 위치의 품목별 합계 |
+| audit_logs | tenant_id, created_at DESC, id DESC | 회사별 감사 페이지 |
+| inventory_document_lines | tenant_id, item_id, document_id | 품목 조건에 해당하는 전표 검색 |
+
+기존 PK·회사별 고유 제약 인덱스와 같은 컬럼 순서를 중복 생성하지 않는다. 목록은 기본 25개·최대 100개이며 전체 건수와 페이지를 같은 SQL 문장에서 계산한다. 코드·이름 부분 검색과 깊은 OFFSET의 비용까지 모든 조건을 인덱스가 해결한다고 가정하지 않는다. 실제 계획·데이터량·소요 시간은 별도 `npm run test:performance`와 [6단계 성능 측정](6단계-성능측정.md)에 기록한다.
+
+대시보드는 withTenant 내부의 단일 SQL 문장으로 집계하므로 모든 구성 요소가 동일한 MVCC 스냅샷을 사용한다. UTC timestamptz를 Asia/Seoul 날짜 경계로 비교하고 서버 시각으로 오늘 포함 7일을 생성한다. 원본 posted_at은 REVERSED 이후에도 실적에 남기고 reversed_at을 취소 실적으로 별도 계산한다. reversal_of_id가 있는 반대 전표는 입출고 실적에서 제외한다.
+
+재고 보유 품목은 활성 여부와 무관한 회사 전체 양수 합계, 부족 재고는 활성 품목 LEFT JOIN 품목별 잔량 합계에 COALESCE(0)를 적용한 최소재고 미달이다. recent는 모든 역할에서 POSTED/REVERSED만 반환한다. 기준정보 선택용 `/api/lookups`는 회사별 창고·위치를 각 최대 1,000개 반환한다. RLS·회사 포함 FK·변경 트랜잭션 권한은 기존 경계를 유지한다. 검증 근거는 [6단계 검증 결과](6단계-검증결과.md)에 기록한다.

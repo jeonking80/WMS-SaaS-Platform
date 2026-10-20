@@ -8,8 +8,9 @@ const singular = { items: "item", warehouses: "warehouse", locations: "location"
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export function validateMasterInput(body: Record<string, unknown>, kind: MasterKind, patch = false) {
   const allowed = patch ? ["code", "name", "active"] : ["code", "name", ...(kind === "locations" ? ["warehouse_id"] : [])];
+  if (kind === "items") allowed.push("min_stock");
   if (Object.keys(body).some((key) => !allowed.includes(key)) || (patch && !Object.keys(body).length)) throw new DomainError(400, "INVALID_INPUT");
-  const result: Record<string, string | boolean> = {};
+  const result: Record<string, string | boolean | number> = {};
   for (const key of ["code", "name"] as const) {
     if (patch && !(key in body)) continue;
     if (typeof body[key] !== "string") throw new DomainError(400, "INVALID_INPUT");
@@ -25,10 +26,14 @@ export function validateMasterInput(body: Record<string, unknown>, kind: MasterK
     if (typeof body.warehouse_id !== "string" || !uuid.test(body.warehouse_id)) throw new DomainError(400, "INVALID_INPUT");
     result.warehouse_id = body.warehouse_id;
   }
+  if ("min_stock" in body) {
+    if (typeof body.min_stock !== "number" || !Number.isInteger(body.min_stock) || body.min_stock < 0 || body.min_stock > 1_000_000_000) throw new DomainError(400, "INVALID_INPUT");
+    result.min_stock = body.min_stock;
+  }
   return result;
 }
 function columns(kind: MasterKind) {
-  return `id, code, name, active${kind === "locations" ? ", warehouse_id" : ""}`;
+  return `id, code, name, active${kind === "items" ? ", min_stock" : ""}${kind === "locations" ? ", warehouse_id" : ""}`;
 }
 async function activeWarehouse(client: PoolClient, id: string) {
   const result = await client.query("SELECT id, active FROM warehouses WHERE id = $1 FOR SHARE", [id]);

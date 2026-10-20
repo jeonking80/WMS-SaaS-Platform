@@ -1,6 +1,6 @@
 # WMS Lite API 명세
 
-**상태:** 5단계 입고·출고·내부 이동 확정과 관리자 확정 취소, 현재고·원장·대조 기능을 구현했다.
+**상태:** 6단계 검색·필터·페이지 처리, 역할별 확정 이력, 대시보드·감사 조회와 최소재고 설정을 구현했다.
 
 ## 1. 구현된 API
 
@@ -34,7 +34,7 @@
 | `GET /api/items` | 관리자·작업자의 자사 품목 조회. code/id 순서 최대 1,000개. 조회자는 403 |
 | `GET /api/items/{id}` | 관리자·작업자의 자사 품목 상세. 없거나 타 회사 대상 또는 잘못된 UUID는 404 |
 
-`/api/me` 응답은 `{ user: { id, name, email }, tenant: { id, name }, role }`이며 role은 admin/worker/viewer다. 품목 응답은 `{ items: [...] }`, `{ item: {...} }`이고 각 항목은 id/code/name/active만 포함한다. 요청의 `tenant_id`나 역할 헤더는 권한 판단에 사용하지 않는다. 회사·역할은 매 요청 세션과 DB 소속으로 확인한다.
+`/api/me` 응답은 `{ user: { id, name, email }, tenant: { id, name }, role }`이며 role은 admin/worker/viewer다. 품목 응답은 `{ items: [...] }`, `{ item: {...} }`이고 각 항목은 id/code/name/active/min_stock을 포함한다. min_stock은 정밀도를 보존하는 문자열이다. 요청의 `tenant_id`나 역할 헤더는 권한 판단에 사용하지 않는다. 회사·역할은 매 요청 세션과 DB 소속으로 확인한다.
 
 사용자·품목 API는 `Cache-Control: no-store`를 반환한다. 오류 형식은 `{ error: code }`이고 `UNAUTHENTICATED`(401), `MEMBERSHIP_REQUIRED`·`ROLE_FORBIDDEN`(403), `NOT_FOUND`(404), 내부 오류 상세를 감춘 `SERVICE_UNAVAILABLE`(503)을 사용한다.
 
@@ -42,7 +42,7 @@
 
 ## 2. 단계별 업무 API
 
-1~5단계 경로는 구현했다. 검색·페이지네이션·대시보드·감사 조회 확장은 6단계 범위다.
+1~6단계 경로를 구현했다. 아래 과거 단계별 계약 중 조회 목록은 10절의 페이지·검색 계약으로 확장한다.
 
 | 단계 | API | 목적 |
 |---|---|---|
@@ -74,19 +74,19 @@ Playwright는 초기 화면·상태 API, 보호 화면의 로그인 필요 여�
 `items`, `warehouses`, `locations` 모두 `GET /api/{종류}`, `POST /api/{종류}`, `GET /api/{종류}/{id}`, `PATCH /api/{종류}/{id}`를 제공한다. 조회는 관리자·작업자, 생성·변경은 관리자만 허용한다. 삭제 경로는 제공하지 않는다.
 
 - 목록은 `{ items: [...] }`처럼 복수형, 상세·변경은 `{ item: {...} }`처럼 단수형이다. 생성은 201, 나머지 성공은 200이다.
-- 생성 입력은 `{ code, name }`, 위치는 `warehouse_id`도 필요하다. 활성 상태는 true로 생성한다.
-- PATCH는 `code`, `name`, `active` 중 하나 이상을 받는다. 위치의 소속 창고는 변경할 수 없다. 알려지지 않은 필드는 거절한다.
+- 생성 입력은 `{ code, name }`, 위치는 `warehouse_id`도 필요하다. 품목은 선택적 `min_stock`(기본 0)을 받는다. 활성 상태는 true로 생성한다.
+- PATCH는 `code`, `name`, `active` 중 하나 이상을 받으며 품목에는 `min_stock`도 허용한다. 위치의 소속 창고는 변경할 수 없다. 알려지지 않은 필드는 거절한다.
 - 코드는 앞뒤 공백 제거·대문자 변환 후 1~64자, 이름은 앞뒤 공백 제거 후 1~128자다.
-- 응답은 id/code/name/active, 위치는 warehouse_id도 포함한다. 목록은 코드순 최대 1,000개이며 위치 목록에 `?warehouse_id=UUID` 필터를 지원한다.
+- 응답은 id/code/name/active, 품목은 min_stock 문자열, 위치는 warehouse_id도 포함한다. 목록은 코드순 최대 1,000개이며 위치 목록에 `?warehouse_id=UUID` 필터를 지원한다.
 - 회사 내 품목·창고 코드와 회사·창고 내 위치 코드가 고유하다. 초안이 참조하는 기준정보는 비활성화할 수 없다. 활성 위치가 있는 창고도 비활성화할 수 없다. 비활성 창고에 위치를 생성·재활성화할 수 없다.
 
 ## 6. 2단계 전표 계약
 
-관리자·작업자만 모든 전표 API를 이용한다. 조회자는 목록·상세·변경 모두 403이다.
+일반 전표 API는 관리자·작업자가 이용한다. 6단계에서 조회자는 `view=history`를 지정한 확정 이력 목록·상세만 읽을 수 있다. 변경은 계속 403이다.
 
 | 경로 | 입력 | 성공 응답 |
 |---|---|---|
-| `GET /api/documents` | 없음 | 200 `{ documents: [...] }`, 최신 변경순 최대 100개, 명세 제외 |
+| `GET /api/documents` | 없음 | 200 `{ documents: [...], pagination }`, 작성 시각·ID 내림차순, 명세 제외 |
 | `GET /api/documents/{id}` | 없음 | 200 `{ document: {..., lines: [...] } }` |
 | `POST /api/documents` | 아래 전체 초안 | 201 `{ document: {..., lines: [...] } }` |
 | `PATCH /api/documents/{id}` | 전체 초안 + 현재 `version` | 200 갱신된 document |
@@ -108,7 +108,7 @@ Playwright는 초기 화면·상태 API, 보호 화면의 로그인 필요 여�
 
 업무 변경 요청은 `Content-Type: application/json`과 `BETTER_AUTH_URL`의 origin과 일치하는 `Origin` 헤더가 필요하다. 출처 불일치는 403 `ORIGIN_FORBIDDEN`, 잘못된 JSON/입력은 400 `INVALID_INPUT`, 코드 중복은 409 `CONFLICT`, 사용 중 비활성화는 409 `IN_USE`, 비활성 부모 창고는 409 `INACTIVE_REFERENCE`다. 인증된 회사만 사용하며 전표 본문에 넣은 `tenant_id`는 무시한다. 모든 업무 응답은 no-store다.
 
-목록 페이지네이션·검색은 현재 제공하지 않으며 위 개수 제한을 적용한다.
+전표 목록의 검색·페이지네이션은 10절을 따른다. 기준정보 목록은 최대 1,000개 제한을 유지한다.
 
 
 ## 7. 3단계 입고 확정·재고 조회
@@ -136,7 +136,7 @@ Playwright는 초기 화면·상태 API, 보호 화면의 로그인 필요 여�
 | `GET /api/stock-ledger` | `{ entries: [{ id, document_id, warehouse_name, location_code, item_code, item_name, quantity_delta, created_at }] }` |
 | `GET /api/stock/reconcile` | `{ consistent, mismatches: [{ location_id, item_id, balance_quantity, ledger_quantity }] }` |
 
-현재고와 원장 목록은 각각 최대 1,000개이며 원장은 최신순이다. 대조는 목록 제한과 무관하게 회사 전체를 단일 SQL 스냅샷으로 비교하며 누락된 잔량·원장도 포함한다. 불일치를 보고할 뿐 자동 보정하지 않는다. 조회자에게 전표 초안 API는 계속 차단한다. 감사 기록 조회 화면/API는 6단계 범위다.
+현재고와 원장 목록은 10절의 페이지 처리를 적용하며 원장은 생성 시각·ID 내림차순이다. 대조는 목록 제한과 무관하게 회사 전체를 단일 SQL 스냅샷으로 비교하며 누락된 잔량·원장도 포함한다. 불일치를 보고할 뿐 자동 보정하지 않는다. 조회자에게 전표 초안 API는 계속 차단한다. 감사 기록 조회는 관리자 전용 `/api/audit-logs`와 `/dashboard/audit`에서 제공한다.
 
 화면은 저장된 입고·출고·이동 초안만 확정한다. 미저장 변경이 있으면 먼저 저장해야 한다. 결과를 받지 못한 요청의 키·버전을 sessionStorage에 보관하고 같은 요청 재시도와 상태 새로고침을 제공한다. 재고가 있는 품목·위치·창고는 비활성화할 수 없다.
 
@@ -181,6 +181,42 @@ Playwright는 초기 화면·상태 API, 보호 화면의 로그인 필요 여�
 - 기존 확정 요청의 같은 키 재반환은 과거 성공 응답을 반환할 수 있다. 현재 상태는 상세를 다시 조회한다. REVERSED 원본에 새 키로 확정을 요청하면 거절한다.
 - 감사 동작은 원본 ID의 REVERSE_DOCUMENT다. 반대 전표·원장·잔량·원본 상태·감사·요청 결과가 함께 커밋되며 잠금/서버 오류는 기존 재시도 규칙을 따른다.
 
-전표 상세에는 `reversal_of_id`, `reversal_document_id`, `reversed_at`, `posted_at`이 포함된다. 원본 상세의 reversal_document_id로 반대 전표를, 반대 전표 상세의 reversal_of_id로 원본을 조회한다. 목록·상세의 역할 제한은 기존과 동일하다. 조회자의 확정 이력 조회 확대는 6단계에서 다룬다.
+전표 상세에는 `reversal_of_id`, `reversal_document_id`, `reversed_at`, `posted_at`이 포함된다. 원본 상세의 reversal_document_id로 반대 전표를, 반대 전표 상세의 reversal_of_id로 원본을 조회한다. 일반 목록·상세는 관리자·작업자에게 제공하며, `view=history` 목록·상세는 모든 역할에 확정 이력만 제공한다.
 
 관리자 화면은 확정 취소와 반대/원본 전표 열기를 제공한다. 취소 요청의 키·버전도 통신 실패 시 sessionStorage에 보존하고 동일 요청 재시도 또는 상태 재조회를 제공한다.
+
+
+## 10. 6단계 검색·페이지·확정 이력
+
+모든 회사는 현재 인증 소속으로 결정한다. 아래 목록은 `page`(기본 1), `page_size`(기본 25, 최대 100)를 받으며 양의 정수만 허용한다. 응답은 기존 `documents`/`stock`/`entries` 배열과 `pagination: { page, page_size, total, total_pages }`다. 결과가 없으면 배열은 비고 total/total_pages는 0이다. 전체 건수와 해당 페이지는 단일 SQL 스냅샷에서 읽는다.
+
+| 경로 | 적용 필터 | 검색어 `q` 대상 | 역할 |
+|---|---|---|---|
+| `/api/documents` | warehouse_id, location_id(출발 또는 도착), item_id, kind, status, date_from, date_to, date_field | 전표 ID·메모·명세 품목 코드/이름 | 관리자·작업자 |
+| `/api/documents?view=history` | 위와 동일, status는 POSTED/REVERSED만 | 위와 동일 | 모든 역할 |
+| `/api/stock` | warehouse_id, location_id, item_id | 품목 코드·이름 | 모든 역할 |
+| `/api/stock-ledger` | warehouse_id, location_id, item_id, document_id, kind, status, date_from, date_to | 품목 코드·이름·전표 ID | 모든 역할 |
+| `/api/audit-logs` | document_id, action, date_from, date_to | 전표 ID·동작·처리자 이름 | 관리자 |
+
+`q`는 앞뒤 공백을 제거한 최대 100자 부분 검색이며 `%`, `_`, 역슬래시는 문자 그대로 검색한다. ID 필터는 UUID다. 날짜는 실제 존재하는 `YYYY-MM-DD`이고 시작일이 종료일보다 늦으면 400 INVALID_INPUT이다. 서울 시간의 시작일 00:00 이상, 종료일 다음 날 00:00 미만으로 조회하므로 UI의 종료일 전체가 포함된다. 전표 `date_field`는 created_at(기본)/posted_at/reversed_at이며 원장·감사는 created_at 기준이다. 현재고에는 날짜 필터를 적용하지 않는다. kind는 INBOUND/OUTBOUND/TRANSFER, status는 DRAFT/CANCELLED/POSTED/REVERSED다. 잘못된 형식·범위는 400 INVALID_INPUT이다.
+
+`GET /api/documents/{id}?view=history`도 모든 역할에 허용하되 POSTED/REVERSED만 반환한다. 자사 초안·초안 취소 상세는 403 ROLE_FORBIDDEN이며 타 회사 상세는 404다. 이력 목록에 DRAFT/CANCELLED를 요청하면 403 ROLE_FORBIDDEN이다. 조회자가 `view=history` 없이 일반 목록·상세를 요청하면 403이다. `/dashboard/history`는 관리자에게도 읽기 전용이며 초안 관리 화면 `/dashboard/documents`는 조회자에게 접근 오류를 표시한다. 원본과 반대 전표 연결을 따라 상세를 조회할 수 있다.
+
+`GET /api/audit-logs`의 entries는 `{ id, document_id, actor_id, actor_name, action, created_at }`이며 생성 시각·ID 내림차순이다. `GET /api/lookups`는 모든 역할에 자사 `{ warehouses: [{ id, code, name, active }], locations: [{ id, warehouse_id, code, name, active }] }`를 반환한다. 각 배열은 코드·ID순 최대 1,000개로, 비활성 기준정보도 과거 이력 필터에 사용한다. 기준정보 관리 API의 조회자 제한은 그대로 유지한다.
+
+품목 POST/PATCH에 선택적 `min_stock`을 받는다. JSON 숫자 정수 0~1,000,000,000만 허용하며 생성 생략값은 0이다. 관리자만 변경할 수 있다. 품목 응답의 min_stock과 재고·원장 수량은 문자열이다. 창고·위치에는 min_stock을 받지 않는다.
+
+## 11. 6단계 대시보드
+
+`GET /api/dashboard`는 모든 역할이 자사 범위에서 호출하며 요청의 회사·시계 값은 사용하지 않는다. 서버 현재 시각의 `as_of`(ISO 8601), `timezone: "Asia/Seoul"`, 아래 데이터를 하나의 SQL 스냅샷으로 반환한다.
+
+- `metrics`: stocked_items, today_inbound, today_outbound, today_reversals, pending_outbound, low_stock_items. 모든 값은 건수 숫자다.
+- `daily`: 오늘 포함 최근 7일을 날짜 오름차순으로 `{ date: "YYYY-MM-DD", inbound, outbound, reversals }` 반환한다. 실적 없는 날도 0으로 포함한다.
+- `low_stock`: 코드·ID순 최대 20개의 `{ id, code, name, min_stock, quantity }`. 수량은 문자열이다.
+- `recent`: 최근 처리 시각(reversed_at 우선, 없으면 posted_at)·ID 내림차순 최대 10개의 `{ id, kind, status, posted_at, reversed_at, reversal_of_id }`. 모든 역할에 POSTED/REVERSED만 제공한다.
+
+입출고 실적은 반대 전표를 제외한 원본 POSTED/REVERSED 전표의 posted_at 기준 건수이며 품목 수량 합계가 아니다. 나중에 취소되어도 원래 확정일의 실적을 유지한다. 확정 취소는 원본 reversed_at 날짜에 별도 집계하며 반대 전표를 신규 입출고 실적으로 중복 계산하지 않는다. 이동은 입출고 건수에서 제외한다. 출고 대기는 DRAFT 출고 건수로 조회자에게도 집계만 제공한다.
+
+재고 보유 품목은 활성 여부와 무관하게 회사 전체 위치 수량 합계가 0보다 큰 품목 수다. 부족 품목은 활성 품목의 회사 전체 위치 합계가 min_stock보다 작은 경우다. 잔량 행이 없으면 0으로 포함하며 비활성 품목은 부족 집계에서 제외한다. 모든 업무 응답은 no-store이며 실패 시 성공 데이터나 0으로 대체하지 않는다.
+
+화면은 로딩·빈 결과·오류를 구분하고 저장된 전표의 확정/확정 취소 전에 품목·위치·수량 확인 창을 제공한다. 최종 검증과 별도 `npm run test:performance` 측정 근거는 [6단계 검증 결과](6단계-검증결과.md), [6단계 성능 측정](6단계-성능측정.md)에 기록한다.

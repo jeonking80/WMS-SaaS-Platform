@@ -361,6 +361,21 @@ ALTER TABLE inventory_documents
 
 INSERT INTO public.pgmigrations(name, run_on) VALUES ('1792368000008_delivery-destinations', CURRENT_TIMESTAMP);
 
+-- 1792368000009_document-numbers.sql
+ALTER TABLE inventory_documents ADD COLUMN document_no bigint GENERATED ALWAYS AS IDENTITY;
+ALTER TABLE inventory_documents ADD CONSTRAINT inventory_documents_document_no_unique UNIQUE (document_no);
+CREATE FUNCTION preserve_document_no() RETURNS trigger LANGUAGE plpgsql AS $$
+BEGIN
+  IF NEW.document_no IS DISTINCT FROM OLD.document_no THEN
+    RAISE EXCEPTION 'document_no is immutable' USING ERRCODE = '23514';
+  END IF;
+  RETURN NEW;
+END $$;
+CREATE TRIGGER inventory_documents_document_no_immutable BEFORE UPDATE ON inventory_documents
+FOR EACH ROW EXECUTE FUNCTION preserve_document_no();
+
+INSERT INTO public.pgmigrations(name, run_on) VALUES ('1792368000009_document-numbers', CURRENT_TIMESTAMP);
+
 REVOKE ALL ON ALL TABLES IN SCHEMA public FROM PUBLIC, wms_app;
 GRANT SELECT, INSERT, UPDATE, DELETE ON public."user", public.session, public.account,
   public.verification, public.items, public.warehouses, public.locations,
@@ -377,7 +392,7 @@ BEGIN
     OR pg_has_role('wms_app', 'wms_migrator', 'MEMBER') THEN
     RAISE EXCEPTION 'Unexpected application role privileges';
   END IF;
-  IF (SELECT count(*) FROM public.pgmigrations) <> 9
+  IF (SELECT count(*) FROM public.pgmigrations) <> 10
     OR (SELECT count(*) FROM pg_tables WHERE schemaname='public') <> 17
     OR (SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
       WHERE n.nspname='public' AND c.relrowsecurity AND c.relforcerowsecurity) <> 10

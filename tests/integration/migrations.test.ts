@@ -39,7 +39,7 @@ afterAll(async () => {
 describe('PostgreSQL migration foundation', () => {
   it('applies an empty schema once and preserves tenant data on rerun', async () => {
     const first = await migrate(databaseUrl, migrationOptions);
-    expect(first).toHaveLength(9);
+    expect(first).toHaveLength(10);
     const inserted = await client.query(
       `INSERT INTO "${schema}".tenants (name) VALUES ($1) RETURNING id, active, created_at`,
       ['테스트 고객사'],
@@ -53,7 +53,7 @@ describe('PostgreSQL migration foundation', () => {
     const tenants = await client.query(`SELECT id, name FROM "${schema}".tenants`);
     expect(tenants.rows).toEqual([{ id: inserted.rows[0].id, name: '테스트 고객사' }]);
     const history = await client.query(`SELECT count(*)::int AS count FROM "${schema}".pgmigrations`);
-    expect(history.rows[0].count).toBe(9);
+    expect(history.rows[0].count).toBe(10);
 
     await expect(client.query(`INSERT INTO "${schema}".tenants (name) VALUES ('   ')`))
       .rejects.toMatchObject({ code: '23514' });

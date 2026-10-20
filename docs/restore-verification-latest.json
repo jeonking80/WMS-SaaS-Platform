@@ -1,34 +1,61 @@
 {
   "result": "PASS",
-  "verified_at": "2026-10-20T07:55:44.505Z",
-  "migrations": 10,
-  "tables_checked": 17,
+  "verified_at": "2026-10-20T13:21:39.177Z",
+  "verification_scope": "synthetic_local_same_cluster",
+  "provider_recovery": "NOT_EXECUTED",
+  "migrations": 18,
+  "tables_checked": 40,
+  "v2_tables_checked": 23,
   "sequence_states": {
     "inventory_documents_document_no_seq": {
       "last_value": "3",
       "is_called": true
     },
     "pgmigrations_id_seq": {
-      "last_value": "10",
+      "last_value": "18",
+      "is_called": true
+    },
+    "v2_integration_events_sequence_seq": {
+      "last_value": "3",
       "is_called": true
     }
   },
   "next_restored_document_no": "4",
-  "archive_bytes": 66533,
+  "next_restored_event_sequence": "4",
+  "archive_bytes": 202459,
+  "archive_sha256": "af1bf12be41d422801d39edace1ae4fc6b9359a709b39150625cf0cba1c48ce8",
+  "completed_at": "2026-10-20T13:21:38.607Z",
+  "restore_verified_at": "2026-10-20T13:21:39.177Z",
   "fixture": {
+    "synthetic_only": true,
     "tenants": 2,
     "users": 1,
-    "accounts": 1,
-    "expired_sessions": 1,
-    "expired_verifications": 1,
-    "memberships": 1,
     "documents": 2,
-    "delivery_destinations": 1,
-    "linked_outbound_snapshots": 1,
-    "ledger_entries": 2,
-    "audit_entries": 2,
-    "idempotency_responses": 2,
-    "balance": 70
+    "idle_lock_minutes": 7,
+    "legacy_balance": 70,
+    "v2_stock": {
+      "S": 50,
+      "R": 10,
+      "P": 5,
+      "Q": 12,
+      "B": 3,
+      "H": 70
+    },
+    "workflow_ledger_entries": 6,
+    "workflow_requests": 1,
+    "request_metrics": 2,
+    "pending_approvals": 1,
+    "integration_events": {
+      "applied": 1,
+      "retry_wait": 1
+    },
+    "rotated_keys": 2,
+    "opening_imports": {
+      "originals": 2,
+      "approved": 1,
+      "rejected": 1,
+      "original_csv_hash_verified": true
+    }
   },
   "row_counts": {
     "tenants": 2,
@@ -37,9 +64,9 @@
     "account": 1,
     "verification": 1,
     "memberships": 1,
-    "items": 1,
-    "warehouses": 1,
-    "locations": 1,
+    "items": 2,
+    "warehouses": 2,
+    "locations": 2,
     "inventory_documents": 2,
     "inventory_document_lines": 2,
     "stock_balances": 1,
@@ -47,24 +74,70 @@
     "idempotency_requests": 2,
     "audit_logs": 2,
     "delivery_destinations": 1,
-    "pgmigrations": 10
+    "pgmigrations": 18,
+    "v2_workflow_state": 1,
+    "v2_workflow_stock": 1,
+    "v2_workflow_objects": 2,
+    "v2_workflow_requests": 1,
+    "v2_workflow_performances": 1,
+    "v2_workflow_receivings": 1,
+    "v2_workflow_ledger": 6,
+    "v2_warehouse_grants": 1,
+    "v2_identity_links": 1,
+    "v2_machine_keys": 2,
+    "v2_machine_warehouses": 2,
+    "v2_identity_audit": 1,
+    "business_partners": 1,
+    "master_barcodes": 3,
+    "master_csv_previews": 1,
+    "master_csv_applies": 1,
+    "master_csv_applied_rows": 1,
+    "v2_integration_limits": 1,
+    "v2_integration_entities": 1,
+    "v2_integration_events": 2,
+    "v2_cutovers": 1,
+    "api_request_metrics": 2,
+    "v2_opening_imports": 4
   },
-  "source_sha256": "7e4ee0ba11605f635701e439bfdcdde74f8d31cd4a2d607ac78b1e035c8d704d",
+  "source_sha256": "935fb0beacb281a037ad89a8a1dd3c28574b8bfe25814067988c7bb612e82ea9",
   "restored_identical": true,
   "source_unchanged": true,
-  "forced_rls_tables": 10,
+  "forced_rls_tables": 33,
   "reconciliation_mismatches": 0,
+  "v2_reconciliation": {
+    "ledger_mismatches": 0,
+    "state_mismatches": 0
+  },
   "application_role": "authenticated wms_app; nonowner/nonsuperuser/no BYPASSRLS",
+  "tenants": {
+    "ec2a1ede-39a6-4a98-bf47-7adec7dd9fc8": {
+      "tenant_id": "ec2a1ede-39a6-4a98-bf47-7adec7dd9fc8",
+      "completed_at": "2026-10-20T13:21:38.607Z",
+      "archive_sha256": "af1bf12be41d422801d39edace1ae4fc6b9359a709b39150625cf0cba1c48ce8",
+      "restore_verified_at": "2026-10-20T13:21:39.177Z"
+    },
+    "8ffad559-24f2-4ced-90d0-ac82b0125d87": {
+      "tenant_id": "8ffad559-24f2-4ced-90d0-ac82b0125d87",
+      "completed_at": "2026-10-20T13:21:38.607Z",
+      "archive_sha256": "af1bf12be41d422801d39edace1ae4fc6b9359a709b39150625cf0cba1c48ce8",
+      "restore_verified_at": "2026-10-20T13:21:39.177Z"
+    }
+  },
   "checks": [
-    "all public tables included; sequence state identical; next document number exceeds existing numbers",
-    "linked outbound recipient/address snapshot and address-book record preserved",
-    "restored credential hash verifies; expired session and membership preserved",
-    "tenant isolation and cross-tenant write refusal",
-    "ledger/audit/idempotency updates denied",
-    "balance delete denied",
-    "schema create denied",
-    "existing target refused",
-    "source target refused",
-    "archive overwrite refused"
+    "all public tables fingerprinted; every v2 table has synthetic rows",
+    "all sequence states preserved including document and event gaps",
+    "legacy and v2 stock/ledger and aggregate state reconcile independently",
+    "workflow request response, pending approval and retry event preserved",
+    "restored credentials, membership, idle policy, explicit warehouse grant, rotated key and consumed link preserved",
+    "all FORCE RLS tables hide rows without context and hide source-tenant rows in foreign context",
+    "tenant composite FK rejects foreign warehouse grant",
+    "append-only permissions and immutable triggers survive restore",
+    "source unchanged; existing/source targets and archive overwrite refused",
+    "archive checksum mismatch refused before target creation"
+  ],
+  "limitations": [
+    "Same local PostgreSQL cluster; existing cluster roles and passwords were reused.",
+    "Synthetic SQL fixtures prove preservation, not new workflow execution.",
+    "No remote-provider restore, PITR, offsite archive recovery, HTTP login, RPO or RTO verification was executed."
   ]
 }

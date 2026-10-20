@@ -1,0 +1,49 @@
+{
+  "recorded_at": "2026-10-20T14:19:33.455349+00:00",
+  "build_id": "a4Btt6-rLBn5JLWzXA2cq",
+  "scope": "local regression; not full proposal completion or public deployment",
+  "github_actions_used": false,
+  "verify_command_exit": 0,
+  "verify_exit_reason": null,
+  "checks": {
+    "typescript": "passed",
+    "unit": {
+      "passed": 186
+    },
+    "integration": {
+      "passed": 156
+    },
+    "build": "passed",
+    "e2e": {
+      "passed": 39,
+      "failed": 0,
+      "duration_minutes": 5.4,
+      "single_all_green_suite": true
+    },
+    "simulator_unit": {
+      "passed": 19,
+      "report": "v2-simulator-freeze-latest.json"
+    },
+    "simulator_integration_after_compact_persistence": {
+      "passed": 9,
+      "actual_scenarios": 12
+    },
+    "final_typecheck": "passed"
+  },
+  "evidence": [
+    {
+      "path": "/tmp/wms-v2-verify-ui-performance.log",
+      "sha256": "b025fb89829f817055661609b0d2296e2933a4cb4bf5dd327be702db1e0d5e56"
+    }
+  ],
+  "pending": [
+    "Subsequent list pagination fixes: events beyond100, masters beyond1000, legacy correction sources beyond50 require new validation",
+    "Final build million-ledger performance after inventory rendering changes",
+    "25-minute congestion",
+    "8-hour shift",
+    "G4 real users/devices/provider",
+    "G5 five business days"
+  ],
+  "whole_proposal_complete": false,
+  "source_scope": "Full verify passed for build a4Btt6-rLBn5JLWzXA2cq; subsequent list-pagination changes are outside this evidence."
+}

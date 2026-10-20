@@ -1,5 +1,7 @@
 "use client";
+import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { loadLookups } from "../lookup-client";
 import ItemPicker from "../components/item-picker";
 import DestinationPicker from "../components/destination-picker";
 import {
@@ -17,6 +19,7 @@ import {
   seoulTime,
   type Pagination,
 } from "../list-controls";
+type Warehouse = MasterRow & { v2_active?: boolean };
 type Kind = "INBOUND" | "OUTBOUND" | "TRANSFER";
 type Line = {
   item_id: string;
@@ -85,7 +88,7 @@ export default function Documents({
     [confirmation, setConfirmation] = useState<"post" | "reverse" | null>(null);
   const [docs, setDocs] = useState<Doc[]>([]),
     [items, setItems] = useState<MasterRow[]>([]),
-    [warehouses, setWarehouses] = useState<MasterRow[]>([]),
+    [warehouses, setWarehouses] = useState<Warehouse[]>([]),
     [locations, setLocations] = useState<MasterRow[]>([]);
   const [selected, setSelected] = useState<Doc | null>(null),
     [editing, setEditing] = useState(false),
@@ -186,11 +189,7 @@ export default function Documents({
         request<{ documents: Doc[]; pagination: Pagination }>(
           `/api/documents?${query(applied, page, history ? { view: "history" } : {})}`,
         ),
-        request<{
-          items?: MasterRow[];
-          warehouses: MasterRow[];
-          locations: MasterRow[];
-        }>("/api/lookups"),
+        loadLookups(),
       ]);
       if (generation !== listRequest.current) return;
       setDocs(d.documents);
@@ -337,6 +336,10 @@ export default function Documents({
     }
   }
   function fail(e: unknown) {
+    if(e instanceof RequestError && ['WAREHOUSE_CUTOVER_READ_ONLY','V2_CUTOVER_ACTIVE','LEGACY_WRITE_BLOCKED','WAREHOUSE_CONVERTED'].includes(e.code)){
+      setError('현장 운영 v2로 전환한 창고입니다. 기존 전표는 조회만 할 수 있습니다. 신규 업무와 정정은 현장 운영 화면에서 처리하세요.');
+      void reload();return;
+    }
     if (e instanceof RequestError && e.code === "DELIVERY_REQUIRED") {
       setError("등록된 배송지를 선택한 후 전표를 저장하고 출고를 확정하세요.");
       return;
@@ -359,6 +362,7 @@ export default function Documents({
   async function save() {
     if (
       pending ||
+      converted ||
       history ||
       (selected && selected.status !== "DRAFT") ||
       postOperation ||
@@ -438,7 +442,7 @@ export default function Documents({
     }
   }
   async function cancel() {
-    if (!selected) return;
+    if (!selected || converted) return;
     setPending(true);
     setError("");
     try {
@@ -457,7 +461,7 @@ export default function Documents({
     }
   }
   async function postDocument() {
-    if (!selected || selected.status !== "DRAFT" || (!postOperation && dirty))
+    if (converted || !selected || selected.status !== "DRAFT" || (!postOperation && dirty))
       return;
     setPending(true);
     setError("");
@@ -529,6 +533,7 @@ export default function Documents({
   }
   async function reverseDocument() {
     if (
+      converted ||
       !selected ||
       role !== "admin" ||
       selected.status !== "POSTED" ||
@@ -649,7 +654,7 @@ export default function Documents({
     if (!canLeave()) return;
     populate(null);
     setKind(nextKind);
-    const activeWarehouses = warehouses.filter((row) => row.active);
+    const activeWarehouses = warehouses.filter((row) => row.active && !row.v2_active);
     if (activeWarehouses.length === 1) {
       setWarehouse(activeWarehouses[0].id);
       const activeLocations = locations.filter(
@@ -670,7 +675,9 @@ export default function Documents({
     window.addEventListener("beforeunload", warn);
     return () => window.removeEventListener("beforeunload", warn);
   }, [dirty, newDirty, history]);
-  const readonly = history || (!!selected && selected.status !== "DRAFT");
+  const converted = warehouses.find(row=>row.id===warehouse)?.v2_active===true;
+  const canCreateLegacy = warehouses.some(row=>row.active&&!row.v2_active);
+  const readonly = history || converted || (!!selected && selected.status !== "DRAFT");
   const disabled =
     pending || readonly || conflict || !!postOperation || !!reverseOperation;
   function options(rows: MasterRow[], value: string) {
@@ -722,7 +729,7 @@ export default function Documents({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {!history && (
+          {!history && canCreateLegacy && (
             <>
               <button
                 className={control}
@@ -752,6 +759,7 @@ export default function Documents({
           </button>
         </div>
       </header>
+      {(converted || (warehouses.length>0&&!canCreateLegacy)) && <section role="status" className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-950"><strong>현장 운영 v2 전환 창고 · 기존 전표 조회 전용</strong><p className="mt-2 text-sm">기존 번호·확정 시각·원장 이력은 보존합니다. 전환 창고에서는 새 전표, 확정과 역분개를 실행할 수 없습니다. 신규 업무와 연결된 정정은 현장 운영에서 처리하세요.</p><Link className="mt-2 inline-block font-semibold underline" href="/dashboard/v2">현장 운영 v2로 이동</Link></section>}
       {error && (
         <p
           role="alert"
@@ -782,7 +790,7 @@ export default function Documents({
           <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 p-5 sm:p-6">
             <div>
               <h2 className="text-xl font-bold">
-                {selected ? "전표 상세 / 수정" : "새 전표 작성"}
+                {converted ? "기존 전표 상세 · 조회 전용" : selected ? "전표 상세 / 수정" : "새 전표 작성"}
               </h2>
               <p className="mt-1 text-sm text-slate-600">
                 {selected
@@ -954,7 +962,7 @@ export default function Documents({
                     }}
                   >
                     <option value="">선택하세요</option>
-                    {options(warehouses, warehouse)}
+                    {options(warehouses.filter(row=>!row.v2_active||row.id===warehouse), warehouse)}
                   </select>
                 </label>
                 {kind !== "INBOUND" &&
@@ -1196,6 +1204,7 @@ export default function Documents({
                     </button>
                   )}
                   {!history &&
+                    !converted &&
                     role === "admin" &&
                     selected?.status === "POSTED" &&
                     !selected.reversal_of_id && (
@@ -1289,7 +1298,7 @@ export default function Documents({
                         {documentNumber(doc)}
                       </button>
                       <p className="mt-1 text-xs text-slate-500">
-                        {kinds[doc.kind]}
+                        {kinds[doc.kind]}{warehouses.find(row=>row.id===doc.warehouse_id)?.v2_active ? " · 기존 전표" : ""}
                       </p>
                     </td>
                     <td className="px-3 py-4">
@@ -1334,7 +1343,7 @@ export default function Documents({
         )}
         <Pager value={pagination} onChange={setPage} pending={!loaded} />
       </section>
-      {confirmation && selected && (
+      {confirmation && selected && !converted && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
           <section
             role="dialog"

@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import { open, mkdir, stat, unlink } from 'node:fs/promises';
 import { resolve, dirname } from 'node:path';
 import pg from 'pg';
@@ -38,20 +39,26 @@ export async function backup(ctx, file) {
   try {
     const data = await runDocker(ctx.container, ['pg_dump', '-U', 'postgres', '-d', ctx.database, '--format=custom']);
     await handle.writeFile(data);
-    return { file: path, bytes: data.length };
+    await handle.sync();
+    return { file: path, bytes: data.length, archive_sha256: createHash('sha256').update(data).digest('hex'), completed_at: new Date().toISOString() };
   } catch (error) {
     await unlink(path).catch(() => {});
     throw error;
   } finally { await handle.close(); }
 }
-export async function restore(ctx, file, name) {
+export async function restore(ctx, file, name, options = {}) {
   if (!/^wms_restore_[a-z0-9_]{1,45}$/.test(name ?? '') || name === ctx.database) throw new Error('RESTORE_DATABASE_NAME must be a distinct fresh wms_restore_* database.');
   const metadata = await stat(file);
   if (!metadata.isFile() || (metadata.mode & 0o077)) throw new Error('Backup must be a private regular file (chmod 600).');
+  const { readFile } = await import('node:fs/promises');
+  const data = await readFile(file);
+  if (options.expectedSha256 !== undefined && (!/^[a-f0-9]{64}$/i.test(options.expectedSha256) || createHash('sha256').update(data).digest('hex') !== options.expectedSha256.toLowerCase())) {
+    throw new Error('Archive checksum mismatch.');
+  }
   // CREATE DATABASE is the existence guard: never clean, drop, or reuse a target.
   await ctx.client.query(`CREATE DATABASE ${pg.escapeIdentifier(name)} TEMPLATE template0`);
-  const { readFile } = await import('node:fs/promises');
-  await runDocker(ctx.container, ['pg_restore', '-U', 'postgres', '-d', name, '--exit-on-error', '--single-transaction'], await readFile(file));
+  options.onCreated?.(name);
+  await runDocker(ctx.container, ['pg_restore', '-U', 'postgres', '-d', name, '--exit-on-error', '--single-transaction'], data);
   return name;
 }
 export function safeFailure(action, error) {

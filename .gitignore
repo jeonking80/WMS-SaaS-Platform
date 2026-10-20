@@ -15,3 +15,9 @@ next-env.d.ts
 backups/
 artifacts/
 deploy/*.env
+
+# Durable local simulator journals and operator alert outboxes may contain business data.
+*.sqlite
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm

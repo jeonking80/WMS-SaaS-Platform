@@ -1,0 +1,38 @@
+{
+  "seed": 20261020,
+  "output": "data/profile",
+  "targets": [
+    {
+      "url": "http://127.0.0.1:3000",
+      "company_id": "REGISTERED_TEST_COMPANY_A",
+      "warehouse_id": "REGISTERED_TEST_WAREHOUSE_A",
+      "source_key_env": "SIM_A_SOURCE_KEY",
+      "process_key_env": "SIM_A_PROCESS_KEY",
+      "worker_key_envs": ["SIM_A_WORKER_0", "SIM_A_WORKER_1"],
+      "supervisor_key_env": "SIM_A_SUPERVISOR_KEY",
+      "supplier_id": "ACTIVE_SUPPLIER_A",
+      "customer_id": "ACTIVE_CUSTOMER_A",
+      "destination_id": "CUSTOMER_DESTINATION_A",
+      "expected_at": "2026-11-01T00:00:00Z",
+      "due_at": "2026-11-02T00:00:00Z",
+      "smoke_duration_ms": 15000,
+      "catalog": [{"item_id":"UNUSED_ITEM_A","receiving_id":"RECEIVING_A","storage_id":"STORAGE_A","staging_id":"STAGING_A","hold_id":"HOLD_A"}]
+    },
+    {
+      "url": "http://127.0.0.1:3000",
+      "company_id": "REGISTERED_TEST_COMPANY_B",
+      "warehouse_id": "REGISTERED_TEST_WAREHOUSE_B",
+      "source_key_env": "SIM_B_SOURCE_KEY",
+      "process_key_env": "SIM_B_PROCESS_KEY",
+      "worker_key_envs": ["SIM_B_WORKER_0", "SIM_B_WORKER_1"],
+      "supervisor_key_env": "SIM_B_SUPERVISOR_KEY",
+      "supplier_id": "ACTIVE_SUPPLIER_B",
+      "customer_id": "ACTIVE_CUSTOMER_B",
+      "destination_id": "CUSTOMER_DESTINATION_B",
+      "expected_at": "2026-11-01T00:00:00Z",
+      "due_at": "2026-11-02T00:00:00Z",
+      "smoke_duration_ms": 15000,
+      "catalog": [{"item_id":"UNUSED_ITEM_B","receiving_id":"RECEIVING_B","storage_id":"STORAGE_B","staging_id":"STAGING_B","hold_id":"HOLD_B"}]
+    }
+  ]
+}

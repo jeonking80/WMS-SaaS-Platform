@@ -1,0 +1,256 @@
+{
+  "run_id": "ec99b388-def4-4be1-8ce5-d0414039e09b",
+  "generated_at": "2026-10-20T14:32:16.035Z",
+  "runtime_build_id": "-oBhg3XQlSYuVZ5MbZfge",
+  "scenario": "revision_reservation_strict_ordering",
+  "actual_api": true,
+  "fixture": {
+    "item_id": "4c13cb2f-5f66-44b3-a424-c3f0146f0f68",
+    "original_100_sku_untouched": true,
+    "locations": {
+      "item_id": "4c13cb2f-5f66-44b3-a424-c3f0146f0f68",
+      "receiving_id": "ef63f3ca-022a-43b4-86bd-d128543430e5",
+      "storage_id": "81b7a24b-6e37-4232-9112-bffb9baab7b1",
+      "staging_id": "c6321b94-dc3a-4584-840b-83efef416218",
+      "hold_id": "301b7d86-8fc6-4d0c-897d-acdf9000e39d",
+      "warehouse_id": "99647df2-354e-4081-87a9-d86547971c2d",
+      "scenario": "revision_race"
+    }
+  },
+  "checks": [
+    {
+      "check": "old_q5_after_update_q6_is_all_or_nothing",
+      "passed": true,
+      "error": "INSUFFICIENT_STOCK",
+      "stock_unchanged": true,
+      "version_unchanged": true,
+      "no_success_request": true
+    },
+    {
+      "check": "update_after_reserve_is_classified",
+      "passed": true,
+      "reason": "CREATE_LINKED_ORDER"
+    },
+    {
+      "check": "both_orders_complete_original_accepted_quantities",
+      "passed": true
+    }
+  ],
+  "expected": {
+    "locations": {
+      "ef63f3ca-022a-43b4-86bd-d128543430e5": {
+        "S": 0,
+        "R": 0,
+        "P": 0,
+        "Q": 0,
+        "B": 0
+      },
+      "81b7a24b-6e37-4232-9112-bffb9baab7b1": {
+        "S": 9,
+        "R": 0,
+        "P": 0,
+        "Q": 0,
+        "B": 0
+      },
+      "c6321b94-dc3a-4584-840b-83efef416218": {
+        "S": 0,
+        "R": 0,
+        "P": 0,
+        "Q": 0,
+        "B": 0
+      }
+    },
+    "order": {
+      "ordered": 11,
+      "reserved": 0,
+      "picked": 0,
+      "shipped": 11
+    },
+    "totals": {
+      "S": 9,
+      "R": 0,
+      "P": 0,
+      "Q": 0,
+      "B": 0
+    }
+  },
+  "actual": {
+    "ef63f3ca-022a-43b4-86bd-d128543430e5": {
+      "B": 0,
+      "P": 0,
+      "Q": 0,
+      "R": 0,
+      "S": 0,
+      "item_id": "4c13cb2f-5f66-44b3-a424-c3f0146f0f68",
+      "location_id": "ef63f3ca-022a-43b4-86bd-d128543430e5",
+      "location_kind": "RECEIVING",
+      "reservation_blocked": false,
+      "A": 0,
+      "H": 0,
+      "locked": false
+    },
+    "81b7a24b-6e37-4232-9112-bffb9baab7b1": {
+      "B": 0,
+      "P": 0,
+      "Q": 0,
+      "R": 0,
+      "S": 9,
+      "item_id": "4c13cb2f-5f66-44b3-a424-c3f0146f0f68",
+      "location_id": "81b7a24b-6e37-4232-9112-bffb9baab7b1",
+      "location_kind": "STORAGE",
+      "reservation_blocked": false,
+      "A": 9,
+      "H": 9,
+      "locked": false
+    },
+    "c6321b94-dc3a-4584-840b-83efef416218": {
+      "B": 0,
+      "P": 0,
+      "Q": 0,
+      "R": 0,
+      "S": 0,
+      "item_id": "4c13cb2f-5f66-44b3-a424-c3f0146f0f68",
+      "location_id": "c6321b94-dc3a-4584-840b-83efef416218",
+      "location_kind": "STAGING",
+      "reservation_blocked": false,
+      "A": 0,
+      "H": 0,
+      "locked": false
+    }
+  },
+  "ledger": {
+    "ef63f3ca-022a-43b4-86bd-d128543430e5": {
+      "S": 0,
+      "R": 0,
+      "P": 0,
+      "Q": 0,
+      "B": 0
+    },
+    "81b7a24b-6e37-4232-9112-bffb9baab7b1": {
+      "S": 9,
+      "R": 0,
+      "P": 0,
+      "Q": 0,
+      "B": 0
+    },
+    "c6321b94-dc3a-4584-840b-83efef416218": {
+      "S": 0,
+      "R": 0,
+      "P": 0,
+      "Q": 0,
+      "B": 0
+    }
+  },
+  "differences": [],
+  "passed": true,
+  "boundary": {
+    "workflow_version": 415,
+    "ledger_rows": 13,
+    "at": "2026-10-20T14:32:16.035Z"
+  },
+  "verdict": "passed",
+  "operations": [
+    {
+      "id": "bc889902-9f29-4c52-a62a-20ff3731b468",
+      "command": "receipt.create",
+      "status": "done",
+      "event_id": "742482ca-5cde-4221-9794-a9439b6549ef"
+    },
+    {
+      "id": "bf55f0cb-c550-4bd0-994a-ba031957b73f",
+      "command": "receipt.receive",
+      "status": "done",
+      "request_id": "2eca320e-267c-49ef-9cf9-2bb592241a62"
+    },
+    {
+      "id": "e9dcf72f-308f-4e13-847d-b1774ccf869f",
+      "command": "receipt.inspect",
+      "status": "done",
+      "request_id": "a71ca15b-ec22-4042-9db5-947378b9adf2"
+    },
+    {
+      "id": "9572b6f8-3c05-49da-993b-fc35cdd07e75",
+      "command": "receipt.putaway",
+      "status": "done",
+      "request_id": "3b35f9b4-2340-4802-bbfa-6899d0b2cdc0"
+    },
+    {
+      "id": "c6da83b9-e93f-4c48-94df-9e99a6445d90",
+      "command": "order.create",
+      "status": "done",
+      "event_id": "0fcee111-eba2-4e70-a4e8-45708d70394b"
+    },
+    {
+      "id": "30a87ab7-ec7b-4f4d-b153-19745bcffe4d",
+      "command": "order.update",
+      "status": "done",
+      "event_id": "56b52639-ded5-46bf-ae75-90ed3510e9be"
+    },
+    {
+      "id": "df09d1a3-3d92-48be-8230-1b0b83bdf601",
+      "command": "order.reserve",
+      "status": "expected_rejected",
+      "request_id": "61e75300-19f9-4020-b920-f61634750be9"
+    },
+    {
+      "id": "4cb4b18b-a303-4818-881f-c8862d653d50",
+      "command": "order.reserve",
+      "status": "done",
+      "request_id": "b210bebe-9d4d-4011-ae2b-58654dc55710"
+    },
+    {
+      "id": "361d5779-02de-4118-b5b6-d8151f572837",
+      "command": "order.pick",
+      "status": "done",
+      "request_id": "cd4ace09-03a8-4390-9f1a-b44e3ec50179"
+    },
+    {
+      "id": "e445c130-0e3e-4bb3-aa1c-d1da41873115",
+      "command": "package.create",
+      "status": "done",
+      "request_id": "394e39b3-219b-46de-a7c4-8aff892fab10"
+    },
+    {
+      "id": "96e0dafb-2490-4618-8dba-71e38be32593",
+      "command": "shipment.create",
+      "status": "done",
+      "request_id": "b93ca12b-9250-4d0e-bbf0-48c4304e5f2f"
+    },
+    {
+      "id": "257d0c3b-5467-4e8c-a64b-bc01f99d2491",
+      "command": "order.create",
+      "status": "done",
+      "event_id": "27e1bc1f-d921-405b-8236-149272a765c0"
+    },
+    {
+      "id": "0ae76274-8124-4616-a090-e3849d8f9cd6",
+      "command": "order.reserve",
+      "status": "done",
+      "request_id": "3f6bfa16-1ef8-4bf6-bfb4-5a8ac9e36f06"
+    },
+    {
+      "id": "005de4a8-28b2-4815-a32d-319b5ed09b93",
+      "command": "order.update",
+      "status": "expected_rejected",
+      "event_id": "845c4bb7-293c-4933-b6fe-e65ada0fa502"
+    },
+    {
+      "id": "55318e0b-c051-4ce8-9bfd-a198fff11f6c",
+      "command": "order.pick",
+      "status": "done",
+      "request_id": "2790e45e-fb17-4e18-ad85-cbabb6f60257"
+    },
+    {
+      "id": "feb38689-db71-4218-8b73-2905e0177c38",
+      "command": "package.create",
+      "status": "done",
+      "request_id": "c2a0c56c-476d-4484-894c-3cc0b5947d3a"
+    },
+    {
+      "id": "ccc1b7ac-8c88-4194-aac6-1961a56b992f",
+      "command": "shipment.create",
+      "status": "done",
+      "request_id": "dbad72e8-6bbe-4f82-b252-9eceade4ca1c"
+    }
+  ]
+}

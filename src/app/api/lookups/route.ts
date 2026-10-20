@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 async function handleGET(request: Request) {
   try {
     const identity = await requireIdentity(request.headers);
-    return json(await listLookups(identity.tenant.id));
+    return json(await listLookups(identity.tenant.id, new URL(request.url).searchParams));
   } catch (error) { return apiError(error); }
 }
 

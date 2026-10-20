@@ -76,7 +76,7 @@ test("회사 정보 위조로 다른 회사 품목 목록·상세에 접근할 �
     for (const item of fixtures) {
       await pool.query("BEGIN");
       await pool.query("SELECT set_config('app.tenant_id', $1, true)", [item.tenant]);
-      await pool.query("DELETE FROM items WHERE id = $1", [item.id]);
+      await pool.query("UPDATE items SET active=false WHERE id = $1", [item.id]);
       await pool.query("COMMIT");
     }
     await pool.end();

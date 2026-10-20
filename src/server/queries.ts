@@ -98,13 +98,18 @@ export function pagedLedger(tenant: string, filters: QueryFilters) {
 }
 export function pagedAuditLogs(tenant: string, filters: QueryFilters) {
   const c = new Conditions();
+  c.equal("d.warehouse_id", filters.warehouse_id);
   c.equal("a.document_id", filters.document_id); c.equal("a.action", filters.action); c.dates("a.created_at", filters); c.search(["a.document_id::text", "a.action", "u.name", documentNumberSql("d")], filters.q);
   return paged(tenant, `SELECT a.id,a.document_id,a.actor_id,u.name AS actor_name,a.action,a.created_at,${documentNumberSql("d")} AS document_number FROM audit_logs a JOIN "user" u ON u.id=a.actor_id LEFT JOIN inventory_documents d ON (d.tenant_id,d.id)=(a.tenant_id,a.document_id)`, c, "created_at DESC, id DESC", filters, "entries");
 }
-export function listLookups(tenant: string) {
+export function listLookups(tenant: string, params = new URLSearchParams()) {
+  const kind = params.get("kind");
+  const after = params.get("after");
+  if ((kind !== null && kind !== "warehouses" && kind !== "locations") || (after !== null && (!kind || !uuid.test(after)))) return invalid();
   return withTenant(tenant, async client => {
-    const warehouses = await client.query("SELECT id,code,name,active FROM warehouses ORDER BY code,id LIMIT 1000");
-    const locations = await client.query("SELECT id,warehouse_id,code,name,active FROM locations ORDER BY code,id LIMIT 1000");
-    return { warehouses: warehouses.rows, locations: locations.rows };
+    const page = <T extends {id:string}>(rows:T[]) => ({rows:rows.slice(0,1000),next_cursor:rows.length>1000?rows[999].id:null});
+    const warehouses = page(kind === "locations" ? [] : (await client.query("SELECT w.id,w.code,w.name,w.active,EXISTS(SELECT 1 FROM v2_cutovers c WHERE (c.tenant_id,c.warehouse_id)=(w.tenant_id,w.id)) AS v2_active FROM warehouses w WHERE ($1::uuid IS NULL OR w.id>$1::uuid) ORDER BY w.id LIMIT 1001",[after])).rows);
+    const locations = page(kind === "warehouses" ? [] : (await client.query("SELECT id,warehouse_id,code,name,active FROM locations WHERE ($1::uuid IS NULL OR id>$1::uuid) ORDER BY id LIMIT 1001",[after])).rows);
+    return {warehouses:warehouses.rows,locations:locations.rows,pagination:{warehouses:{next_cursor:warehouses.next_cursor},locations:{next_cursor:locations.next_cursor}}};
   });
 }

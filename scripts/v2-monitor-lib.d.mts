@@ -1,0 +1,7 @@
+import type { PoolClient } from 'pg';
+export type BackupEvidence={status:string;reason?:string;completed_at?:string;restore_verified_at?:string|null;provider_restore_verified_at?:string|null;verification?:string};
+export type MonitorAlert={code:string;severity:string;status:string;observed_at:string;tenant:{id:string;name:string|null};warehouses:{id:string;code:string;name:string}[];references:{kind:string;business_id:string|null;business_number:string|null;request_id:string|null}[];action:{path:string;authorization:string}};
+export type MonitorReport={status:'ok'|'warning'|'critical';checked_at:string;tenant_id:string;warehouse_ids:string[];checks:{name:string;status:string;details:Record<string,unknown>}[];alerts:MonitorAlert[];notifications:{status:string;recipient_configured:boolean;delivery:string;sent:boolean}};
+export function readBackupEvidence(file:string|undefined,tenantId:string):Promise<BackupEvidence>;
+export function collectDatabaseLocks(client:Pick<PoolClient,'query'>,tenantId:string,warehouseIds:string[]):Promise<{waiting_requests:number;unknown_start:number;max_wait_ms:number;mean_wait_ms:number;measured_at:string;scope:string;tenant_only_transactions:string;history:string}>;
+export function collectMonitor(client:Pick<PoolClient,'query'>,options:{tenantId:string;warehouseIds:string[];now?:Date;backupEvidence?:BackupEvidence;pendingMinutes?:number;reservationHours?:number;backupHours?:number;recipientConfigured?:boolean}):Promise<MonitorReport>;

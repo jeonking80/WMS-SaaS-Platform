@@ -41,6 +41,10 @@ try {
   await client.query('GRANT USAGE ON SCHEMA public TO wms_app');
   // Restrict ownership changes to this application's known tables, preserving other data.
   const tables = ['pgmigrations', 'tenants', 'user', 'session', 'account', 'verification', 'memberships', 'items', 'warehouses', 'locations', 'inventory_documents', 'inventory_document_lines', 'stock_balances', 'stock_ledger', 'idempotency_requests', 'audit_logs', 'delivery_destinations'];
+  const v2Mutable = ['v2_workflow_state','v2_workflow_stock','v2_workflow_objects','v2_identity_links','v2_machine_keys','business_partners','master_barcodes','master_csv_previews','v2_integration_limits','v2_integration_entities','v2_integration_events'];
+  const v2AppendOnly = ['v2_workflow_requests','v2_workflow_performances','v2_workflow_receivings','v2_workflow_ledger','v2_identity_audit','master_csv_applies','master_csv_applied_rows','v2_cutovers','api_request_metrics','v2_opening_imports'];
+  const v2Grants = ['v2_warehouse_grants','v2_machine_warehouses'];
+  tables.push(...v2Mutable,...v2AppendOnly,...v2Grants);
   for (const table of tables) {
     const exists = await client.query('SELECT to_regclass($1) AS relation', [`public.${quote(table)}`]);
     if (exists.rows[0].relation) {
@@ -54,6 +58,12 @@ try {
     await client.query('GRANT SELECT, INSERT, UPDATE ON public.stock_balances TO wms_app');
     await client.query('GRANT SELECT, INSERT ON public.stock_ledger, public.idempotency_requests, public.audit_logs TO wms_app');
     await client.query('GRANT SELECT ON public.tenants, public.memberships TO wms_app');
+    await client.query('GRANT UPDATE(idle_lock_minutes) ON public.tenants TO wms_app');
+    await client.query('GRANT INSERT(user_id,tenant_id,role,status),UPDATE(role,status,updated_at) ON public.memberships TO wms_app');
+    for(const [names,permissions] of [[v2Mutable,'SELECT,INSERT,UPDATE'],[v2AppendOnly,'SELECT,INSERT'],[v2Grants,'SELECT,INSERT,UPDATE,DELETE']]) {
+      for(const table of names) await client.query(`GRANT ${permissions} ON public.${quote(table)} TO wms_app`);
+    }
+    await client.query('GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO wms_app');
   }
   await client.query('COMMIT');
   console.log(process.argv.includes('--grant') ? 'Database roles and application grants configured.' : 'Database roles configured. Run migrations, then db:bootstrap -- --grant.');

@@ -52,6 +52,7 @@ try {
   } else {
     const hashes = await Promise.all(passwords.map(password => hashPassword(password)));
     for (const statement of fixturePlan(hashes)) await client.query(statement.text, statement.values);
+    await client.query('INSERT INTO v2_warehouse_grants(tenant_id,user_id,warehouse_id) SELECT m.tenant_id,m.user_id,w.id FROM memberships m JOIN warehouses w ON w.tenant_id=m.tenant_id WHERE m.tenant_id=$1 ON CONFLICT DO NOTHING', [tenant]);
     await assertFixture();
   }
   await client.query('COMMIT');

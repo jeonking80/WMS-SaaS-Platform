@@ -37,6 +37,9 @@ export function apiError(error: unknown): Response {
     return errorJson({ error: error.code }, error.status);
   }
   const code = error && typeof error === "object" && "code" in error ? error.code : undefined;
+  if (code === "23514" && error instanceof Error && error.message === "WAREHOUSE_CUTOVER_READ_ONLY") {
+    return errorJson({ error: "WAREHOUSE_CUTOVER_READ_ONLY" }, 409);
+  }
   if (["40001", "40P01", "55P03", "57014"].includes(String(code))) {
     return errorJson({ error: "RETRYABLE_TRANSACTION" }, 503);
   }

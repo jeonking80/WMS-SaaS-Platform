@@ -1,0 +1,25 @@
+import type { Order, Receipt, Return } from "@/server/v2/workflow/types";
+import { downloadCsv, type Context } from "./common";
+
+type BusinessObject=Receipt|Order|Return;
+const objectName=(kind:string,index:number,row:BusinessObject)=>('external_id' in row&&row.external_id)||`${kind==='receipt'?'입고':kind==='order'?'주문':'반품'} ${String(index+1).padStart(4,'0')}`;
+const record=(value:unknown):Record<string,unknown>=>value&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:{};
+const statusName=(row:BusinessObject,kind:string)=>{const total=row.lines.reduce((sum,line)=>sum+line.quantity,0),cancelled=row.lines.reduce((sum,line)=>sum+line.cancelled,0);if(total===cancelled)return '취소';if(kind==='order')return row.lines.every(line=>line.quantity===line.cancelled+line.shipped)?'완료':(row as Order).reservations.length||(row as Order).picks.length?'진행':'접수';const receipt=row as Receipt|Return;if(receipt.closed)return '잔량 마감';return receipt.lines.every(line=>line.quantity<=line.received+line.cancelled)&&receipt.lots.every(lot=>lot.pending+lot.normal+lot.hold===0)?'완료':receipt.lots.length?'진행':'접수';};
+function metadata(c:Context,kind:string,query:string,rows:number,objects:number){return ['회사',c.company,'창고코드',c.warehouseCode,'창고명',c.warehouseName,'창고ID',c.warehouse,'업무종류',kind,'업무번호·품목검색필터',query||'전체','조회기준시각',c.asOf,'처리경계버전',c.snapshot.version,'단위','EA','업무건수',objects,'명세행수',rows];}
+
+export function exportBusiness(c:Context,kind:'receipt'|'order'|'return',filtered:BusinessObject[],all:BusinessObject[],query:string){
+ const rows=filtered.flatMap(row=>row.lines.map((line,index)=>{
+  const item=c.items.find(item=>item.id===line.item_id),common=[objectName(kind,all.findIndex(candidate=>candidate.id===row.id),row),'external_id' in row?row.external_id||'':'',statusName(row,kind),index+1,item?.code||'',item?.name||'',line.quantity,line.cancelled];
+  if(kind==='order'){const order=row as Order,delivery=record(order.delivery);return [...common,line.shipped,Math.max(0,line.quantity-line.shipped-line.cancelled),order.reservations.filter(r=>r.line_id===line.id).reduce((sum,r)=>sum+r.quantity,0),order.picks.filter(p=>p.line_id===line.id).reduce((sum,p)=>sum+p.active,0),order.picks.filter(p=>p.line_id===line.id).reduce((sum,p)=>sum+p.packed,0),order.due_at||'',delivery.partner_name||record(delivery.partner).name||c.partners.find(partner=>partner.id===delivery.partner_id)?.name||'',delivery.recipient_name||delivery.recipient||'',delivery.address||[delivery.address_line1,delivery.address_line2].filter(Boolean).join(' '),row.created_at];}
+  const receipt=row as Receipt|Return,lots=receipt.lots.filter(lot=>lot.line_id===line.id),supplier=record((receipt as Receipt).supplier);return [...common,line.received,Math.max(0,line.quantity-line.received-line.cancelled),lots.reduce((sum,lot)=>sum+lot.pending,0),lots.reduce((sum,lot)=>sum+lot.normal,0),lots.reduce((sum,lot)=>sum+lot.hold,0),(receipt as Receipt).expected_at||'',supplier.name||c.partners.find(partner=>partner.id===(receipt as Receipt).supplier_id)?.name||'','shipment_id' in receipt?`출하 ${c.snapshot.shipments.findIndex(shipment=>shipment.id===receipt.shipment_id)+1}`:'',row.created_at];
+ }));
+ const columns=['업무번호','외부번호','업무상태','원품목행','품목코드','품목명','계획EA','취소EA',...(kind==='order'?['누적출하EA','미출하EA','미피킹예약EA','유효피킹EA','포장EA','납기','납품처','수령인','배송지','접수시각']:['누적수령EA','미수령EA','검수대기EA','적치대기EA','보류EA','입고예정시각','공급처','원출하','접수시각'])];
+ downloadCsv(`wms-${kind}-documents.csv`,[metadata(c,kind,query,rows.length,filtered.length),columns,...rows]);
+}
+
+export function exportShipments(c:Context,filtered:BusinessObject[],query:string){
+ const orderIds=new Set(filtered.map(order=>order.id)),shipments=c.snapshot.shipments.filter(shipment=>shipment.lines.some(line=>orderIds.has(line.order_id)));
+ const statuses:Record<string,string>={handed_over:'인계 완료',in_transit:'운송 중',delivered:'배송 완료',failed:'배송 실패',lost:'분실'};
+ const rows=shipments.flatMap(shipment=>shipment.lines.filter(line=>orderIds.has(line.order_id)).map(line=>{const order=c.snapshot.orders.find(order=>order.id===line.order_id),item=c.items.find(item=>item.id===line.item_id);return [`출하 ${c.snapshot.shipments.findIndex(candidate=>candidate.id===shipment.id)+1}`,order?objectName('order',c.snapshot.orders.indexOf(order),order):'',order?.external_id||'',statuses[shipment.status]||shipment.status,shipment.revision,(order?.lines.findIndex(candidate=>candidate.id===line.order_line_id)??-1)+1,item?.code||'',item?.name||'',line.quantity,shipment.package_ids.map(id=>`포장 ${c.snapshot.packages.findIndex(pack=>pack.id===id)+1}`).join(' / '),shipment.handover_by,shipment.carrier,shipment.handed_over_at];}));
+ downloadCsv('wms-shipments.csv',[metadata(c,'출하',query,rows.length,shipments.length),['출하번호','원주문번호','외부주문번호','배송상태','배송이력차수','원주문품목행','품목코드','품목명','출하EA','완료포장목록','인계자','운송수단','인계시각'],...rows]);
+}

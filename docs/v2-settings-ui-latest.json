@@ -1,0 +1,23 @@
+{
+  "run_id": "2044cf83-c4cf-4e60-894b-ea56ec947c8c",
+  "verdict": "passed",
+  "roles": [
+    "source",
+    "supervisor",
+    "supervisor",
+    "supervisor",
+    "source",
+    "supervisor",
+    "supervisor",
+    "supervisor",
+    "supervisor"
+  ],
+  "comparison_visible": "설정이 다른 실행입니다. 아래 설정 차이와 함께 결과를 해석하세요.\n\nrun_id\t0ae36edd-86f0-47a7-b6d4-66a50c62b2ad\t2044cf83-c4cf-4e60-894b-ea56ec947c8c\t\nscenario\tmixed_pattern\tmixed_pattern\t\nseed\t319\t20261020\t\nmode\tauto\tauto\t\nverdict\tpassed\tpassed\t\napi_calls\t157\t36\t-121\nunique_events\t4\t2\t-2\nphysical_commands\t24\t7\t-17\nlatency_p95_ms\t62\t136\t74\ndifferences\t0\t0\t0\n{\n  \"left_configuration\": {\n    \"scenario\": \"mixed_pattern\",\n    \"mode\": \"auto\",\n    \"seed\": 319,\n    \"delay_ms\": 100,\n    \"event_count\": 2,\n    \"quantity_min\": 5,\n    \"quantity_max\": 5,\n    \"outage_seconds\": 0,\n    \"worker_count\": 2,\n    \"worker_role\": \"worker\",\n    \"working_start\": \"00:00\",\n    \"working_end\": \"24:00\",\n    \"shortage_ratio\": 1,\n    \"damage_ratio\": 1,\n    \"wrong_scan_ratio\": 1,\n    \"delay_ratio\": 1,\n    \"duplicate_ratio\": 1,\n    \"response_loss_ratio\": 1,\n    \"worker_interval_ms\": 200,\n    \"event_delay_ms\": 200,\n    \"handover_after_ms\": 500,\n    \"interrupt_after_operations\": 3,\n    \"warehouse_id\": \"99647df2-354e-4081-87a9-d86547971c2d\",\n    \"item_id\": \"10af1720-960b-4831-8375-27a9ce21c385\",\n    \"receiving_id\": \"ef63f3ca-022a-43b4-86bd-d128543430e5\",\n    \"storage_id\": \"81b7a24b-6e37-4232-9112-bffb9baab7b1\",\n    \"staging_id\": \"c6321b94-dc3a-4584-840b-83efef416218\",\n    \"hold_id\": \"301b7d86-8fc6-4d0c-897d-acdf9000e39d\",\n    \"supplier_id\": \"8e9a85ef-f048-4cc5-bcf0-6085116c1167\",\n    \"customer_id\": \"8e9a85ef-f048-4cc5-bcf0-6085116c1167\",\n    \"destination_id\": \"9505da31-111a-4f1f-a50a-a524b69f198d\",\n    \"expected_at\": \"2026-11-01T00:00:00Z\",\n    \"due_at\": \"2026-11-02T00:00:00Z\",\n    \"duplicate\": false,\n    \"lose_response\": false,\n    \"generator_version\": \"2.0.0\",\n    \"scenario_version\": \"1.1\",\n    \"contract_version\": \"2.0\",\n    \"baseline\": \"unused_item_zero\"\n  },\n  \"right_configuration\": {\n    \"scenario\": \"mixed_pattern\",\n    \"mode\": \"auto\",\n    \"seed\": 20261020,\n    \"delay_ms\": 100,\n    \"event_count\": 1,\n    \"quantity_min\": 2,\n    \"quantity_max\": 2,\n    \"outage_seconds\": 0,\n    \"worker_count\": 1,\n    \"worker_role\": \"supervisor\",\n    \"working_start\": \"00:00\",\n    \"working_end\": \"24:00\",\n    \"shortage_ratio\": 0,\n    \"damage_ratio\": 0,\n    \"wrong_scan_ratio\": 0,\n    \"delay_ratio\": 0,\n    \"duplicate_ratio\": 0,\n    \"response_loss_ratio\": 0,\n    \"worker_interval_ms\": 150,\n    \"event_delay_ms\": 1000,\n    \"handover_after_ms\": 0,\n    \"interrupt_after_operations\": 0,\n    \"warehouse_id\": \"99647df2-354e-4081-87a9-d86547971c2d\",\n    \"item_id\": \"5a79dead-f7d0-45e6-8c1d-fe3681eb4700\",\n    \"receiving_id\": \"2b3ad0fa-b729-4873-b9f1-75d53e8ab305\",\n    \"storage_id\": \"2b75973b-671b-4b71-b8b8-bd6bbce4ba22\",\n    \"staging_id\": \"002ce63d-4343-48e2-8b85-af5aa40078e5\",\n    \"hold_id\": \"1066c83b-7f43-463f-92d0-f2ab0ef732a3\",\n    \"supplier_id\": \"8e9a85ef-f048-4cc5-bcf0-6085116c1167\",\n    \"customer_id\": \"8e9a85ef-f048-4cc5-bcf0-6085116c1167\",\n    \"destination_id\": \"9505da31-111a-4f1f-a50a-a524b69f198d\",\n    \"expected_at\": \"2026-10-21T13:36:00.000Z\",\n    \"due_at\": \"2026-10-21T13:36:00.000Z\",\n    \"duplicate\": false,\n    \"lose_response\": false,\n    \"generator_version\": \"2.0.0\",\n    \"scenario_version\": \"1.1\",\n    \"contract_version\": \"2.0\",\n    \"baseline\": \"unused_item_zero\"\n  },\n  \"left_expected\": {\n    \"S\": 0,\n    \"R\": 0,\n    \"P\": 0,\n    \"Q\": 0,\n    \"B\": 2\n  },\n  \"right_expected\": {\n    \"S\": 0,\n    \"R\": 0,\n    \"P\": 0,\n    \"Q\": 0,\n    \"B\": 0\n  }\n}",
+  "javascript_errors": [],
+  "actual_api": true,
+  "mobile": {
+    "viewport_width": 390,
+    "document_width": 390,
+    "comparison_scroll_inside_table": true
+  }
+}

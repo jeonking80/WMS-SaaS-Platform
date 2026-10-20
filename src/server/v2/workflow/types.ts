@@ -1,0 +1,22 @@
+export type Bucket = 'S'|'R'|'P'|'Q'|'B';
+export type Stock = {item_id:string;location_id:string;S:number;R:number;P:number;Q:number;B:number;reservation_blocked?:boolean;location_kind?:string};
+export type Line = {id:string;item_id:string;quantity:number;received:number;cancelled:number;shipped:number};
+export type Lot = {id:string;line_id:string;item_id:string;location_id:string;quantity:number;pending:number;normal:number;hold:number;putaway:number;overage:boolean;approved:number;released:number;received_by?:string};
+export type Receipt = {id:string;external_id?:string;version:number;lines:Line[];lots:Lot[];closed:boolean;created_at:string;supplier_id?:string;supplier?:unknown;expected_at?:string};
+export type Reservation = {id:string;line_id:string;item_id:string;location_id:string;quantity:number;picked:number;reserved_at?:string};
+export type Pick = {id:string;reservation_id:string;line_id:string;item_id:string;location_id:string;quantity:number;active:number;packed:number;shipped:number;damaged:number;returned:number;cancel_pending:number};
+export type Order = {id:string;external_id?:string;original_order_id?:string;original_return_id?:string;version:number;lines:Line[];reservations:Reservation[];picks:Pick[];delivery:unknown;due_at?:string;created_at:string};
+export type Package = {id:string;order_id:string;status:'complete'|'unpacked'|'shipped';weight_grams?:number;lines:{pick_id:string;quantity:number}[];delivery:unknown;created_at:string};
+export type ShipmentLine = {id:string;order_id:string;order_line_id:string;pick_id:string;item_id:string;quantity:number};
+export type Shipment = {id:string;package_ids:string[];lines:ShipmentLine[];status:string;revision:number;handover_by:string;carrier:string;handed_over_at:string;delivery:unknown[];events:{status:string;revision:number;reason:string;at:string;previous_revision?:number;previous_status?:string;correction?:boolean;operation?:'record'|'correction';actor_id?:string;request_id?:string}[]};
+export type Return = {id:string;shipment_id:string;lines:(Line & {shipment_line_id:string})[];lots:Lot[];closed:boolean;created_at:string};
+export type Approval = {id:string;type:'overage'|'receipt.close'|'count'|'correction';requester_id:string;request_id?:string;requested_at?:string;origin_actor_ids?:string[];target_id:string;target_version:number;quantity:number;data:Record<string,unknown>;reason:string;status:'pending'|'approved'|'rejected';decider_id?:string;decided_at?:string;decision_reason?:string};
+export type Count = {id:string;location_id:string;actor_id:string;counter_id?:string;counter_ids?:string[];submitted_by?:string;version:number;status:'counting'|'submitted'|'completed'|'unlocked';baseline:Stock[];lines:{item_id:string;bucket:'S'|'Q'|'B';quantity:number;recounted?:boolean}[];recount:boolean;reason:string};
+export type Task = {id:string;object_type:string;object_id:string;assignee_id:string;reason:string;assigned_at:string};
+export type Ledger = {id:string;item_id:string;location_id:string;bucket:Bucket;delta:number;request_id:string;actor_id:string;command:string;reason:string;original_id?:string;created_at:string};
+export type WorkflowState = {version:number;stock:Stock[];receipts:Receipt[];orders:Order[];packages:Package[];shipments:Shipment[];returns:Return[];approvals:Approval[];counts:Count[];tasks:Task[];shifts:Record<string,unknown>[];ledger:Ledger[];receiving_ids:string[];holds:Lot[];ledger_base?:Stock[];ledger_count?:number;location_blocks:{location_id:string;reason:string;blocked_at:string;request_id:string}[]};
+export type WorkflowInput = {warehouse_id:string;command:string;request_id:string;payload:Record<string,unknown>};
+export type Actor = {id:string;role:string};
+export type Reference = {id:string;active:boolean;kind?:string;location_type?:string;warehouse_id?:string;priority?:number;code?:string;reservation_blocked?:boolean};
+export type WorkflowContext = {actor:Actor;request_id:string;command:string;now:string;id:()=>string;items:Reference[];locations:Reference[]};
+export function emptyState():WorkflowState { return {version:0,stock:[],receipts:[],orders:[],packages:[],shipments:[],returns:[],approvals:[],counts:[],tasks:[],shifts:[],ledger:[],receiving_ids:[],holds:[],location_blocks:[]}; }

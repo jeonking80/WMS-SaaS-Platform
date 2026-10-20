@@ -1,0 +1,171 @@
+{
+  "schema_version": "1.0",
+  "scenario": "AC13_WMS_process_SIGKILL_restart",
+  "generated_at": "2026-10-20T13:38:09.609Z",
+  "verdict": "passed",
+  "run_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df",
+  "server": {
+    "origin": "http://127.0.0.1:3205",
+    "build_id": "VuDcSWeSgbT_5k8fDYdmc",
+    "runtime_directory": "/tmp/wms-shift-final-p71htcdn",
+    "initial_pid": 131404,
+    "restarted_pid": 131506,
+    "sigkill_at": "2026-10-20T13:38:08.013Z",
+    "observed_exit": {
+      "pid": 131404,
+      "code": null,
+      "signal": "SIGKILL",
+      "at": "2026-10-20T13:38:08.026Z"
+    },
+    "unavailable_after_kill": true,
+    "same_app_database_binding": true
+  },
+  "accepted_before_kill": {
+    "run_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df",
+    "phase": "accepted_before_wms_kill",
+    "event_id": "d172a6df-2776-4821-841d-4330ffadd236",
+    "event_row_id": "18c82d26-ca70-4ecd-917e-b2d9e7723ac2",
+    "pending_body_sha256": "7a2026dcebbc8ff7514e2a2927a0ad990bf6b4fc3167814477b79983d3bd568d"
+  },
+  "recovery": {
+    "run_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df",
+    "verdict": "passed",
+    "company_id": "6b419eca-4b3b-49ce-8d3e-9fe1552cbee4",
+    "warehouse_id": "b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+    "event_id": "d172a6df-2776-4821-841d-4330ffadd236",
+    "event_row_id": "18c82d26-ca70-4ecd-917e-b2d9e7723ac2",
+    "body_sha256": "7a2026dcebbc8ff7514e2a2927a0ad990bf6b4fc3167814477b79983d3bd568d",
+    "recovered_pending_event": true,
+    "same_event_retry_deduplicated": true,
+    "same_request_retry_reservation": 3,
+    "reserve_ledger_rows": 1,
+    "source_orders": 1,
+    "shipped": 3,
+    "full_ledger_pages": 1,
+    "independent_reconciliation": {
+      "expected": {
+        "locations": {
+          "33b2a9c8-a3f1-41b6-b9e4-59aa585685c8": {
+            "S": 0,
+            "R": 0,
+            "P": 0,
+            "Q": 0,
+            "B": 0
+          },
+          "e09883d8-5650-4ee0-94d1-6249b731b124": {
+            "S": 7,
+            "R": 0,
+            "P": 0,
+            "Q": 0,
+            "B": 0
+          },
+          "9b5f1419-593e-4bf1-89be-5965b0121873": {
+            "S": 0,
+            "R": 0,
+            "P": 0,
+            "Q": 0,
+            "B": 0
+          }
+        },
+        "order": {
+          "ordered": 3,
+          "reserved": 0,
+          "picked": 0,
+          "shipped": 3
+        },
+        "totals": {
+          "S": 7,
+          "R": 0,
+          "P": 0,
+          "Q": 0,
+          "B": 0
+        }
+      },
+      "actual": {
+        "33b2a9c8-a3f1-41b6-b9e4-59aa585685c8": {
+          "B": 0,
+          "P": 0,
+          "Q": 0,
+          "R": 0,
+          "S": 0,
+          "item_id": "f0810f46-b5ff-42c1-b98e-fe27248c20df",
+          "location_id": "33b2a9c8-a3f1-41b6-b9e4-59aa585685c8",
+          "location_kind": "RECEIVING",
+          "reservation_blocked": false,
+          "A": 0,
+          "H": 0,
+          "locked": false
+        },
+        "e09883d8-5650-4ee0-94d1-6249b731b124": {
+          "B": 0,
+          "P": 0,
+          "Q": 0,
+          "R": 0,
+          "S": 7,
+          "item_id": "f0810f46-b5ff-42c1-b98e-fe27248c20df",
+          "location_id": "e09883d8-5650-4ee0-94d1-6249b731b124",
+          "location_kind": "STORAGE",
+          "reservation_blocked": false,
+          "A": 7,
+          "H": 7,
+          "locked": false
+        },
+        "9b5f1419-593e-4bf1-89be-5965b0121873": {
+          "B": 0,
+          "P": 0,
+          "Q": 0,
+          "R": 0,
+          "S": 0,
+          "item_id": "f0810f46-b5ff-42c1-b98e-fe27248c20df",
+          "location_id": "9b5f1419-593e-4bf1-89be-5965b0121873",
+          "location_kind": "STAGING",
+          "reservation_blocked": false,
+          "A": 0,
+          "H": 0,
+          "locked": false
+        }
+      },
+      "ledger": {
+        "33b2a9c8-a3f1-41b6-b9e4-59aa585685c8": {
+          "S": 0,
+          "R": 0,
+          "P": 0,
+          "Q": 0,
+          "B": 0
+        },
+        "e09883d8-5650-4ee0-94d1-6249b731b124": {
+          "S": 7,
+          "R": 0,
+          "P": 0,
+          "Q": 0,
+          "B": 0
+        },
+        "9b5f1419-593e-4bf1-89be-5965b0121873": {
+          "S": 0,
+          "R": 0,
+          "P": 0,
+          "Q": 0,
+          "B": 0
+        }
+      },
+      "differences": [],
+      "passed": true,
+      "boundary": {
+        "workflow_version": 9,
+        "ledger_rows": 8,
+        "at": "2026-10-20T13:38:09.594Z"
+      }
+    },
+    "limitations": [
+      "Local owned WMS process restart; no hosting-provider recovery, RPO/RTO or field-device claim."
+    ]
+  },
+  "api_child_has_database_binding": false,
+  "local_journal": "/tmp/v2-wms-kill-ZqDYBD/http-journal.json",
+  "limitations": [
+    "Dedicated disposable test companies only. Existing simulator, shift and performance companies were not used.",
+    "Local process crash recovery does not certify hosting-provider recovery, backup RPO/RTO or real devices."
+  ],
+  "journal_artifact": "v2-wms-process-restart-journal.json",
+  "journal_sha256": "6f6186ab9887047f75d59d08c376bf61fd25f84f3e7cb9b28e8c60d83ea5fade"
+}

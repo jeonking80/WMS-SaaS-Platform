@@ -1,0 +1,153 @@
+{
+  "result": "PASS",
+  "scenario": "T12",
+  "verified_at": "2026-10-20T13:35:36.046Z",
+  "verification_scope": "actual_http_synthetic_local_same_cluster",
+  "build_id": "VuDcSWeSgbT_5k8fDYdmc",
+  "migrations": 18,
+  "tables_checked": 40,
+  "fault": "client_discarded_committed_response_body",
+  "unconfirmed_remaining": 0,
+  "source_unchanged": true,
+  "restored_identical_before_resume": true,
+  "same_session_cookie_restored": true,
+  "resumed_from_durable_journal": true,
+  "workflow": {
+    "comparison": "persisted committed result and version; replay marker is expected to change",
+    "command": "receipt.receive",
+    "request_id": "8d1bb65c-cc3f-4deb-a6dc-f334b0ed3138",
+    "original_response_sha256": "8c4525c8a76571f8ac94de5c9cbe0c5902eefba2501055a8ac5de5a316db2e3a",
+    "recovered_response_sha256": "8c4525c8a76571f8ac94de5c9cbe0c5902eefba2501055a8ac5de5a316db2e3a",
+    "identical": true,
+    "replays": 2,
+    "effects": 1,
+    "received_quantity": 30,
+    "bucket": "Q"
+  },
+  "external": {
+    "event_id": "4adb636e-fa14-4e29-9994-ba4ed11c52e3",
+    "receipt_id": "f821a985-78ef-4122-b53d-8839c4d93b84",
+    "sequence": "2",
+    "accepted_before_dump": true,
+    "replayed_same_receipt": true,
+    "applied_after_restore": true,
+    "processing_attempts": 1,
+    "event_rows": 1,
+    "workflow_effects": 1,
+    "objects": 1
+  },
+  "work_preserved": {
+    "reservations": 40,
+    "tasks": 1,
+    "assignee_unchanged": true,
+    "orders_unchanged": true
+  },
+  "final_inventory": {
+    "S": 100,
+    "R": 40,
+    "P": 0,
+    "Q": 30,
+    "B": 0,
+    "A": 60,
+    "H": 130
+  },
+  "reconciliation": {
+    "ledger_mismatches": 0,
+    "state_mismatches": 0
+  },
+  "legacy_cutover": {
+    "actual_http_rehearsal": true,
+    "warehouse_id": "b9f099f9-e54a-48f2-97be-4b85ad2c883d",
+    "document_id": "7f955e56-d632-4522-ad7f-e418d565f118",
+    "document_number": "WMS-000001",
+    "original_ledger_ids": [
+      "d0a3253e-d531-4ce3-9a53-4c7df5b3ba37"
+    ],
+    "legacy_records_unchanged": true,
+    "opening_ledger_entries": 3,
+    "opening_ledger_ids": [
+      "6d8e1e4e-b99c-4f63-a098-a99f245fa727",
+      "71643479-66f5-4fa3-83e9-0397c7555de4",
+      "9ae599fc-a9df-4e98-af23-aefbe8f92e2f"
+    ],
+    "opening": {
+      "S": 40,
+      "Q": 10,
+      "B": 10,
+      "H": 60
+    },
+    "reservation": 12,
+    "cutover_replay_preserved": true,
+    "reservation_replay_preserved": true,
+    "restored_inventory": {
+      "S": 40,
+      "R": 12,
+      "P": 0,
+      "Q": 10,
+      "B": 10,
+      "A": 28,
+      "H": 60
+    }
+  },
+  "row_counts_before_resume": {
+    "account": 2,
+    "api_request_metrics": 23,
+    "audit_logs": 1,
+    "business_partners": 1,
+    "delivery_destinations": 1,
+    "idempotency_requests": 1,
+    "inventory_document_lines": 1,
+    "inventory_documents": 1,
+    "items": 1,
+    "locations": 5,
+    "master_barcodes": 0,
+    "master_csv_applied_rows": 0,
+    "master_csv_applies": 0,
+    "master_csv_previews": 0,
+    "memberships": 2,
+    "pgmigrations": 18,
+    "session": 1,
+    "stock_balances": 1,
+    "stock_ledger": 1,
+    "tenants": 1,
+    "user": 2,
+    "v2_cutovers": 1,
+    "v2_identity_audit": 6,
+    "v2_identity_links": 2,
+    "v2_integration_entities": 1,
+    "v2_integration_events": 2,
+    "v2_integration_limits": 1,
+    "v2_machine_keys": 1,
+    "v2_machine_warehouses": 1,
+    "v2_opening_imports": 0,
+    "v2_warehouse_grants": 3,
+    "v2_workflow_ledger": 9,
+    "v2_workflow_objects": 4,
+    "v2_workflow_performances": 11,
+    "v2_workflow_receivings": 2,
+    "v2_workflow_requests": 12,
+    "v2_workflow_state": 2,
+    "v2_workflow_stock": 5,
+    "verification": 0,
+    "warehouses": 2
+  },
+  "source_sha256": "168906e9fb4f4b2441f12e449db4bde324fa71805c3fc18a07773c1f579af5dc",
+  "archive_sha256": "09c5aa29ba6a3d50da1c26c94d26cd4a497d7b18f52a9c17a6ae150066443c5b",
+  "completed_at": "2026-10-20T13:35:34.702Z",
+  "restore_verified_at": "2026-10-20T13:35:36.046Z",
+  "tenants": {
+    "08e4d924-10d3-4e5b-b9a4-622ce5af1468": {
+      "tenant_id": "08e4d924-10d3-4e5b-b9a4-622ce5af1468",
+      "completed_at": "2026-10-20T13:35:34.702Z",
+      "archive_sha256": "09c5aa29ba6a3d50da1c26c94d26cd4a497d7b18f52a9c17a6ae150066443c5b",
+      "restore_verified_at": "2026-10-20T13:35:36.046Z"
+    }
+  },
+  "server_database_access": "wms_app only; isolated runtime cwd without administrative .env files",
+  "provider_recovery": "NOT_EXECUTED",
+  "limitations": [
+    "Same local PostgreSQL cluster and existing cluster roles; no remote-provider restore or PITR.",
+    "Response loss is a deliberate client discard after committed HTTP response headers, not a network outage.",
+    "No RPO/RTO target, physical warehouse, or real-device acceptance is claimed."
+  ]
+}

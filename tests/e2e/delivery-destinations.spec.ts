@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 import pg from "pg";
+import { grantFixtureWarehouse } from "./warehouse-scope";
 
 const origin = "http://127.0.0.1:3100";
 const tenant = "00000000-0000-4000-8000-000000000001";
@@ -21,12 +22,19 @@ function fixtures() {
   const url = new URL(connectionString);
   if (!["127.0.0.1", "localhost"].includes(url.hostname) || !["/wms_lite", "/wms_test"].includes(url.pathname)) throw new Error("Destination fixtures require an isolated local database.");
   const pool = new pg.Pool({ connectionString, max: 1 });
-  const ids: string[] = [];
-  return { ids, async cleanup() {
+  const ids: string[] = [], warehouses: string[] = [];
+  return { ids, async prepareWarehouse(request:APIRequestContext) {
+    const code=`DEST-${randomUUID()}`;
+    const response=await request.post("/api/warehouses",{headers:{origin},data:{code,name:"Destination access fixture"}});
+    expect(response.status()).toBe(201);
+    const id=(await response.json()).warehouse.id as string;warehouses.push(id);
+    await grantFixtureWarehouse(pool,tenant,id);
+  }, async cleanup() {
     try {
       await pool.query("BEGIN");
       await pool.query("SELECT set_config('app.tenant_id', $1, true)", [tenant]);
-      await pool.query("DELETE FROM delivery_destinations WHERE id=ANY($1::uuid[])", [ids]);
+      await pool.query("UPDATE delivery_destinations SET active=false WHERE id=ANY($1::uuid[])", [ids]);
+      await pool.query("UPDATE warehouses SET active=false WHERE id=ANY($1::uuid[])", [warehouses]);
       await pool.query("COMMIT");
     } catch (error) { await pool.query("ROLLBACK"); throw error; } finally { await pool.end(); }
   } };
@@ -55,6 +63,7 @@ test("admin registers a searched address inline, retries provider failure, and r
   });
   try {
     await login(page.request, "admin.a@example.test");
+    await fixture.prepareWarehouse(page.request);
     await outboundForm(page);
     await page.getByRole("button", { name: "새 배송지 등록", exact: true }).click();
     const dialog = page.getByRole("dialog", { name: "새 배송지 등록", exact: true });
@@ -96,6 +105,7 @@ test("destination access is tenant scoped; workers select active entries while v
   const headers = { origin };
   try {
     await login(page.request, "admin.a@example.test");
+    await fixture.prepareWarehouse(page.request);
     const created = await page.request.post("/api/delivery-destinations", { headers, data: body });
     expect(created.status()).toBe(201);
     const destination = (await created.json()).destination; fixture.ids.push(destination.id);

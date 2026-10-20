@@ -1,0 +1,635 @@
+{
+  "kind": "single instrumented browser navigation; not a new acceptance measurement",
+  "style_injection": "stock table fixed layout with declared columns; same 1600 rows and trace buttons",
+  "company": "B",
+  "build_id": "OKmhv8KsLVWaXERwuuT7M",
+  "fixture_run_id": "5ee81f14-1139-4772-8b6c-8ce61931f850",
+  "started_at": "2026-10-20T14:10:08.964Z",
+  "network": [
+    {
+      "path": "/dashboard/v2",
+      "method": "GET",
+      "type": "Document",
+      "start_ms": 0,
+      "status": 200,
+      "headers_ms": 26.644999998097774,
+      "server_wait_ms": 23.839,
+      "body_complete_ms": 26.13299999939045,
+      "duration_ms": 26.13299999939045,
+      "encoded_bytes": 4940
+    },
+    {
+      "path": "/_next/static/chunks/3d5oa2a1wl6d0.css",
+      "method": "GET",
+      "type": "Stylesheet",
+      "start_ms": 288.33099999974365,
+      "status": 200,
+      "headers_ms": 288.49899999841,
+      "server_wait_ms": 8.982000000000001,
+      "body_complete_ms": 288.5179999975662,
+      "duration_ms": 0.18699999782256782,
+      "encoded_bytes": 0
+    },
+    {
+      "path": "/_next/static/chunks/277x1l4o8560f.css",
+      "method": "GET",
+      "type": "Stylesheet",
+      "start_ms": 288.977000000159,
+      "status": 200,
+      "headers_ms": 289.0509999997448,
+      "server_wait_ms": 7.2780000000000005,
+      "body_complete_ms": 289.06500000084634,
+      "duration_ms": 0.08800000068731606,
+      "encoded_bytes": 0
+    },
+    {
+      "path": "/_next/static/chunks/1x6obpmlu1_c2.js",
+      "method": "GET",
+      "type": "Script",
+      "start_ms": 289.096000000427,
+      "status": 200,
+      "headers_ms": 289.14199999780976,
+      "server_wait_ms": 7.657,
+      "body_complete_ms": 289.1539999982342,
+      "duration_ms": 0.057999997807201,
+      "encoded_bytes": 0
+    },
+    {
+      "path": "/_next/static/chunks/2kzd2bib-2ux6.js",
+      "method": "GET",
+      "type": "Script",
+      "start_ms": 289.17399999772897,
+      "status": 200,
+      "headers_ms": 289.20300000027055,
+      "server_wait_ms": 14.677,
+      "body_complete_ms": 289.21400000035646,
+      "duration_ms": 0.040000002627493814,
+      "encoded_bytes": 0
+    },
+    {
+      "path": "/_next/static/chunks/2khxl0v1q4i6n.js",
+      "method": "GET",
+      "type": "Script",
+      "start_ms": 289.22899999815854,
+      "status": 200,
+      "headers_ms": 289.2619999984163,
+      "server_wait_ms": 20.022,
+      "body_complete_ms": 289.2729999985022,
+      "duration_ms": 0.04400000034365803,
+      "encoded_bytes": 0
+    },
+    {
+      "path": "/_next/static/chunks/0-4pkq-hqgd6s.js",
+      "method": "GET",
+      "type": "Script",
+      "start_ms": 289.28799999994226,
+      "status": 200,
+      "headers_ms": 289.3149999981688,
+      "server_wait_ms": 20.267999999999997,
+      "body_complete_ms": 289.32699999859324,
+      "duration_ms": 0.03899999865097925,
+      "encoded_bytes": 0
+    },
+    {
+      "path": "/_next/static/chunks/turbopack-2c3mg3r-05n1w.js",
+      "method": "GET",
+      "type": "Script",
+      "start_ms": 289.34099999969476,
+      "status": 200,
+      "headers_ms": 289.40199999851757,
+      "server_wait_ms": 12.065,
+      "body_complete_ms": 289.413999998942,
+      "duration_ms": 0.07299999924725853,
+      "encoded_bytes": 0
+    },
+    {
+      "path": "/_next/static/chunks/0umf92h1sb77c.js",
+      "method": "GET",
+      "type": "Script",
+      "start_ms": 289.43599999911385,
+      "status": 200,
+      "headers_ms": 289.46799999903305,
+      "server_wait_ms": 16.308,
+      "body_complete_ms": 289.4799999994575,
+      "duration_ms": 0.04400000034365803,
+      "encoded_bytes": 0
+    },
+    {
+      "path": "/_next/static/chunks/416toj_cg_8j0.js",
+      "method": "GET",
+      "type": "Script",
+      "start_ms": 289.494000000559,
+      "status": 200,
+      "headers_ms": 289.53199999887147,
+      "server_wait_ms": 12.119,
+      "body_complete_ms": 289.5439999992959,
+      "duration_ms": 0.04999999873689376,
+      "encoded_bytes": 0
+    },
+    {
+      "path": "/_next/static/chunks/16pwic2e0nuoh.js",
+      "method": "GET",
+      "type": "Script",
+      "start_ms": 289.5619999981136,
+      "status": 200,
+      "headers_ms": 289.5910000006552,
+      "server_wait_ms": 19.413,
+      "body_complete_ms": 289.60100000040256,
+      "duration_ms": 0.03900000228895806,
+      "encoded_bytes": 0
+    },
+    {
+      "path": "/_next/static/chunks/3oxflkcl6b8ch.js",
+      "method": "GET",
+      "type": "Script",
+      "start_ms": 289.6149999978661,
+      "status": 200,
+      "headers_ms": 289.64799999812385,
+      "server_wait_ms": 12.586,
+      "body_complete_ms": 289.65799999787123,
+      "duration_ms": 0.043000000005122274,
+      "encoded_bytes": 0
+    },
+    {
+      "path": "/api/v2/identity/context",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 333.5019999976794,
+      "status": 200,
+      "headers_ms": 385.86799999757204,
+      "server_wait_ms": 49.583,
+      "body_complete_ms": 385.8829999990121,
+      "duration_ms": 52.38100000133272,
+      "encoded_bytes": 2820
+    },
+    {
+      "path": "/dashboard",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 341.7029999982333,
+      "status": 200,
+      "headers_ms": 362.0969999974477,
+      "server_wait_ms": 5.279,
+      "body_complete_ms": 356.6209999989951,
+      "duration_ms": 14.918000000761822,
+      "encoded_bytes": 561
+    },
+    {
+      "path": "/dashboard/stock",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 341.9880000001285,
+      "status": 200,
+      "headers_ms": 362.5839999986056,
+      "server_wait_ms": 6.939,
+      "body_complete_ms": 356.7929999990156,
+      "duration_ms": 14.80499999888707,
+      "encoded_bytes": 572
+    },
+    {
+      "path": "/dashboard/history",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 342.21400000024005,
+      "status": 200,
+      "headers_ms": 362.7909999995609,
+      "server_wait_ms": 8.263,
+      "body_complete_ms": 356.8859999977576,
+      "duration_ms": 14.67199999751756,
+      "encoded_bytes": 574
+    },
+    {
+      "path": "/dashboard/documents",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 342.42599999925005,
+      "status": 200,
+      "headers_ms": 363.257999997586,
+      "server_wait_ms": 11.093,
+      "body_complete_ms": 357.01699999845005,
+      "duration_ms": 14.590999999199994,
+      "encoded_bytes": 574
+    },
+    {
+      "path": "/dashboard/master",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 365.6430000010005,
+      "status": 200,
+      "headers_ms": 371.8899999985297,
+      "server_wait_ms": 4.276
+    },
+    {
+      "path": "/dashboard/delivery-destinations",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 366.7150000001129,
+      "status": 200,
+      "headers_ms": 381.06499999776133,
+      "server_wait_ms": 7.091000000000001
+    },
+    {
+      "path": "/dashboard/audit",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 367.41799999799696,
+      "status": 200,
+      "headers_ms": 381.5089999989141,
+      "server_wait_ms": 8.059
+    },
+    {
+      "path": "/dashboard",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 368.46499999955995,
+      "status": 200,
+      "headers_ms": 382.90000000051805,
+      "server_wait_ms": 10.709
+    },
+    {
+      "path": "/dashboard/stock",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 383.85099999868544,
+      "status": 200,
+      "headers_ms": 401.5899999976682,
+      "server_wait_ms": 6.163
+    },
+    {
+      "path": "/dashboard/history",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 384.7139999998035,
+      "status": 200,
+      "headers_ms": 401.9929999994929,
+      "server_wait_ms": 8.17
+    },
+    {
+      "path": "/dashboard/documents",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 385.58800000100746,
+      "status": 200,
+      "headers_ms": 402.24099999977625,
+      "server_wait_ms": 11.515
+    },
+    {
+      "path": "/dashboard/master",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 386.9510000004084,
+      "status": 200,
+      "headers_ms": 403.612999998586,
+      "server_wait_ms": 12.116999999999999
+    },
+    {
+      "path": "/api/v2/workflow",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 392.23800000036135,
+      "status": 200,
+      "headers_ms": 885.7570000000123,
+      "server_wait_ms": 490.918,
+      "body_complete_ms": 885.5059999987134,
+      "duration_ms": 493.267999998352,
+      "encoded_bytes": 396479
+    },
+    {
+      "path": "/api/v2/masters/items",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 393.5529999980645,
+      "status": 200,
+      "headers_ms": 462.47199999925215,
+      "server_wait_ms": 59.133,
+      "body_complete_ms": 454.7810000003665,
+      "duration_ms": 61.228000002302,
+      "encoded_bytes": 25142
+    },
+    {
+      "path": "/api/v2/masters/locations",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 394.8369999998249,
+      "status": 200,
+      "headers_ms": 461.1799999984214,
+      "server_wait_ms": 36.822,
+      "body_complete_ms": 452.5759999996808,
+      "duration_ms": 57.73899999985588,
+      "encoded_bytes": 6592
+    },
+    {
+      "path": "/api/v2/masters/partners",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 396.1109999982,
+      "status": 200,
+      "headers_ms": 462.05299999928684,
+      "server_wait_ms": 38.422,
+      "body_complete_ms": 454.63399999789544,
+      "duration_ms": 58.52299999969546,
+      "encoded_bytes": 607
+    },
+    {
+      "path": "/api/v2/masters/destinations",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 397.3459999979241,
+      "status": 200,
+      "headers_ms": 553.3399999985704,
+      "server_wait_ms": 135.88400000000001,
+      "body_complete_ms": 552.0189999988361,
+      "duration_ms": 154.673000000912,
+      "encoded_bytes": 796
+    },
+    {
+      "path": "/api/v2/masters/barcodes",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 398.6349999977392,
+      "status": 200,
+      "headers_ms": 475.59499999988475,
+      "server_wait_ms": 57.44800000000001,
+      "body_complete_ms": 473.7920000006852,
+      "duration_ms": 75.157000002946,
+      "encoded_bytes": 348
+    },
+    {
+      "path": "/dashboard/delivery-destinations",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 416.2689999975555,
+      "status": 200,
+      "headers_ms": 463.4029999979248,
+      "server_wait_ms": 4.997
+    },
+    {
+      "path": "/dashboard/audit",
+      "method": "GET",
+      "type": "Fetch",
+      "start_ms": 418.24500000075204,
+      "status": 200,
+      "headers_ms": 465.3230000003532,
+      "server_wait_ms": 6.811000000000001
+    }
+  ],
+  "timings": {
+    "navigation_load_ms": 338.2080839999999,
+    "tab_visible_ms": 390.22937699999966,
+    "tab_click_completed_ms": 485.5107479999997,
+    "stock_dom_ready_ms": 1832.7554760000003,
+    "two_frames_ms": 1855.4549209999996
+  },
+  "dom": {
+    "rows": 1600,
+    "cells": 17600,
+    "buttons": 3201,
+    "descendants": 24020,
+    "table_layout": "fixed",
+    "table_width": 1240,
+    "column_widths": [
+      222.140625,
+      181.75,
+      64.625,
+      64.625,
+      64.625,
+      64.625,
+      64.625,
+      64.625,
+      64.625,
+      161.5625,
+      222.171875
+    ]
+  },
+  "long_tasks": [
+    {
+      "start_ms": 889.4000000022352,
+      "duration_ms": 66,
+      "name": "self"
+    }
+  ],
+  "navigation": {
+    "request_start_ms": 2.100000001490116,
+    "response_start_ms": 26.100000001490116,
+    "response_end_ms": 27.100000001490116,
+    "dom_interactive_ms": 317.5,
+    "dom_content_loaded_ms": 318,
+    "load_ms": 328.6000000014901,
+    "transfer_bytes": 4743
+  },
+  "trace_file": "docs/v2-performance-browser-timeline-fixed-layout.json",
+  "trace_events": [
+    {
+      "name": "RunTask",
+      "count": 5250,
+      "inclusive_total_ms": 1839.5959999999727,
+      "max_ms": 623.029
+    },
+    {
+      "name": "Layout",
+      "count": 6,
+      "inclusive_total_ms": 306.718,
+      "max_ms": 302.947
+    },
+    {
+      "name": "UpdateLayoutTree",
+      "count": 12,
+      "inclusive_total_ms": 248.4,
+      "max_ms": 127.302
+    },
+    {
+      "name": "Paint",
+      "count": 8,
+      "inclusive_total_ms": 198.834,
+      "max_ms": 121.599
+    },
+    {
+      "name": "v8.callFunction",
+      "count": 102,
+      "inclusive_total_ms": 134.60199999999998,
+      "max_ms": 66.872
+    },
+    {
+      "name": "FunctionCall",
+      "count": 102,
+      "inclusive_total_ms": 128.002,
+      "max_ms": 66.546
+    },
+    {
+      "name": "V8.GC_MC_BACKGROUND_MARKING",
+      "count": 10,
+      "inclusive_total_ms": 99.439,
+      "max_ms": 44.654
+    },
+    {
+      "name": "PrePaint",
+      "count": 24,
+      "inclusive_total_ms": 87.225,
+      "max_ms": 64.686
+    },
+    {
+      "name": "EvaluateScript",
+      "count": 16,
+      "inclusive_total_ms": 37.803,
+      "max_ms": 9.99
+    },
+    {
+      "name": "RasterTask",
+      "count": 132,
+      "inclusive_total_ms": 35.611999999999995,
+      "max_ms": 2.546
+    },
+    {
+      "name": "V8.GC_SCAVENGER_BACKGROUND_SCAVENGE_PARALLEL",
+      "count": 27,
+      "inclusive_total_ms": 29.98899999999999,
+      "max_ms": 3.813
+    },
+    {
+      "name": "MajorGC",
+      "count": 1,
+      "inclusive_total_ms": 28.106,
+      "max_ms": 28.106
+    },
+    {
+      "name": "V8.GCFinalizeMC",
+      "count": 1,
+      "inclusive_total_ms": 28.064,
+      "max_ms": 28.064
+    },
+    {
+      "name": "V8.GC_MARK_COMPACTOR",
+      "count": 1,
+      "inclusive_total_ms": 28.048,
+      "max_ms": 28.048
+    },
+    {
+      "name": "v8.produceCache",
+      "count": 20,
+      "inclusive_total_ms": 22.568999999999996,
+      "max_ms": 4.028
+    },
+    {
+      "name": "V8.GCIncrementalMarking",
+      "count": 85,
+      "inclusive_total_ms": 19.965,
+      "max_ms": 1.969
+    },
+    {
+      "name": "V8.GC_MC_INCREMENTAL",
+      "count": 85,
+      "inclusive_total_ms": 19.586000000000016,
+      "max_ms": 1.962
+    },
+    {
+      "name": "V8.GC_MC_INCREMENTAL_EMBEDDER_TRACING",
+      "count": 85,
+      "inclusive_total_ms": 18.536000000000005,
+      "max_ms": 1.906
+    },
+    {
+      "name": "V8.GC_MC_MARK",
+      "count": 1,
+      "inclusive_total_ms": 15.92,
+      "max_ms": 15.92
+    },
+    {
+      "name": "V8.GC_MC_MARK_FULL_CLOSURE_PARALLEL",
+      "count": 1,
+      "inclusive_total_ms": 15.52,
+      "max_ms": 15.52
+    },
+    {
+      "name": "V8.GC_MC_BACKGROUND_EVACUATE_COPY",
+      "count": 4,
+      "inclusive_total_ms": 15.178999999999998,
+      "max_ms": 5.055
+    },
+    {
+      "name": "Layerize",
+      "count": 10,
+      "inclusive_total_ms": 15.144000000000002,
+      "max_ms": 10.122
+    },
+    {
+      "name": "V8.GC_MC_MARK_WEAK_CLOSURE_EPHEMERON_MARKING",
+      "count": 4,
+      "inclusive_total_ms": 14.672,
+      "max_ms": 14.664
+    },
+    {
+      "name": "MinorGC",
+      "count": 4,
+      "inclusive_total_ms": 13.669,
+      "max_ms": 4.815
+    },
+    {
+      "name": "V8.GCScavenger",
+      "count": 4,
+      "inclusive_total_ms": 13.487,
+      "max_ms": 4.767
+    },
+    {
+      "name": "V8.GC_SCAVENGER",
+      "count": 4,
+      "inclusive_total_ms": 13.285,
+      "max_ms": 4.664
+    },
+    {
+      "name": "V8.GC_SCAVENGER_SCAVENGE",
+      "count": 4,
+      "inclusive_total_ms": 13.209,
+      "max_ms": 4.644
+    },
+    {
+      "name": "V8.GC_SCAVENGER_SCAVENGE_PARALLEL_PHASE",
+      "count": 4,
+      "inclusive_total_ms": 9.991,
+      "max_ms": 3.88
+    },
+    {
+      "name": "Commit",
+      "count": 66,
+      "inclusive_total_ms": 9.121,
+      "max_ms": 0.786
+    },
+    {
+      "name": "V8.GC_MC_MARK_EMBEDDER_TRACING",
+      "count": 6,
+      "inclusive_total_ms": 8.365,
+      "max_ms": 5.646
+    },
+    {
+      "name": "V8.GC_MC_EVACUATE",
+      "count": 2,
+      "inclusive_total_ms": 8.313,
+      "max_ms": 8.31
+    },
+    {
+      "name": "v8.run",
+      "count": 12,
+      "inclusive_total_ms": 8.254999999999999,
+      "max_ms": 6.865
+    },
+    {
+      "name": "V8.GC_MC_BACKGROUND_SWEEPING",
+      "count": 30,
+      "inclusive_total_ms": 7.881000000000002,
+      "max_ms": 2.365
+    },
+    {
+      "name": "EventDispatch",
+      "count": 1419,
+      "inclusive_total_ms": 7.698000000000429,
+      "max_ms": 0.996
+    },
+    {
+      "name": "UpdateLayer",
+      "count": 364,
+      "inclusive_total_ms": 6.426000000000035,
+      "max_ms": 0.591
+    }
+  ],
+  "trace_note": "Inclusive nested durations overlap and cannot be summed into percentages. Cookies, headers, response bodies and script source are excluded.",
+  "finished_at": "2026-10-20T14:10:14.796Z"
+}

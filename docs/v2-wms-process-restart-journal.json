@@ -1,0 +1,652 @@
+{
+  "run_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df",
+  "company_id": "6b419eca-4b3b-49ce-8d3e-9fe1552cbee4",
+  "warehouse_id": "b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+  "operations": [
+    {
+      "id": "43f0bb0c-eddc-4493-abcf-a125309abe59",
+      "kind": "event",
+      "input": {
+        "schema_version": "2.0",
+        "event_id": "43f0bb0c-eddc-4493-abcf-a125309abe59",
+        "source_system": "SHIFT-8H",
+        "external_entity_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df:seed",
+        "revision": 1,
+        "event_type": "receipt.create",
+        "occurred_at": "2026-10-20T13:38:07.620Z",
+        "correlation_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df",
+        "run_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df",
+        "warehouse_id": "b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+        "payload": {
+          "supplier_id": "e34caaa7-53e6-42b3-895d-66cbdd1157b2",
+          "expected_at": "2027-01-01T00:00:00Z",
+          "lines": [
+            {
+              "id": "11ec70e7-e848-4713-b3d1-e98e682cbb29",
+              "item_id": "f0810f46-b5ff-42c1-b98e-fe27248c20df",
+              "quantity": 10
+            }
+          ]
+        }
+      },
+      "status": "done",
+      "result": {
+        "result": {
+          "id": "c3b3996a-a58a-466e-8c0b-2c66623c6ca4"
+        }
+      }
+    },
+    {
+      "id": "b874907d-06a5-4498-9da5-7e60372f4d27",
+      "kind": "command",
+      "label": "receipt.receive",
+      "status": "done",
+      "input": {
+        "warehouse_id": "b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+        "request_id": "b7f03ba3-a7e6-4a45-8f1c-f8421dc7a852",
+        "command": "receipt.receive",
+        "payload": {
+          "receipt_id": "c3b3996a-a58a-466e-8c0b-2c66623c6ca4",
+          "receiving_id": "d3e56588-0643-486e-9cf6-46f2e27984d2",
+          "lines": [
+            {
+              "line_id": "11ec70e7-e848-4713-b3d1-e98e682cbb29",
+              "quantity": 10,
+              "location_id": "33b2a9c8-a3f1-41b6-b9e4-59aa585685c8"
+            }
+          ],
+          "execution_mode": "automated"
+        }
+      },
+      "result": {
+        "result": {
+          "id": "c3b3996a-a58a-466e-8c0b-2c66623c6ca4",
+          "lot_ids": [
+            "d184646b-f880-4180-9549-216a5053ad0d"
+          ]
+        }
+      }
+    },
+    {
+      "id": "67216298-ab77-4e2c-946b-8ef76116b1de",
+      "kind": "command",
+      "label": "receipt.inspect",
+      "status": "done",
+      "input": {
+        "warehouse_id": "b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+        "request_id": "335f09f7-a084-4263-b91c-0bcef126bbe6",
+        "command": "receipt.inspect",
+        "payload": {
+          "receipt_id": "c3b3996a-a58a-466e-8c0b-2c66623c6ca4",
+          "lines": [
+            {
+              "lot_id": "d184646b-f880-4180-9549-216a5053ad0d",
+              "quantity": 10,
+              "outcome": "normal"
+            }
+          ],
+          "execution_mode": "automated"
+        }
+      },
+      "result": {
+        "result": {
+          "id": "c3b3996a-a58a-466e-8c0b-2c66623c6ca4"
+        }
+      }
+    },
+    {
+      "id": "879e902f-c3e7-4b03-a23c-fb736bab2aa1",
+      "kind": "command",
+      "label": "receipt.putaway",
+      "status": "done",
+      "input": {
+        "warehouse_id": "b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+        "request_id": "ee169c9f-8eb0-4f6b-8c66-d7ffb4b07ba0",
+        "command": "receipt.putaway",
+        "payload": {
+          "receipt_id": "c3b3996a-a58a-466e-8c0b-2c66623c6ca4",
+          "lines": [
+            {
+              "lot_id": "d184646b-f880-4180-9549-216a5053ad0d",
+              "quantity": 10,
+              "location_id": "e09883d8-5650-4ee0-94d1-6249b731b124"
+            }
+          ],
+          "execution_mode": "automated"
+        }
+      },
+      "result": {
+        "result": {
+          "id": "c3b3996a-a58a-466e-8c0b-2c66623c6ca4"
+        }
+      }
+    },
+    {
+      "id": "d172a6df-2776-4821-841d-4330ffadd236",
+      "kind": "event",
+      "input": {
+        "schema_version": "2.0",
+        "event_id": "d172a6df-2776-4821-841d-4330ffadd236",
+        "source_system": "SHIFT-8H",
+        "external_entity_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df:restart-order",
+        "revision": 1,
+        "event_type": "order.create",
+        "occurred_at": "2026-10-20T13:38:07.966Z",
+        "correlation_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df",
+        "run_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df",
+        "warehouse_id": "b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+        "payload": {
+          "delivery": {
+            "partner_id": "e34caaa7-53e6-42b3-895d-66cbdd1157b2",
+            "delivery_destination_id": "494036aa-99f8-489d-8fc8-23057fcf6672"
+          },
+          "due_at": "2027-01-02T00:00:00Z",
+          "lines": [
+            {
+              "id": "afafc767-3b7f-4d58-9768-ca6e9706e001",
+              "item_id": "f0810f46-b5ff-42c1-b98e-fe27248c20df",
+              "quantity": 3
+            }
+          ]
+        }
+      },
+      "status": "done",
+      "result": {
+        "result": {
+          "id": "86438170-a040-472a-942b-5f9de86db30e"
+        }
+      }
+    },
+    {
+      "id": "44691ff4-8a79-4c91-9359-d65c6f3a642c",
+      "kind": "command",
+      "label": "order.reserve",
+      "status": "done",
+      "input": {
+        "warehouse_id": "b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+        "request_id": "5e1de21d-c774-4ec9-aebe-371252ce70bc",
+        "command": "order.reserve",
+        "payload": {
+          "order_id": "86438170-a040-472a-942b-5f9de86db30e",
+          "partial": false,
+          "lines": [
+            {
+              "line_id": "afafc767-3b7f-4d58-9768-ca6e9706e001",
+              "quantity": 3,
+              "location_id": "e09883d8-5650-4ee0-94d1-6249b731b124"
+            }
+          ],
+          "execution_mode": "automated"
+        }
+      },
+      "result": {
+        "result": {
+          "id": "86438170-a040-472a-942b-5f9de86db30e"
+        }
+      }
+    },
+    {
+      "id": "c7424dbe-4b0a-4fbe-a0b7-2f025ead0d2b",
+      "kind": "command",
+      "label": "order.pick",
+      "status": "done",
+      "input": {
+        "warehouse_id": "b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+        "request_id": "05c2673e-25c7-4f51-9528-27cf7a3cf6fe",
+        "command": "order.pick",
+        "payload": {
+          "order_id": "86438170-a040-472a-942b-5f9de86db30e",
+          "lines": [
+            {
+              "reservation_id": "319fe6bc-736a-4382-bc88-634dccf4bf6a",
+              "quantity": 3,
+              "location_id": "9b5f1419-593e-4bf1-89be-5965b0121873",
+              "scanned_item_id": "f0810f46-b5ff-42c1-b98e-fe27248c20df",
+              "scanned_location_id": "e09883d8-5650-4ee0-94d1-6249b731b124"
+            }
+          ],
+          "execution_mode": "automated"
+        }
+      },
+      "result": {
+        "result": {
+          "id": "86438170-a040-472a-942b-5f9de86db30e",
+          "pick_ids": [
+            "50b5f63b-5e1c-4ed8-b333-5d39bb47553e"
+          ]
+        }
+      }
+    },
+    {
+      "id": "1ee12f03-4206-4ca9-a293-947cdec1b620",
+      "kind": "command",
+      "label": "package.create",
+      "status": "done",
+      "input": {
+        "warehouse_id": "b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+        "request_id": "2d4a1fbc-d46b-4d12-9aa1-ada3e5e0f73c",
+        "command": "package.create",
+        "payload": {
+          "order_id": "86438170-a040-472a-942b-5f9de86db30e",
+          "lines": [
+            {
+              "pick_id": "50b5f63b-5e1c-4ed8-b333-5d39bb47553e",
+              "quantity": 3
+            }
+          ],
+          "execution_mode": "automated"
+        }
+      },
+      "result": {
+        "result": {
+          "id": "fd92450f-6d3a-4166-98ae-a55534f97775"
+        }
+      }
+    },
+    {
+      "id": "30d555d8-42f8-4065-9027-16c79b7a73d4",
+      "kind": "command",
+      "label": "shipment.create",
+      "status": "done",
+      "input": {
+        "warehouse_id": "b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+        "request_id": "b58f58d9-8bb4-41f2-a15a-e71e7245bcb5",
+        "command": "shipment.create",
+        "payload": {
+          "package_ids": [
+            "fd92450f-6d3a-4166-98ae-a55534f97775"
+          ],
+          "handover_by": "Synthetic restart worker",
+          "carrier": "RESTART-TEST",
+          "execution_mode": "automated"
+        }
+      },
+      "result": {
+        "result": {
+          "id": "67770e49-e693-4cf4-9ee7-f843468847ae"
+        }
+      }
+    }
+  ],
+  "http": [
+    {
+      "role": "source",
+      "path": "/api/v2/integration/connection",
+      "method": "GET",
+      "status": 200,
+      "body_sha256": null,
+      "at": "2026-10-20T13:38:07.576Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow?warehouse_id=b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+      "method": "GET",
+      "status": 200,
+      "body_sha256": null,
+      "at": "2026-10-20T13:38:07.614Z"
+    },
+    {
+      "role": "source",
+      "path": "/api/v2/integration/events",
+      "method": "POST",
+      "status": 202,
+      "body_sha256": "9cc97c09ac146fc816d20d208eed3e7cb408dbdfb24d52210df3dfc3c15f8fa5",
+      "at": "2026-10-20T13:38:07.666Z"
+    },
+    {
+      "role": "process",
+      "path": "/api/v2/integration/process",
+      "method": "POST",
+      "status": 200,
+      "body_sha256": "f579092a049c44edd869d16b2254888dd25354afff0130a9b0aba9d5df193731",
+      "at": "2026-10-20T13:38:07.774Z"
+    },
+    {
+      "role": "source",
+      "path": "/api/v2/integration/events?warehouse_id=b8f99445-94f9-4b13-bfc6-25e6a58beccc&event_id=43f0bb0c-eddc-4493-abcf-a125309abe59",
+      "method": "GET",
+      "status": 200,
+      "body_sha256": null,
+      "at": "2026-10-20T13:38:07.797Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow",
+      "method": "POST",
+      "status": 200,
+      "body_sha256": "3bc6568a7c35496e169689f1e8f6cb8908519fa60e4c8da2b585f02a0b249700",
+      "at": "2026-10-20T13:38:07.850Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow?warehouse_id=b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+      "method": "GET",
+      "status": 200,
+      "body_sha256": null,
+      "at": "2026-10-20T13:38:07.873Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow",
+      "method": "POST",
+      "status": 200,
+      "body_sha256": "0246e8a75436911de723534aa631feac0d80b03256031aab094a55415e5a326c",
+      "at": "2026-10-20T13:38:07.910Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow",
+      "method": "POST",
+      "status": 200,
+      "body_sha256": "8a732439622455d640da4236d02dc97986cf4aeec22401302bc03bdcda81a30f",
+      "at": "2026-10-20T13:38:07.964Z"
+    },
+    {
+      "role": "source",
+      "path": "/api/v2/integration/events",
+      "method": "POST",
+      "status": 202,
+      "body_sha256": "7a2026dcebbc8ff7514e2a2927a0ad990bf6b4fc3167814477b79983d3bd568d",
+      "at": "2026-10-20T13:38:07.990Z"
+    },
+    {
+      "role": "source",
+      "path": "/api/v2/integration/events?warehouse_id=b8f99445-94f9-4b13-bfc6-25e6a58beccc&event_id=d172a6df-2776-4821-841d-4330ffadd236",
+      "method": "GET",
+      "status": 200,
+      "body_sha256": null,
+      "at": "2026-10-20T13:38:08.004Z"
+    },
+    {
+      "role": "source",
+      "path": "/api/v2/integration/connection",
+      "method": "GET",
+      "status": 200,
+      "body_sha256": null,
+      "at": "2026-10-20T13:38:08.821Z"
+    },
+    {
+      "role": "source",
+      "path": "/api/v2/integration/events?warehouse_id=b8f99445-94f9-4b13-bfc6-25e6a58beccc&event_id=d172a6df-2776-4821-841d-4330ffadd236",
+      "method": "GET",
+      "status": 200,
+      "body_sha256": null,
+      "at": "2026-10-20T13:38:08.871Z"
+    },
+    {
+      "role": "source",
+      "path": "/api/v2/integration/events",
+      "method": "POST",
+      "status": 202,
+      "body_sha256": "7a2026dcebbc8ff7514e2a2927a0ad990bf6b4fc3167814477b79983d3bd568d",
+      "at": "2026-10-20T13:38:08.901Z"
+    },
+    {
+      "role": "process",
+      "path": "/api/v2/integration/process",
+      "method": "POST",
+      "status": 200,
+      "body_sha256": "f579092a049c44edd869d16b2254888dd25354afff0130a9b0aba9d5df193731",
+      "at": "2026-10-20T13:38:09.018Z"
+    },
+    {
+      "role": "source",
+      "path": "/api/v2/integration/events?warehouse_id=b8f99445-94f9-4b13-bfc6-25e6a58beccc&event_id=d172a6df-2776-4821-841d-4330ffadd236",
+      "method": "GET",
+      "status": 200,
+      "body_sha256": null,
+      "at": "2026-10-20T13:38:09.045Z"
+    },
+    {
+      "role": "source",
+      "path": "/api/v2/integration/events",
+      "method": "POST",
+      "status": 202,
+      "body_sha256": "7a2026dcebbc8ff7514e2a2927a0ad990bf6b4fc3167814477b79983d3bd568d",
+      "at": "2026-10-20T13:38:09.064Z"
+    },
+    {
+      "role": "process",
+      "path": "/api/v2/integration/process",
+      "method": "POST",
+      "status": 200,
+      "body_sha256": "f579092a049c44edd869d16b2254888dd25354afff0130a9b0aba9d5df193731",
+      "at": "2026-10-20T13:38:09.097Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow",
+      "method": "POST",
+      "status": 200,
+      "body_sha256": "1a9952ffe6af72549b322ffd37b138318e6eb3647d0a6a4f043b54ccdffc8972",
+      "at": "2026-10-20T13:38:09.167Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow",
+      "method": "POST",
+      "status": 200,
+      "body_sha256": "1a9952ffe6af72549b322ffd37b138318e6eb3647d0a6a4f043b54ccdffc8972",
+      "at": "2026-10-20T13:38:09.215Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow?warehouse_id=b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+      "method": "GET",
+      "status": 200,
+      "body_sha256": null,
+      "at": "2026-10-20T13:38:09.242Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow",
+      "method": "POST",
+      "status": 200,
+      "body_sha256": "f7460a3489ae200eae8284bc183b45c10be42487f962859ab13ba3fdc288f2e6",
+      "at": "2026-10-20T13:38:09.291Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow?warehouse_id=b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+      "method": "GET",
+      "status": 200,
+      "body_sha256": null,
+      "at": "2026-10-20T13:38:09.323Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow",
+      "method": "POST",
+      "status": 200,
+      "body_sha256": "5bc52917520a5134ae9886c5a35c6a1eb614cb75d67dc5bf7c9be96692e3851a",
+      "at": "2026-10-20T13:38:09.396Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow",
+      "method": "POST",
+      "status": 200,
+      "body_sha256": "a68418767f30d3a633a4eb17b89a5b4785c4e6136d5df5ab61416bc823b15841",
+      "at": "2026-10-20T13:38:09.492Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow?warehouse_id=b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+      "method": "GET",
+      "status": 200,
+      "body_sha256": null,
+      "at": "2026-10-20T13:38:09.539Z"
+    },
+    {
+      "role": "worker",
+      "path": "/api/v2/workflow/ledger?warehouse_id=b8f99445-94f9-4b13-bfc6-25e6a58beccc&boundary=9&limit=500",
+      "method": "GET",
+      "status": 200,
+      "body_sha256": null,
+      "at": "2026-10-20T13:38:09.589Z"
+    }
+  ],
+  "phase": "completed",
+  "pending_event": {
+    "schema_version": "2.0",
+    "event_id": "d172a6df-2776-4821-841d-4330ffadd236",
+    "source_system": "SHIFT-8H",
+    "external_entity_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df:restart-order",
+    "revision": 1,
+    "event_type": "order.create",
+    "occurred_at": "2026-10-20T13:38:07.966Z",
+    "correlation_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df",
+    "run_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df",
+    "warehouse_id": "b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+    "payload": {
+      "delivery": {
+        "partner_id": "e34caaa7-53e6-42b3-895d-66cbdd1157b2",
+        "delivery_destination_id": "494036aa-99f8-489d-8fc8-23057fcf6672"
+      },
+      "due_at": "2027-01-02T00:00:00Z",
+      "lines": [
+        {
+          "id": "afafc767-3b7f-4d58-9768-ca6e9706e001",
+          "item_id": "f0810f46-b5ff-42c1-b98e-fe27248c20df",
+          "quantity": 3
+        }
+      ]
+    }
+  },
+  "pending_body_sha256": "7a2026dcebbc8ff7514e2a2927a0ad990bf6b4fc3167814477b79983d3bd568d",
+  "accepted_event_row_id": "18c82d26-ca70-4ecd-917e-b2d9e7723ac2",
+  "accepted_at": "2026-10-20T13:38:07.973Z",
+  "report": {
+    "run_id": "a54b362a-2fd0-43d8-9369-fdf89b5a91df",
+    "verdict": "passed",
+    "company_id": "6b419eca-4b3b-49ce-8d3e-9fe1552cbee4",
+    "warehouse_id": "b8f99445-94f9-4b13-bfc6-25e6a58beccc",
+    "event_id": "d172a6df-2776-4821-841d-4330ffadd236",
+    "event_row_id": "18c82d26-ca70-4ecd-917e-b2d9e7723ac2",
+    "body_sha256": "7a2026dcebbc8ff7514e2a2927a0ad990bf6b4fc3167814477b79983d3bd568d",
+    "recovered_pending_event": true,
+    "same_event_retry_deduplicated": true,
+    "same_request_retry_reservation": 3,
+    "reserve_ledger_rows": 1,
+    "source_orders": 1,
+    "shipped": 3,
+    "full_ledger_pages": 1,
+    "independent_reconciliation": {
+      "expected": {
+        "locations": {
+          "33b2a9c8-a3f1-41b6-b9e4-59aa585685c8": {
+            "S": 0,
+            "R": 0,
+            "P": 0,
+            "Q": 0,
+            "B": 0
+          },
+          "e09883d8-5650-4ee0-94d1-6249b731b124": {
+            "S": 7,
+            "R": 0,
+            "P": 0,
+            "Q": 0,
+            "B": 0
+          },
+          "9b5f1419-593e-4bf1-89be-5965b0121873": {
+            "S": 0,
+            "R": 0,
+            "P": 0,
+            "Q": 0,
+            "B": 0
+          }
+        },
+        "order": {
+          "ordered": 3,
+          "reserved": 0,
+          "picked": 0,
+          "shipped": 3
+        },
+        "totals": {
+          "S": 7,
+          "R": 0,
+          "P": 0,
+          "Q": 0,
+          "B": 0
+        }
+      },
+      "actual": {
+        "33b2a9c8-a3f1-41b6-b9e4-59aa585685c8": {
+          "B": 0,
+          "P": 0,
+          "Q": 0,
+          "R": 0,
+          "S": 0,
+          "item_id": "f0810f46-b5ff-42c1-b98e-fe27248c20df",
+          "location_id": "33b2a9c8-a3f1-41b6-b9e4-59aa585685c8",
+          "location_kind": "RECEIVING",
+          "reservation_blocked": false,
+          "A": 0,
+          "H": 0,
+          "locked": false
+        },
+        "e09883d8-5650-4ee0-94d1-6249b731b124": {
+          "B": 0,
+          "P": 0,
+          "Q": 0,
+          "R": 0,
+          "S": 7,
+          "item_id": "f0810f46-b5ff-42c1-b98e-fe27248c20df",
+          "location_id": "e09883d8-5650-4ee0-94d1-6249b731b124",
+          "location_kind": "STORAGE",
+          "reservation_blocked": false,
+          "A": 7,
+          "H": 7,
+          "locked": false
+        },
+        "9b5f1419-593e-4bf1-89be-5965b0121873": {
+          "B": 0,
+          "P": 0,
+          "Q": 0,
+          "R": 0,
+          "S": 0,
+          "item_id": "f0810f46-b5ff-42c1-b98e-fe27248c20df",
+          "location_id": "9b5f1419-593e-4bf1-89be-5965b0121873",
+          "location_kind": "STAGING",
+          "reservation_blocked": false,
+          "A": 0,
+          "H": 0,
+          "locked": false
+        }
+      },
+      "ledger": {
+        "33b2a9c8-a3f1-41b6-b9e4-59aa585685c8": {
+          "S": 0,
+          "R": 0,
+          "P": 0,
+          "Q": 0,
+          "B": 0
+        },
+        "e09883d8-5650-4ee0-94d1-6249b731b124": {
+          "S": 7,
+          "R": 0,
+          "P": 0,
+          "Q": 0,
+          "B": 0
+        },
+        "9b5f1419-593e-4bf1-89be-5965b0121873": {
+          "S": 0,
+          "R": 0,
+          "P": 0,
+          "Q": 0,
+          "B": 0
+        }
+      },
+      "differences": [],
+      "passed": true,
+      "boundary": {
+        "workflow_version": 9,
+        "ledger_rows": 8,
+        "at": "2026-10-20T13:38:09.594Z"
+      }
+    },
+    "limitations": [
+      "Local owned WMS process restart; no hosting-provider recovery, RPO/RTO or field-device claim."
+    ]
+  }
+}

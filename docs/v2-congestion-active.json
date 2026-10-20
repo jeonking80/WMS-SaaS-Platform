@@ -1,0 +1,155 @@
+{
+  "run_id": "89990772-835e-4b2d-b9ee-4750ad668da0",
+  "status": "running_not_a_pass",
+  "generated_at": "2026-10-20T14:37:02.724Z",
+  "process_started_at": "2026-10-20T14:35:55.317Z",
+  "client_pid": 184103,
+  "runtime_pid": 175965,
+  "runtime_build_id": "-oBhg3XQlSYuVZ5MbZfge",
+  "client_modules": [
+    {
+      "file": "profile.mjs",
+      "sha256": "db2f803b581d760fbaeeb291e97bb9285e3c0f607a751ff8d863ab6d2039a8ff"
+    },
+    {
+      "file": "profile-plan.mjs",
+      "sha256": "d7ce46fb8135686261acf0cfcbbb62e585f3f08c900b9378ba13b66383d82b54"
+    },
+    {
+      "file": "runner.mjs",
+      "sha256": "294a30f2e48e0319be6ec165d42ddb5a67431e17cb20be342466f738f80a5d45"
+    },
+    {
+      "file": "planner.mjs",
+      "sha256": "500f76774a771d0f20d19cd271cec034b9ec3aa874114bec484f75871cd6be19"
+    },
+    {
+      "file": "store.mjs",
+      "sha256": "5d03cd21cb52b2b5b892d09f06a0065b3c81c88c50b382862a9ef750192fb83f"
+    },
+    {
+      "file": "oracle.mjs",
+      "sha256": "69954edc764625c5779ff073b1722ce63c7fe525eaa1c894221749298312bffd"
+    },
+    {
+      "file": "scheduling.mjs",
+      "sha256": "4acc27b880914f612e49473ee5379004bdb34073e5b2dc0bf5cec19dfe638bff"
+    },
+    {
+      "file": "shift-profile.mjs",
+      "sha256": "852a6019df4f27c2513414bd997048ea369944d32b39f95b41349bc0e1fd73fb"
+    }
+  ],
+  "profile": "congestion",
+  "required_real_duration_ms": 1500000,
+  "required_unique_events": 5400,
+  "companies": [
+    {
+      "run_id": "89990772-835e-4b2d-b9ee-4750ad668da0:0",
+      "status": "running",
+      "phase": "1_per_second_first_10_minutes",
+      "measured_started_at": "2026-10-20T14:36:51.646Z",
+      "planned_end_at": "2026-10-20T15:01:51.646Z",
+      "recovery_deadline_at": "2026-10-20T15:11:51.646Z",
+      "elapsed_ms": 11078,
+      "remaining_ms": 1488922,
+      "target_events": 2700,
+      "scheduled_rate_per_second": 1,
+      "planned_due": 12,
+      "accepted_unique_events": 11,
+      "finalized_unique_events": 10,
+      "undelivered_due_events": 1,
+      "queue_backlog": 1,
+      "maximum_delivery_lateness_ms": 846,
+      "completed_shipments": 3,
+      "completed_receipt_putaways_including_seed": 100,
+      "normal_window_api_calls": 62,
+      "normal_window_technical_failures": 0,
+      "status_counts": [
+        {
+          "kind": "command",
+          "status": "done",
+          "n": 323
+        },
+        {
+          "kind": "command",
+          "status": "unconfirmed",
+          "n": 5
+        },
+        {
+          "kind": "event",
+          "status": "done",
+          "n": 109
+        },
+        {
+          "kind": "event",
+          "status": "expected_business_rejected",
+          "n": 1
+        },
+        {
+          "kind": "event",
+          "status": "unconfirmed",
+          "n": 1
+        },
+        {
+          "kind": "event",
+          "status": "unsent",
+          "n": 2689
+        }
+      ]
+    },
+    {
+      "run_id": "89990772-835e-4b2d-b9ee-4750ad668da0:1",
+      "status": "running",
+      "phase": "1_per_second_first_10_minutes",
+      "measured_started_at": "2026-10-20T14:36:51.646Z",
+      "planned_end_at": "2026-10-20T15:01:51.646Z",
+      "recovery_deadline_at": "2026-10-20T15:11:51.646Z",
+      "elapsed_ms": 11078,
+      "remaining_ms": 1488922,
+      "target_events": 2700,
+      "scheduled_rate_per_second": 1,
+      "planned_due": 12,
+      "accepted_unique_events": 11,
+      "finalized_unique_events": 10,
+      "undelivered_due_events": 1,
+      "queue_backlog": 1,
+      "maximum_delivery_lateness_ms": 876,
+      "completed_shipments": 4,
+      "completed_receipt_putaways_including_seed": 100,
+      "normal_window_api_calls": 63,
+      "normal_window_technical_failures": 0,
+      "status_counts": [
+        {
+          "kind": "command",
+          "status": "done",
+          "n": 324
+        },
+        {
+          "kind": "command",
+          "status": "waiting_stock",
+          "n": 1
+        },
+        {
+          "kind": "event",
+          "status": "done",
+          "n": 110
+        },
+        {
+          "kind": "event",
+          "status": "unconfirmed",
+          "n": 2
+        },
+        {
+          "kind": "event",
+          "status": "unsent",
+          "n": 2688
+        }
+      ]
+    }
+  ],
+  "final_reconciliation": "pending until all source and physical work settles at the frozen ledger boundary",
+  "resume": {
+    "command": "node --env-file=/tmp/v2-sim-shared-bindings.env /tmp/v2-congestion-client-start.mjs 89990772-835e-4b2d-b9ee-4750ad668da0"
+  }
+}

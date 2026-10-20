@@ -22,13 +22,16 @@
     "db:bootstrap": "node --env-file-if-exists=.env.local scripts/db-bootstrap.mjs",
     "auth:seed": "node --env-file-if-exists=.env.local scripts/auth-seed.mjs",
     "db:setup": "npm run db:bootstrap && npm run db:migrate && npm run db:bootstrap -- --grant && npm run db:seed && npm run auth:seed",
-    "verify": "npm run typecheck && npm run test:unit && npm run test:integration && npm run build && npm run test:e2e",
+    "verify": "npm run typecheck && npm run test:unit && npm run test:simulator && npm run test:integration && npm run build && npm run test:e2e",
     "test:performance": "node --env-file-if-exists=.env.local scripts/performance.mjs",
     "db:backup": "node --env-file-if-exists=.env.local scripts/db-backup.mjs",
     "db:restore": "node --env-file-if-exists=.env.local scripts/db-restore.mjs",
     "test:restore": "node --env-file-if-exists=.env.local scripts/verify-restore.mjs",
     "demo:seed": "node --env-file-if-exists=.env.local scripts/demo-seed.mjs",
-    "demo:smoke": "node --env-file-if-exists=.env.local scripts/demo-smoke.mjs"
+    "demo:smoke": "node --env-file-if-exists=.env.local scripts/demo-smoke.mjs",
+    "test:simulator": "npm --prefix apps/simulator test",
+    "company:provision": "node --env-file-if-exists=.env.local scripts/provision-company.mjs",
+    "operations:monitor": "node --env-file-if-exists=.env.local scripts/v2-monitor.mjs"
   },
   "dependencies": {
     "better-auth": "1.7.11",

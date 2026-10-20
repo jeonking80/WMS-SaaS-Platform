@@ -1,0 +1,728 @@
+{
+  "schema_version": "1.0",
+  "verdict": "passed_six_additional_actual_http_acceptance_scenarios",
+  "generated_at": "2026-10-20T13:44:14.392Z",
+  "execution_scope": "Actual local production-build HTTP with durable SQLite journal, dedicated disposable items/locations and independently planned per-location bucket deltas; no WMS modules or database access in simulator.",
+  "server": {
+    "build_id": "VuDcSWeSgbT_5k8fDYdmc",
+    "port": 3023,
+    "runtime_path": "/tmp/wms-v2-acceptance-runtime-1792503378076",
+    "bundle_sha256": "30599f0de028a033c587d9c18a3fa49c1022a074578f693a3302a0310c381fb1",
+    "environment": "test",
+    "company_id": "69b9bc57-6220-4f93-825a-bdc03a5b23f4",
+    "warehouse_id": "99647df2-354e-4081-87a9-d86547971c2d",
+    "stopped_after_execution_at": "2026-10-20T13:44:30.140Z",
+    "process_ownership_evidence": "Owned detached PID recorded at creation; /proc cwd inspection is restricted by the runtime."
+  },
+  "runner": {
+    "path": "apps/simulator/scenarios-acceptance.mjs",
+    "sha256": "b59dc64a902236a8f6aacc88dab526290aae6fbc5f4aca56a854a4544ebf0f42",
+    "journal": "artifacts/v2-acceptance-final/acceptance.sqlite"
+  },
+  "original_profile_catalog": {
+    "companies": 2,
+    "items_per_company": [
+      100,
+      100
+    ],
+    "identity_unchanged": true,
+    "no_catalog_item_or_location_used": true
+  },
+  "scenarios": [
+    {
+      "scenario": "T01",
+      "run_id": "cad567a4-2a1f-4f51-8e06-5dc58872c80f",
+      "report": "artifacts/v2-acceptance-final/cad567a4-2a1f-4f51-8e06-5dc58872c80f.json",
+      "sha256": "498ae7d9843c69f479c792bb5afb847cfdfd575705a9195f202506cd1f81fb26",
+      "verdict": "passed",
+      "operations": 29,
+      "expected_rejections": 2,
+      "api_calls": 43,
+      "read_calls": 12,
+      "write_calls": 31,
+      "required_checks": [
+        "partial_overage_105",
+        "overage_approved_separately",
+        "quality_hold_preserved",
+        "split_putaway",
+        "overage_rejected_preserves_physical",
+        "unapproved_overage_no_effect",
+        "rejected_overage_no_effect",
+        "two_storage_locations_used"
+      ],
+      "all_required_checks_passed": true,
+      "checks": [
+        {
+          "label": "partial_receiving_40",
+          "passed": true,
+          "expected": {
+            "Q": 40,
+            "B": 0,
+            "H": 40,
+            "A": 0
+          },
+          "actual": {
+            "S": 0,
+            "R": 0,
+            "P": 0,
+            "Q": 40,
+            "B": 0,
+            "A": 0,
+            "H": 40
+          }
+        },
+        {
+          "label": "partial_overage_105",
+          "passed": true,
+          "expected": {
+            "S": 0,
+            "Q": 100,
+            "B": 5,
+            "H": 105,
+            "A": 0
+          },
+          "actual": {
+            "S": 0,
+            "R": 0,
+            "P": 0,
+            "Q": 100,
+            "B": 5,
+            "A": 0,
+            "H": 105
+          }
+        },
+        {
+          "label": "inbound.unapprovedRelease",
+          "passed": true,
+          "expected_error": "OVERAGE_APPROVAL_REQUIRED"
+        },
+        {
+          "label": "unapproved_overage_no_effect",
+          "passed": true
+        },
+        {
+          "label": "overage_approved_separately",
+          "passed": true
+        },
+        {
+          "label": "quality_hold_preserved",
+          "passed": true,
+          "expected": {
+            "Q": 100,
+            "B": 5,
+            "H": 105,
+            "A": 0
+          },
+          "actual": {
+            "S": 0,
+            "R": 0,
+            "P": 0,
+            "Q": 100,
+            "B": 5,
+            "A": 0,
+            "H": 105
+          }
+        },
+        {
+          "label": "split_putaway",
+          "passed": true,
+          "expected": {
+            "S": 100,
+            "Q": 0,
+            "B": 5,
+            "A": 100,
+            "H": 105
+          },
+          "actual": {
+            "S": 100,
+            "R": 0,
+            "P": 0,
+            "Q": 0,
+            "B": 5,
+            "A": 100,
+            "H": 105
+          }
+        },
+        {
+          "label": "two_storage_locations_used",
+          "passed": true
+        },
+        {
+          "label": "overage_rejected_preserves_physical",
+          "passed": true
+        },
+        {
+          "label": "inbound.rejectedRelease",
+          "passed": true,
+          "expected_error": "OVERAGE_APPROVAL_REQUIRED"
+        },
+        {
+          "label": "rejected_overage_no_effect",
+          "passed": true
+        }
+      ],
+      "oracle_differences": 0,
+      "pending": 0,
+      "not_executed": [],
+      "fixture": {
+        "item_id": "a3ff67ce-32fc-4f61-857b-0b4ec6909602",
+        "locations": {
+          "receiving_id": "f6a9489e-cef1-4bf2-9529-246b411d28d9",
+          "storage_id": "8f8576aa-4c28-4e48-bb75-27e040f27958",
+          "storage2_id": "da65baba-35b3-4b88-9308-fc2ab5f6270f",
+          "staging_id": "4e306448-e366-4450-a98a-1958ee485aa0",
+          "hold_id": "a67ecab7-30d6-4d8f-9adc-950a005f2771"
+        },
+        "baseline": "dedicated unused item zero"
+      },
+      "external_results": [],
+      "started_at": "2026-10-20T13:42:32.744Z",
+      "finished_at": "2026-10-20T13:42:35.457Z"
+    },
+    {
+      "scenario": "T02",
+      "run_id": "db0e9378-48c8-44e5-87ca-6998a833dd64",
+      "report": "artifacts/v2-acceptance-final/db0e9378-48c8-44e5-87ca-6998a833dd64.json",
+      "sha256": "9519623056d4a35fdcae8e904d0a813724c4644ff77518d98422c2d19a14faa2",
+      "verdict": "passed",
+      "operations": 20,
+      "expected_rejections": 1,
+      "api_calls": 35,
+      "read_calls": 11,
+      "write_calls": 24,
+      "required_checks": [
+        "concurrent_reservations_one_winner",
+        "shortage_remaining_tracked",
+        "explicit_rereservation_after_receipt"
+      ],
+      "all_required_checks_passed": true,
+      "checks": [
+        {
+          "label": "race.reserve.1",
+          "passed": true,
+          "expected_error": "INSUFFICIENT_STOCK"
+        },
+        {
+          "label": "concurrent_reservations_one_winner",
+          "passed": true,
+          "accepted": 1,
+          "rejected": 1,
+          "attempted_each": 40,
+          "physical_stock": 50
+        },
+        {
+          "label": "shortage_remaining_tracked",
+          "passed": true,
+          "remaining": 30,
+          "partial_reserved": 10
+        },
+        {
+          "label": "explicit_rereservation_after_receipt",
+          "passed": true,
+          "ordered": 80,
+          "reserved": 80,
+          "remaining": 0
+        }
+      ],
+      "oracle_differences": 0,
+      "pending": 0,
+      "not_executed": [],
+      "fixture": {
+        "item_id": "a3c563d3-d378-45ac-b1dd-8be4324f1b5d",
+        "locations": {
+          "receiving_id": "23dfe2fa-fefa-4928-8277-aefd7c8f2ab1",
+          "storage_id": "1d287fe6-f2fd-43fb-bef3-5b774ff4a8a3",
+          "storage2_id": "7a754835-ab94-4929-a53b-81b255ee8f49",
+          "staging_id": "0c02327c-a99c-471d-9f29-5f149fc68b6b",
+          "hold_id": "d0e5302b-8182-4b5a-b6d6-d9fa1697a52b"
+        },
+        "baseline": "dedicated unused item zero"
+      },
+      "external_results": [],
+      "started_at": "2026-10-20T13:42:35.563Z",
+      "finished_at": "2026-10-20T13:42:36.894Z"
+    },
+    {
+      "scenario": "T05",
+      "run_id": "ff293b49-1979-4ef8-9135-9917ae90cdde",
+      "report": "artifacts/v2-acceptance-final/ff293b49-1979-4ef8-9135-9917ae90cdde.json",
+      "sha256": "beff9667a7f738f2ffab4be563fa7722e805d341b645705444a433d2077453d1",
+      "verdict": "passed",
+      "operations": 22,
+      "expected_rejections": 0,
+      "api_calls": 40,
+      "read_calls": 14,
+      "write_calls": 26,
+      "required_checks": [
+        "delivery_failure_no_stock",
+        "return_request_no_stock",
+        "return_actual_arrival_only",
+        "partial_return_close_and_inspect"
+      ],
+      "all_required_checks_passed": true,
+      "checks": [
+        {
+          "label": "delivery_failure_no_stock",
+          "passed": true,
+          "expected": {
+            "S": 0,
+            "R": 0,
+            "P": 0,
+            "Q": 0,
+            "B": 0,
+            "H": 0
+          },
+          "actual": {
+            "S": 0,
+            "R": 0,
+            "P": 0,
+            "Q": 0,
+            "B": 0,
+            "A": 0,
+            "H": 0
+          }
+        },
+        {
+          "label": "return_request_no_stock",
+          "passed": true,
+          "expected": {
+            "H": 0,
+            "Q": 0
+          },
+          "actual": {
+            "S": 0,
+            "R": 0,
+            "P": 0,
+            "Q": 0,
+            "B": 0,
+            "A": 0,
+            "H": 0
+          }
+        },
+        {
+          "label": "return_actual_arrival_only",
+          "passed": true,
+          "expected": {
+            "Q": 3,
+            "H": 3,
+            "A": 0
+          },
+          "actual": {
+            "S": 0,
+            "R": 0,
+            "P": 0,
+            "Q": 3,
+            "B": 0,
+            "A": 0,
+            "H": 3
+          }
+        },
+        {
+          "label": "partial_return_close_and_inspect",
+          "passed": true,
+          "approved": 5,
+          "arrived": 3,
+          "closed_unreceived": 2,
+          "normal": 2,
+          "held": 1
+        }
+      ],
+      "oracle_differences": 0,
+      "pending": 0,
+      "not_executed": [],
+      "fixture": {
+        "item_id": "aa7000be-a12d-44d7-ba3c-b1a8b80d50b7",
+        "locations": {
+          "receiving_id": "6c21e224-2d53-40b3-8f19-81aedfa0ad2c",
+          "storage_id": "155222f2-ab5d-4b9c-ad0a-e083be9a6df0",
+          "storage2_id": "c0843498-e458-4d25-bf9d-878f62f16051",
+          "staging_id": "0eaa4d8b-8f9d-4555-aa32-77670377698b",
+          "hold_id": "9c03d5c9-976c-4478-a14e-3a123bca6c8e"
+        },
+        "baseline": "dedicated unused item zero"
+      },
+      "external_results": [
+        {
+          "label": "return.deliveryFailure",
+          "event_id": "444102a2-2281-496a-acd9-10e4d58f05e8",
+          "status": "applied",
+          "reason": null,
+          "object_id": "fe402900-e75d-454d-94ea-ccb3066b1f96"
+        }
+      ],
+      "started_at": "2026-10-20T13:42:37.019Z",
+      "finished_at": "2026-10-20T13:42:38.800Z"
+    },
+    {
+      "scenario": "T06",
+      "run_id": "2e07a046-5266-450a-868c-c7eea16a18dd",
+      "report": "artifacts/v2-acceptance-final/2e07a046-5266-450a-868c-c7eea16a18dd.json",
+      "sha256": "880bfa30533e6d8432e1b3163adb4b2e7c38b844a22279f9df0fee57641563d8",
+      "verdict": "passed",
+      "operations": 37,
+      "expected_rejections": 5,
+      "api_calls": 53,
+      "read_calls": 13,
+      "write_calls": 40,
+      "required_checks": [
+        "wrong_scans_no_effect",
+        "shortage_blocks_location",
+        "count_approval_only_adjustment",
+        "packed_damage_requires_unpack",
+        "damage_preserves_physical_and_order",
+        "replacement_good_only_shipped"
+      ],
+      "all_required_checks_passed": true,
+      "checks": [
+        {
+          "label": "exception.wrongItem",
+          "passed": true,
+          "expected_error": "WRONG_ITEM_SCAN"
+        },
+        {
+          "label": "exception.wrongLocation",
+          "passed": true,
+          "expected_error": "WRONG_LOCATION_SCAN"
+        },
+        {
+          "label": "wrong_scans_no_effect",
+          "passed": true
+        },
+        {
+          "label": "shortage_blocks_location",
+          "passed": true,
+          "expected": {
+            "S": 12,
+            "R": 0,
+            "A": 0,
+            "H": 12
+          },
+          "actual": {
+            "S": 12,
+            "R": 0,
+            "P": 0,
+            "Q": 0,
+            "B": 0,
+            "A": 0,
+            "H": 12
+          }
+        },
+        {
+          "label": "exception.blockedReserve",
+          "passed": true,
+          "expected_error": "INSUFFICIENT_STOCK"
+        },
+        {
+          "label": "count_before_approval_no_effect",
+          "passed": true,
+          "expected": {
+            "S": 12,
+            "A": 0,
+            "H": 12
+          },
+          "actual": {
+            "S": 12,
+            "R": 0,
+            "P": 0,
+            "Q": 0,
+            "B": 0,
+            "A": 0,
+            "H": 12
+          }
+        },
+        {
+          "label": "count_approval_only_adjustment",
+          "passed": true
+        },
+        {
+          "label": "exception.rejectPackedDamage",
+          "passed": true,
+          "expected_error": "UNPACK_REQUIRED"
+        },
+        {
+          "label": "packed_damage_requires_unpack",
+          "passed": true
+        },
+        {
+          "label": "damage_preserves_physical_and_order",
+          "passed": true
+        },
+        {
+          "label": "exception.replacementShort",
+          "passed": true,
+          "expected_error": "INSUFFICIENT_STOCK"
+        },
+        {
+          "label": "replacement_good_only_shipped",
+          "passed": true,
+          "physical_seed": 13,
+          "approved_missing": 1,
+          "shipped_good": 10,
+          "isolated_damaged": 2
+        }
+      ],
+      "oracle_differences": 0,
+      "pending": 0,
+      "not_executed": [],
+      "fixture": {
+        "item_id": "db57325f-d5c9-4aab-8c4d-f3ad2aa965f7",
+        "locations": {
+          "receiving_id": "b1d162fe-676b-4d57-9bdf-c5a2418627a2",
+          "storage_id": "8154fc85-68ac-479a-858e-79a25705447e",
+          "storage2_id": "7fb35159-4207-40b3-82ab-aead8c4cf09d",
+          "staging_id": "547aa6b1-86ad-436b-8105-5b8a97bf3770",
+          "hold_id": "a9c0b896-b4b1-4bc6-b2c1-c4195ad7dffd"
+        },
+        "baseline": "dedicated unused item zero"
+      },
+      "external_results": [],
+      "started_at": "2026-10-20T13:42:38.923Z",
+      "finished_at": "2026-10-20T13:42:41.714Z"
+    },
+    {
+      "scenario": "T07",
+      "run_id": "b4fe7bf1-276f-445a-b31e-58ea286e00b4",
+      "report": "artifacts/v2-acceptance-final/b4fe7bf1-276f-445a-b31e-58ea286e00b4.json",
+      "sha256": "5e839d5af7cf56ed91b28f0050553fd8907a6a70eed49ba339aba43061e6e8fe",
+      "verdict": "passed",
+      "operations": 22,
+      "expected_rejections": 3,
+      "api_calls": 42,
+      "read_calls": 18,
+      "write_calls": 24,
+      "required_checks": [
+        "external_duplicates_one_object",
+        "lost_response_recovered_original",
+        "duplicate_receive_same_request",
+        "new_request_same_physical_rejected",
+        "duplicate_package_and_shipment_no_effect"
+      ],
+      "all_required_checks_passed": true,
+      "checks": [
+        {
+          "label": "external_duplicates_one_object",
+          "passed": true
+        },
+        {
+          "label": "lost_response_recovered_original",
+          "passed": true
+        },
+        {
+          "label": "duplicate_receive_same_request",
+          "passed": true
+        },
+        {
+          "label": "duplicate.receiveNewKey",
+          "passed": true,
+          "expected_error": "RECEIVING_ALREADY_CONFIRMED"
+        },
+        {
+          "label": "new_request_same_physical_rejected",
+          "passed": true
+        },
+        {
+          "label": "duplicate.newKeyPackage",
+          "passed": true,
+          "expected_error": "EXCEEDS_PACKABLE"
+        },
+        {
+          "label": "duplicate.shipNewKey",
+          "passed": true,
+          "expected_error": "INVALID_PACKAGE_STATE"
+        },
+        {
+          "label": "duplicate_package_and_shipment_no_effect",
+          "passed": true
+        }
+      ],
+      "oracle_differences": 0,
+      "pending": 0,
+      "not_executed": [],
+      "fixture": {
+        "item_id": "5429e847-6df7-4829-8c16-70bebde30976",
+        "locations": {
+          "receiving_id": "dd6a6375-0382-49a6-8056-4a506700c971",
+          "storage_id": "443ab3c3-4c33-4839-a7ed-385050859da1",
+          "storage2_id": "fec78147-7ddb-4c9f-93bf-7c024c0f748a",
+          "staging_id": "fb9e25c3-36c5-47ca-a501-5a2aebcf7532",
+          "hold_id": "8b243c6f-ab82-45c4-999a-0a0083d70aea"
+        },
+        "baseline": "dedicated unused item zero"
+      },
+      "external_results": [
+        {
+          "label": "duplicate.receipt",
+          "event_id": "00b136e9-96d6-4c65-a00f-3b27c2fc4582",
+          "status": "applied",
+          "reason": null,
+          "object_id": "aca6c6bd-fba3-4baf-97c9-f91931834941"
+        }
+      ],
+      "started_at": "2026-10-20T13:42:41.823Z",
+      "finished_at": "2026-10-20T13:42:44.386Z"
+    },
+    {
+      "scenario": "T08",
+      "run_id": "6a2eb37b-040c-44fe-8218-ac27368fa6ab",
+      "report": "artifacts/v2-acceptance-final/6a2eb37b-040c-44fe-8218-ac27368fa6ab.json",
+      "sha256": "49a7941c7271f5cf4c0d9fd2e7752143fcfb72a81013560a638be4ba7f6688d0",
+      "verdict": "passed",
+      "operations": 17,
+      "expected_rejections": 3,
+      "api_calls": 46,
+      "read_calls": 21,
+      "write_calls": 25,
+      "required_checks": [
+        "revision_gap_waits",
+        "revision_three_one_two_recovers",
+        "stale_revision_no_regression",
+        "event_content_conflict",
+        "revision_content_conflict",
+        "invalid_reference_business_rejected",
+        "business_rejection_new_revision_recovers",
+        "update_before_create_recovers",
+        "invalid_envelope_classified"
+      ],
+      "all_required_checks_passed": true,
+      "checks": [
+        {
+          "label": "revision_gap_waits",
+          "passed": true
+        },
+        {
+          "label": "revision_three_one_two_recovers",
+          "passed": true,
+          "arrivals": [
+            3,
+            1,
+            2
+          ],
+          "applied": [
+            1,
+            2,
+            3
+          ],
+          "final_quantity": 3
+        },
+        {
+          "label": "stale_revision_no_regression",
+          "passed": true
+        },
+        {
+          "label": "revision.sameEventConflict.accept",
+          "passed": true,
+          "expected_error": "EVENT_CONTENT_CONFLICT"
+        },
+        {
+          "label": "event_content_conflict",
+          "passed": true
+        },
+        {
+          "label": "revision.sameRevisionConflict.accept",
+          "passed": true,
+          "expected_error": "REVISION_CONTENT_CONFLICT"
+        },
+        {
+          "label": "revision_content_conflict",
+          "passed": true
+        },
+        {
+          "label": "invalid_reference_business_rejected",
+          "passed": true
+        },
+        {
+          "label": "business_rejection_new_revision_recovers",
+          "passed": true
+        },
+        {
+          "label": "update_before_create_recovers",
+          "passed": true
+        },
+        {
+          "label": "invalid.envelope.accept",
+          "passed": true,
+          "expected_error": "INVALID_EVENT"
+        },
+        {
+          "label": "invalid_envelope_classified",
+          "passed": true
+        }
+      ],
+      "oracle_differences": 0,
+      "pending": 0,
+      "not_executed": [],
+      "fixture": {
+        "item_id": "702043a0-6711-4c2b-bc3a-458f7709818e",
+        "locations": {
+          "receiving_id": "23f2184a-2baf-4741-8721-343f62959b95",
+          "storage_id": "eeb194f8-b7b2-4a8b-8100-2c4db0f3088a",
+          "storage2_id": "e189b9fa-21b9-414e-aca3-62da1630252d",
+          "staging_id": "0673a945-078b-4878-9456-de284f912969",
+          "hold_id": "ebd22149-a542-4edf-8971-30c7f0d74741"
+        },
+        "baseline": "dedicated unused item zero"
+      },
+      "external_results": [
+        {
+          "label": "revision.three",
+          "event_id": "1864e809-2b3f-4fbb-a586-8119d8a61015",
+          "status": "applied",
+          "reason": null,
+          "object_id": "e1d6819c-680d-41c8-b9b8-357046e7a141"
+        },
+        {
+          "label": "revision.one",
+          "event_id": "1dbb94ee-8769-4c55-a382-995c291548c4",
+          "status": "applied",
+          "reason": null,
+          "object_id": "e1d6819c-680d-41c8-b9b8-357046e7a141"
+        },
+        {
+          "label": "revision.two",
+          "event_id": "312db108-8e2a-4e87-ac15-9a91220e858d",
+          "status": "applied",
+          "reason": null,
+          "object_id": "e1d6819c-680d-41c8-b9b8-357046e7a141"
+        },
+        {
+          "label": "reference.bad",
+          "event_id": "e8583b37-399e-4901-a797-7ecc5e69db5a",
+          "status": "business_rejected",
+          "reason": "ITEM_UNAVAILABLE",
+          "object_id": null
+        },
+        {
+          "label": "reference.fixed",
+          "event_id": "5b16f213-e36e-4bab-a685-fcfa19801d2b",
+          "status": "applied",
+          "reason": null,
+          "object_id": "f39f52bc-c011-4642-8174-4aef364ae46d"
+        },
+        {
+          "label": "reference.updateBeforeCreate",
+          "event_id": "d1fe96cc-40c7-4694-a070-ecf91083f40a",
+          "status": "business_rejected",
+          "reason": "EXTERNAL_ENTITY_NOT_CREATED",
+          "object_id": null
+        },
+        {
+          "label": "reference.lateCreate",
+          "event_id": "0b134bf3-6e47-46dc-a13d-7db8787a755d",
+          "status": "applied",
+          "reason": null,
+          "object_id": "f11063b8-55cb-4ede-9531-87f9bf2579bc"
+        }
+      ],
+      "started_at": "2026-10-20T13:42:44.517Z",
+      "finished_at": "2026-10-20T13:42:45.704Z"
+    }
+  ],
+  "limitations": [
+    "Local automated API acceptance is separate from G4 real people/devices/scanners and G5 field parallel operation.",
+    "No 25-minute/5400-event or eight-hour/ten-worker performance requirement is claimed by these scenarios.",
+    "No provider recovery/PITR/RPO/RTO requirement is claimed.",
+    "T07 deliberately discards a committed HTTP response in the client and recovers the original request; this is not evidence of a network wire outage. T09 has separate proxy/SIGKILL evidence.",
+    "Initial harness attempts exposed a warehouse-wide version comparison affected by unrelated writes, a local variable-name collision, and SQLite response-recording contention. They were corrected without server code changes; T06 resumed the same journal and keys. This final six-run batch used the fixed runner and completed each case from new durable intent.",
+    "The initial failed T01 report remains at artifacts/v2-acceptance-final/b254b465-098b-4ac5-a25a-db8621afdcda.json. Earlier same-journal recovery observations are retained in acceptance.sqlite; final new runs above are the acceptance verdict source."
+  ]
+}

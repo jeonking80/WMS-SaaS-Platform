@@ -26,6 +26,7 @@ services:
       DATABASE_URL: ${DATABASE_URL:?Set restricted wms_app DATABASE_URL}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:?Set HTTPS origin}
+      WMS_ENVIRONMENT: ${WMS_ENVIRONMENT:-production}
     ports:
       - "127.0.0.1:${APP_PORT:-3000}:3000"
     networks: [database, frontend]
@@ -55,6 +56,22 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+  integration-worker:
+    image: wms-integration-worker:${IMAGE_TAG:-local}
+    build:
+      context: ..
+      target: integration-worker
+    profiles: [integration]
+    environment:
+      WMS_URL: http://web:3000
+      WMS_INTEGRATION_PROCESS_KEY: ${WMS_INTEGRATION_PROCESS_KEY:-}
+      WMS_INTEGRATION_WAREHOUSE_IDS: ${WMS_INTEGRATION_WAREHOUSE_IDS:-}
+    networks: [frontend]
+    depends_on: [web]
+    restart: unless-stopped
     security_opt: [no-new-privileges:true]
     cap_drop: [ALL]
 

@@ -91,7 +91,7 @@ async function raced(id: string | string[], operations: (() => Promise<unknown>)
     const deadline = Date.now() + 8000;
     let waiting = 0;
     while (Date.now() < deadline) {
-      const result = await owner.query("SELECT count(*)::int AS count FROM pg_stat_activity WHERE application_name=$1 AND wait_event_type='Lock'", [schema]);
+      const result = await owner.query("SELECT count(*)::int AS count FROM pg_stat_activity WHERE usename=$1 AND datname=current_database() AND wait_event_type='Lock'", [role]);
       waiting = result.rows[0].count;
       if (waiting >= operations.length) break;
       await new Promise(resolve => setTimeout(resolve, 20));

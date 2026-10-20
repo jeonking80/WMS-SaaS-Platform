@@ -1,0 +1,188 @@
+{
+  "run_id": "e6aa46b2-6348-4654-b71a-547f57e47833",
+  "profile": "shift-smoke",
+  "scenario_version": "1.1",
+  "generator_version": "2.0.0",
+  "seed": 20261020,
+  "generated_at": "2026-10-20T13:22:17.884Z",
+  "execution": "finished",
+  "verdict": "passed",
+  "companies": [
+    {
+      "shift_evidence": {
+        "pinned_order_id": "079cee10-eda8-4efe-9b81-675503fee28b",
+        "initial_worker_index": 1,
+        "initial_assignee": "machine:9425b58a-ce78-4bb2-83c3-3d49997b7bfd",
+        "initial_assignment_completed_at": 1792502518173,
+        "long_reservation_observed_at": 1792502523888,
+        "reserved_at": 1792502518710,
+        "reservation_age_at_warning_ms": 5178,
+        "handover_completed_at": 1792502528036,
+        "final_assignee": "machine:a51f70bc-0bad-419c-a360-38d239a8933e",
+        "shift_report_id": "e73bad33-efe3-451f-a3b6-72fd061bf479"
+      },
+      "company_id": "718f511f-d075-44af-9d80-cf8142183d1b",
+      "boundary": 38,
+      "planned_unique_events": 6,
+      "delivered_unique_events": 6,
+      "measured_orders": 4,
+      "measured_receipts": 2,
+      "measured_updates": 0,
+      "initial_seed_events": 2,
+      "completed_measured_receipts": 2,
+      "completed_shipments": 4,
+      "maximum_delivery_lateness_ms": 57,
+      "first_delivery_at": "2026-10-20T13:21:57.810Z",
+      "last_delivery_at": "2026-10-20T13:22:12.829Z",
+      "elapsed_ms": 20053,
+      "worker_accounts": 2,
+      "api_calls": 117,
+      "read_calls": 55,
+      "write_calls": 62,
+      "latency": {
+        "sample_count": 117,
+        "all_p95_ms": 79,
+        "external_acceptance_p95_ms": 53,
+        "physical_command_p95_ms": 83,
+        "queue_application_p95_ms": 74
+      },
+      "technical_error_count": 0,
+      "successful_physical_commands": 28,
+      "expected_business_rejections": 0,
+      "ledger_rows": 52,
+      "differences": [],
+      "incomplete": [],
+      "quality_targets": {
+        "qualification": false,
+        "met": true,
+        "window_start": "2026-10-20T13:21:57.789Z",
+        "window_end": "2026-10-20T13:22:17.789Z",
+        "baseline_seed_and_final_reconciliation_excluded": true,
+        "checks": {
+          "physical_confirmation_p95": {
+            "observed_ms": 83,
+            "maximum_ms": 1500,
+            "samples": 24
+          },
+          "external_acceptance_p95": {
+            "observed_ms": 42,
+            "maximum_ms": 1000,
+            "samples": 6
+          },
+          "external_application_p95": {
+            "observed_ms": 74,
+            "maximum_ms": 5000,
+            "samples": 6
+          },
+          "technical_failure_rate": {
+            "numerator": 0,
+            "denominator": 96,
+            "observed": 0,
+            "strict_maximum": 0.001
+          },
+          "recovery": {
+            "observed_ms": 16,
+            "maximum_ms": 600000,
+            "unresolved": 0
+          }
+        },
+        "limitations": [
+          "Successful HTTP workflow responses measure automated command confirmation, not real scanner hardware latency.",
+          "Browser display and real-device requirements need their separate evidence."
+        ]
+      },
+      "integrity_passed": true,
+      "verdict": "passed"
+    },
+    {
+      "shift_evidence": {
+        "pinned_order_id": "07edf5e5-5bc6-40a9-b8dc-9d8eb9239326",
+        "initial_worker_index": 0,
+        "initial_assignee": "machine:89b2a1d3-beea-404b-a2be-e3edcff18858",
+        "initial_assignment_completed_at": 1792502518254,
+        "long_reservation_observed_at": 1792502523910,
+        "reserved_at": 1792502518738,
+        "reservation_age_at_warning_ms": 5172,
+        "handover_completed_at": 1792502528147,
+        "final_assignee": "machine:2863e184-ebb2-490f-ace9-126ec9bc5cdc",
+        "shift_report_id": "a9c92af4-9983-4abf-aa9e-25d8b5554d16"
+      },
+      "company_id": "a583a985-88e1-4119-b3d8-51c2002b2a35",
+      "boundary": 38,
+      "planned_unique_events": 6,
+      "delivered_unique_events": 6,
+      "measured_orders": 4,
+      "measured_receipts": 2,
+      "measured_updates": 0,
+      "initial_seed_events": 2,
+      "completed_measured_receipts": 2,
+      "completed_shipments": 4,
+      "maximum_delivery_lateness_ms": 64,
+      "first_delivery_at": "2026-10-20T13:21:57.809Z",
+      "last_delivery_at": "2026-10-20T13:22:12.828Z",
+      "elapsed_ms": 20095,
+      "worker_accounts": 2,
+      "api_calls": 116,
+      "read_calls": 55,
+      "write_calls": 61,
+      "latency": {
+        "sample_count": 116,
+        "all_p95_ms": 73,
+        "external_acceptance_p95_ms": 43,
+        "physical_command_p95_ms": 78,
+        "queue_application_p95_ms": 74
+      },
+      "technical_error_count": 0,
+      "successful_physical_commands": 28,
+      "expected_business_rejections": 0,
+      "ledger_rows": 52,
+      "differences": [],
+      "incomplete": [],
+      "quality_targets": {
+        "qualification": false,
+        "met": true,
+        "window_start": "2026-10-20T13:21:57.789Z",
+        "window_end": "2026-10-20T13:22:17.789Z",
+        "baseline_seed_and_final_reconciliation_excluded": true,
+        "checks": {
+          "physical_confirmation_p95": {
+            "observed_ms": 78,
+            "maximum_ms": 1500,
+            "samples": 24
+          },
+          "external_acceptance_p95": {
+            "observed_ms": 42,
+            "maximum_ms": 1000,
+            "samples": 6
+          },
+          "external_application_p95": {
+            "observed_ms": 74,
+            "maximum_ms": 5000,
+            "samples": 6
+          },
+          "technical_failure_rate": {
+            "numerator": 0,
+            "denominator": 96,
+            "observed": 0,
+            "strict_maximum": 0.001
+          },
+          "recovery": {
+            "observed_ms": 16,
+            "maximum_ms": 600000,
+            "unresolved": 0
+          }
+        },
+        "limitations": [
+          "Successful HTTP workflow responses measure automated command confirmation, not real scanner hardware latency.",
+          "Browser display and real-device requirements need their separate evidence."
+        ]
+      },
+      "integrity_passed": true,
+      "verdict": "passed"
+    }
+  ],
+  "limitations": [
+    "Local profile execution is separate from deployed hosting or real device/field approval.",
+    "Transport fault and restore need their dedicated evidence; shift profiles persist real reservation age, ownership changes and shift-close evidence."
+  ]
+}

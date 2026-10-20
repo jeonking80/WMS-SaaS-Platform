@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import pg from "pg";
+import { grantFixtureWarehouse } from "./warehouse-scope";
 
 test.use({ actionTimeout: 10_000 });
 
@@ -48,6 +49,7 @@ test("P2 master data and document lifecycle enforce roles, tenant isolation and 
     const key = kind === "items" ? "item" : kind === "warehouses" ? "warehouse" : "location";
     const row = (await response.json())[key] as Row;
     created.get(tenant)![kind].push(row.id);
+    if (kind === "warehouses") await grantFixtureWarehouse(pool,tenant,row.id);
     return row;
   }
   async function document(data: Record<string, unknown>) {
@@ -161,7 +163,7 @@ test("P2 master data and document lifecycle enforce roles, tenant isolation and 
         await pool.query("SELECT set_config('app.tenant_id', $1, true)", [tenantId]);
         await pool.query("DELETE FROM inventory_document_lines WHERE document_id = ANY($1::uuid[])", [ids.documents]);
         await pool.query("DELETE FROM inventory_documents WHERE id = ANY($1::uuid[])", [ids.documents]);
-        for (const table of ["locations", "warehouses", "items"] as const) await pool.query(`DELETE FROM ${table} WHERE id = ANY($1::uuid[])`, [ids[table]]);
+        for (const table of ["locations", "warehouses", "items"] as const) await pool.query(`UPDATE ${table} SET active=false WHERE id = ANY($1::uuid[])`, [ids[table]]);
         await pool.query("COMMIT");
       } catch (error) { await pool.query("ROLLBACK"); throw error; }
     }
@@ -191,6 +193,7 @@ test("P2 browser creates master data and saves, edits and cancels a document", a
       expect(response.status()).toBe(201);
       const singular = kind === "items" ? "item" : kind === "warehouses" ? "warehouse" : "location";
       ids[kind].push((await response.json())[singular].id);
+      if (kind === "warehouses") await grantFixtureWarehouse(pool,tenants.a,ids.warehouses.at(-1)!);
       await expect(dialog).toHaveCount(0);
       await page.getByLabel("검색어", { exact: true }).fill(`${code}-${kind}`);
       await page.getByRole("button", { name: "검색 적용", exact: true }).click();
@@ -266,7 +269,7 @@ test("P2 browser creates master data and saves, edits and cancels a document", a
       await pool.query("SELECT set_config('app.tenant_id', $1, true)", [tenants.a]);
       await pool.query("DELETE FROM inventory_document_lines WHERE document_id = ANY($1::uuid[])", [ids.documents]);
       await pool.query("DELETE FROM inventory_documents WHERE id = ANY($1::uuid[])", [ids.documents]);
-      for (const table of ["locations", "warehouses", "items"] as const) await pool.query(`DELETE FROM ${table} WHERE id = ANY($1::uuid[])`, [ids[table]]);
+      for (const table of ["locations", "warehouses", "items"] as const) await pool.query(`UPDATE ${table} SET active=false WHERE id = ANY($1::uuid[])`, [ids[table]]);
       await pool.query("COMMIT");
     } catch (error) { await pool.query("ROLLBACK"); throw error; }
     finally { await pool.end(); }

@@ -1,0 +1,199 @@
+{
+  "run_id": "e6aa46b2-6348-4654-b71a-547f57e47833",
+  "profile": "accelerated_shift_smoke",
+  "generator_version": "2.0.0",
+  "scenario_version": "1.1",
+  "generated_at": "2026-10-20T13:22:18.002Z",
+  "configuration_sha256": "a1fa786502c6272276097820912ca4254cb302f134d51c335b20c15997e8906a",
+  "specification": {
+    "mode": "smoke",
+    "duration_ms": null,
+    "required_orders_per_company": 4,
+    "required_receipts_per_company": 2
+  },
+  "verdict": "smoke_passed",
+  "eight_hour_requirement_passed": false,
+  "companies": [
+    {
+      "company_id": "718f511f-d075-44af-9d80-cf8142183d1b",
+      "warehouse_id": "a9e6b8d8-4349-414f-b1ad-fc3f30a56089",
+      "mode": "smoke",
+      "measured_start": "2026-10-20T13:21:57.789Z",
+      "elapsed_ms": 20122,
+      "required_duration_ms": 20000,
+      "planned_orders": 4,
+      "planned_receipts": 2,
+      "initial_seed_receipts": 2,
+      "initial_seed_is_measured_throughput": false,
+      "baseline_source_run_id": null,
+      "worker_accounts_observed": 2,
+      "stage_counts": {
+        "receipt.receive": 2,
+        "receipt.inspect": 2,
+        "receipt.putaway": 2,
+        "order.reserve": 4,
+        "order.pick": 4,
+        "package.create": 4,
+        "shipment.create": 4
+      },
+      "t11": {
+        "policy": {
+          "full": false,
+          "duration_ms": 20000,
+          "reservation_warning_ms": 5000,
+          "handover_at_ms": 10000
+        },
+        "held_order_id": "079cee10-eda8-4efe-9b81-675503fee28b",
+        "initial_assignee": "machine:9425b58a-ce78-4bb2-83c3-3d49997b7bfd",
+        "final_assignee": "machine:a51f70bc-0bad-419c-a360-38d239a8933e",
+        "reservation_age_at_warning_ms": 5178,
+        "handover_completed_at": 1792502528036,
+        "shift_report_id": "e73bad33-efe3-451f-a3b6-72fd061bf479"
+      },
+      "functional_passed": true,
+      "performance_targets": {
+        "qualification": false,
+        "met": true,
+        "window_start": "2026-10-20T13:21:57.789Z",
+        "window_end": "2026-10-20T13:22:17.789Z",
+        "baseline_seed_and_final_reconciliation_excluded": true,
+        "checks": {
+          "physical_confirmation_p95": {
+            "observed_ms": 83,
+            "maximum_ms": 1500,
+            "samples": 24
+          },
+          "external_acceptance_p95": {
+            "observed_ms": 42,
+            "maximum_ms": 1000,
+            "samples": 6
+          },
+          "external_application_p95": {
+            "observed_ms": 74,
+            "maximum_ms": 5000,
+            "samples": 6
+          },
+          "technical_failure_rate": {
+            "numerator": 0,
+            "denominator": 96,
+            "observed": 0,
+            "strict_maximum": 0.001
+          },
+          "recovery": {
+            "observed_ms": 16,
+            "maximum_ms": 600000,
+            "unresolved": 0
+          }
+        },
+        "limitations": [
+          "Successful HTTP workflow responses measure automated command confirmation, not real scanner hardware latency.",
+          "Browser display and real-device requirements need their separate evidence."
+        ]
+      },
+      "failures": [],
+      "verdict": "smoke_passed",
+      "eight_hour_requirement_passed": false,
+      "reconciliation": {
+        "boundary": 38,
+        "full_ledger_pages": 1,
+        "differences": [],
+        "passed": true
+      },
+      "target_fingerprint": "7cad708add0aec8a0d2554e0bb76df542e917a6b4eebf2050102002e549cfd33"
+    },
+    {
+      "company_id": "a583a985-88e1-4119-b3d8-51c2002b2a35",
+      "warehouse_id": "b0ea587b-08e3-45c8-8019-9c36b6ef0f92",
+      "mode": "smoke",
+      "measured_start": "2026-10-20T13:21:57.789Z",
+      "elapsed_ms": 20169,
+      "required_duration_ms": 20000,
+      "planned_orders": 4,
+      "planned_receipts": 2,
+      "initial_seed_receipts": 2,
+      "initial_seed_is_measured_throughput": false,
+      "baseline_source_run_id": null,
+      "worker_accounts_observed": 2,
+      "stage_counts": {
+        "receipt.receive": 2,
+        "receipt.inspect": 2,
+        "receipt.putaway": 2,
+        "order.reserve": 4,
+        "order.pick": 4,
+        "package.create": 4,
+        "shipment.create": 4
+      },
+      "t11": {
+        "policy": {
+          "full": false,
+          "duration_ms": 20000,
+          "reservation_warning_ms": 5000,
+          "handover_at_ms": 10000
+        },
+        "held_order_id": "07edf5e5-5bc6-40a9-b8dc-9d8eb9239326",
+        "initial_assignee": "machine:89b2a1d3-beea-404b-a2be-e3edcff18858",
+        "final_assignee": "machine:2863e184-ebb2-490f-ace9-126ec9bc5cdc",
+        "reservation_age_at_warning_ms": 5172,
+        "handover_completed_at": 1792502528147,
+        "shift_report_id": "a9c92af4-9983-4abf-aa9e-25d8b5554d16"
+      },
+      "functional_passed": true,
+      "performance_targets": {
+        "qualification": false,
+        "met": true,
+        "window_start": "2026-10-20T13:21:57.789Z",
+        "window_end": "2026-10-20T13:22:17.789Z",
+        "baseline_seed_and_final_reconciliation_excluded": true,
+        "checks": {
+          "physical_confirmation_p95": {
+            "observed_ms": 78,
+            "maximum_ms": 1500,
+            "samples": 24
+          },
+          "external_acceptance_p95": {
+            "observed_ms": 42,
+            "maximum_ms": 1000,
+            "samples": 6
+          },
+          "external_application_p95": {
+            "observed_ms": 74,
+            "maximum_ms": 5000,
+            "samples": 6
+          },
+          "technical_failure_rate": {
+            "numerator": 0,
+            "denominator": 96,
+            "observed": 0,
+            "strict_maximum": 0.001
+          },
+          "recovery": {
+            "observed_ms": 16,
+            "maximum_ms": 600000,
+            "unresolved": 0
+          }
+        },
+        "limitations": [
+          "Successful HTTP workflow responses measure automated command confirmation, not real scanner hardware latency.",
+          "Browser display and real-device requirements need their separate evidence."
+        ]
+      },
+      "failures": [],
+      "verdict": "smoke_passed",
+      "eight_hour_requirement_passed": false,
+      "reconciliation": {
+        "boundary": 38,
+        "full_ledger_pages": 1,
+        "differences": [],
+        "passed": true
+      },
+      "target_fingerprint": "f3070c65885a40847056b42b648cc8c358e43ae76fa82c6ae08da005a52a69d6"
+    }
+  ],
+  "runtime_report": "e6aa46b2-6348-4654-b71a-547f57e47833.json",
+  "runtime_report_sha256": "aa2e834ea61ea2fcb4fab24b77ea0bbacbdf6e97ff2ce0e6923edcb28a983ba7",
+  "limitations": [
+    "No hosting, real-device or field certification.",
+    "Physical intent and execution come only from HTTP work and the independent local journal; no WMS database connection is used.",
+    "Shift handover and reservation duration are checked from actual persisted work; full-duration completion still requires eight real hours. Restore/resume needs its separate evidence. Accelerated smoke never satisfies the eight-hour duration."
+  ]
+}

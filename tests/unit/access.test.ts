@@ -23,7 +23,7 @@ describe("server-side access decisions", () => {
   });
 
   it("ignores requested company/role headers and resolves membership from session user", async () => {
-    getSession.mockResolvedValue({ user: identity.user });
+    getSession.mockResolvedValue({ user: identity.user, session: { id:"session-A" } });
     query.mockResolvedValue({ rows: [{ tenant_id: "tenant-A", tenant_name: "A company", role: "worker" }] });
     const result = await requireIdentity(new Headers({ "x-tenant-id": "tenant-B", "x-role": "admin" }));
     expect(query.mock.calls[0][1]).toEqual(["user-A"]);
@@ -31,8 +31,16 @@ describe("server-side access decisions", () => {
     expect(result.role).toBe("worker");
   });
 
+  it("expires an idle server session and removes it even while the auth library reports it valid", async () => {
+    getSession.mockResolvedValue({user:identity.user,session:{id:"session-A"}});
+    query.mockResolvedValueOnce({rows:[{tenant_id:"tenant-A",tenant_name:"A company",role:"worker",idle_lock_minutes:7}]})
+      .mockResolvedValueOnce({rows:[]}).mockResolvedValueOnce({rows:[]});
+    await expect(requireIdentity(new Headers())).rejects.toMatchObject({status:401,code:"UNAUTHENTICATED"});
+    expect(query.mock.calls[1][1]).toEqual(["session-A","user-A",7]);
+    expect(query.mock.calls[2][0]).toContain('DELETE FROM "session"');
+  });
   it("rejects missing membership and lets protected pages redirect", async () => {
-    getSession.mockResolvedValue({ user: identity.user });
+    getSession.mockResolvedValue({ user: identity.user, session: { id:"session-A" } });
     query.mockResolvedValue({ rows: [] });
     await expect(requireIdentity(new Headers())).rejects.toMatchObject({ status: 403 });
     expect(await getCurrentIdentity(new Headers())).toBeNull();
@@ -40,7 +48,7 @@ describe("server-side access decisions", () => {
 
   it("logs the verified session user on membership failure without trusting tenant headers", async () => {
     const log = vi.spyOn(console, "info").mockImplementation(() => {});
-    getSession.mockResolvedValue({ user: identity.user });
+    getSession.mockResolvedValue({ user: identity.user, session: { id:"session-A" } });
     query.mockResolvedValue({ rows: [] });
     const handler = withRequestLog("me", async (request: Request) => {
       try { await requireIdentity(request.headers); return Response.json({}); }

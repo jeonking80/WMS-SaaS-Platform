@@ -88,7 +88,7 @@ describe('P2 relational constraints and tenant isolation', () => {
       await expect(tenantQuery(tenants[0], "INSERT INTO inventory_documents (tenant_id,kind,warehouse_id,destination_location_id) VALUES ($1,'INBOUND',$2,$3)", [tenants[0], warehouses[0], location])).rejects.toMatchObject({ code: '23503' });
     }
     for (const [document, item] of [[documents[1], items[0]], [documents[0], items[1]]]) {
-      await expect(tenantQuery(tenants[0], 'INSERT INTO inventory_document_lines (tenant_id,document_id,item_id,quantity) VALUES ($1,$2,$3,1)', [tenants[0], document, item])).rejects.toMatchObject({ code: '23503' });
+      await expect(tenantQuery(tenants[0], 'INSERT INTO inventory_document_lines (tenant_id,document_id,item_id,quantity) VALUES ($1,$2,$3,1)', [tenants[0], document, item])).rejects.toMatchObject({ code: document === documents[1] ? '42501' : '23503' });
     }
   });
 

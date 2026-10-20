@@ -1,0 +1,27 @@
+{
+  "runtime_directory": "/tmp/wms-shift-frozen-er0j3tep",
+  "build_id": "_P7skz_iVUWWknhOU9rgS",
+  "server_sha256": "f24bff508a88525dc9abaa8ded8599cd4f36e43671fb3ec2f36590ff5ab24aa7",
+  "database_credentials_copied": false,
+  "status": "smoke_completed_server_stopped",
+  "run_id": "e6aa46b2-6348-4654-b71a-547f57e47833",
+  "profile": "accelerated_shift_smoke",
+  "passed": true,
+  "eight_hour_requirement_passed": false,
+  "scope_exclusions": [
+    "Latest approval separation changes were not used.",
+    "Optional package weight and delivery corrections were not used.",
+    "External opening-stock import was not used.",
+    "No real hardware or field G4/G5 acceptance was performed."
+  ],
+  "raw_artifact_directory": "/tmp/v2-shift-smoke-9EFm3q",
+  "database_scope": "Two newly provisioned isolated smoke companies; accumulated performance companies unchanged.",
+  "outbound_lane": "Independent company source timers and processor lanes do not await stock snapshot reads.",
+  "client_sources_sha256": {
+    "profile.mjs": "49b1d1e1b7ddb992e5c7c58abe2ab38384f92ce8152c27120310fa49a467acca",
+    "shift-profile.mjs": "852a6019df4f27c2513414bd997048ea369944d32b39f95b41349bc0e1fd73fb",
+    "profile-plan.mjs": "d7ce46fb8135686261acf0cfcbbb62e585f3f08c900b9378ba13b66383d82b54",
+    "store.mjs": "110b0c1a00f8569ce860debb5a305584a366b43a5fab94a22ca9f2d7de455e03"
+  },
+  "latency_measurement_note": "This preserved smoke measured fetch header arrival. Long-profile client was corrected afterwards to include complete body reception and JSON decoding; do not reuse smoke p95 as full-profile SLA evidence."
+}

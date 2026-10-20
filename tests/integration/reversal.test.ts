@@ -98,7 +98,7 @@ async function documentBarrier(id: string, operations: (() => Promise<unknown>)[
     outcomes = Promise.allSettled(operations.map(operation => operation()));
     let waiting = 0;
     while (Date.now() - started < 700) {
-      const result = await owner.query("SELECT count(DISTINCT pid)::int AS count FROM pg_stat_activity WHERE application_name=$1 AND state='active' AND wait_event_type='Lock'", [schema]);
+      const result = await owner.query("SELECT count(DISTINCT pid)::int AS count FROM pg_stat_activity WHERE usename=$1 AND datname=current_database() AND state='active' AND wait_event_type='Lock'", [role]);
       waiting = result.rows[0].count;
       if (waiting >= operations.length) break;
       await new Promise(resolve => setTimeout(resolve, 5));
@@ -124,7 +124,7 @@ async function stockBarrier(item: string, operations: (() => Promise<unknown>)[]
     outcomes = Promise.allSettled(operations.map(operation => operation()));
     let waiting = 0;
     while (Date.now() - started < 700) {
-      const result = await owner.query("SELECT count(DISTINCT pid)::int AS count FROM pg_stat_activity WHERE application_name=$1 AND state='active' AND wait_event_type='Lock'", [schema]);
+      const result = await owner.query("SELECT count(DISTINCT pid)::int AS count FROM pg_stat_activity WHERE usename=$1 AND datname=current_database() AND state='active' AND wait_event_type='Lock'", [role]);
       waiting = result.rows[0].count;
       if (waiting >= operations.length) break;
       await new Promise(resolve => setTimeout(resolve, 5));

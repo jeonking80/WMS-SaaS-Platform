@@ -2,6 +2,7 @@ import { openDocument } from "./document-ui";
 import { randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import pg from "pg";
+import { grantFixtureWarehouse } from "./warehouse-scope";
 
 const origin = "http://127.0.0.1:3100";
 const tenant = "00000000-0000-4000-8000-000000000001";
@@ -31,7 +32,9 @@ function fixtures(request: APIRequestContext) {
     const response = await request.post(`/api/${kind}`, { headers, data: { code: `${prefix}-${kind}`, name: `${prefix}-${kind}`, ...extra } });
     expect(response.status()).toBe(201);
     const row = (await response.json())[kind === "items" ? "item" : kind === "warehouses" ? "warehouse" : "location"];
-    ids[kind].push(row.id); return row.id as string;
+    ids[kind].push(row.id);
+    if (kind === "warehouses") await grantFixtureWarehouse(pool,tenant,row.id);
+    return row.id as string;
   }
   return {
     ids,
@@ -73,7 +76,7 @@ function fixtures(request: APIRequestContext) {
         await pool.query("DELETE FROM inventory_document_lines WHERE document_id=ANY($1::uuid[])", [ownedIds]);
         await pool.query("DELETE FROM inventory_documents WHERE id=ANY($1::uuid[])", [reversalIds]);
         await pool.query("DELETE FROM inventory_documents WHERE id=ANY($1::uuid[])", [ids.documents]);
-        for (const table of ["locations", "warehouses", "items"] as const) await pool.query(`DELETE FROM ${table} WHERE id=ANY($1::uuid[])`, [ids[table]]);
+        for (const table of ["locations", "warehouses", "items"] as const) await pool.query(`UPDATE ${table} SET active=false WHERE id=ANY($1::uuid[])`, [ids[table]]);
         await pool.query("COMMIT");
       } catch (error) { await pool.query("ROLLBACK"); throw error; } finally { await pool.end(); }
     },
@@ -170,6 +173,9 @@ for (const loseResponse of [false, true]) test(`P5 browser transfers and reverse
     await expect(page.getByRole("status").filter({ hasText: "전표를 저장했습니다." })).toHaveText("전표를 저장했습니다.");
     await page.getByRole("button", { name: "이동 확정", exact: true }).click();
     await page.getByRole("button", { name: "확정 실행", exact: true }).click();
+    // The input is also disabled while posting; wait for the committed response
+    // before issuing separate source/destination stock reads.
+    await expect(page.getByRole("status").filter({ hasText: "확정했습니다. 재고에 반영되었습니다." })).toBeVisible();
     await expect(page.getByLabel("수량 1", { exact: true })).toBeDisabled();
     await transferBalances(page.request, item, location, destination, [40, 60]);
     const keys: string[] = [];

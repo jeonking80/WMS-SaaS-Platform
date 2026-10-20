@@ -1,4 +1,5 @@
 import { searchMaster } from "./master-search";
+import { randomUUID } from "node:crypto";
 import type { PoolClient } from "pg";
 import { DomainError, apiError, json, readBody, requireMutationOrigin } from "./api";
 import { requireIdentity, requireRole } from "./auth/access";
@@ -66,6 +67,15 @@ export async function masterCollection(request: Request, kind: MasterKind) {
     const result = await withTenant(identity.tenant.id, async (client) => {
       if (!input) return (await client.query(`SELECT ${columns(kind)} FROM ${kind}${warehouseId ? " WHERE warehouse_id = $1" : ""} ORDER BY code, id LIMIT 1000`, warehouseId ? [warehouseId] : [])).rows;
       if (kind === "locations") await activeWarehouse(client, input.warehouse_id as string);
+      if (kind === "warehouses") {
+        const id = randomUUID();
+        await client.query("SELECT set_config('app.creating_warehouse',$1,true)", [id]);
+        const keys = ["id", "tenant_id", ...Object.keys(input)];
+        const row = (await client.query(`INSERT INTO warehouses (${keys.join(",")}) VALUES (${keys.map((_, i) => `$${i + 1}`).join(",")}) RETURNING ${columns(kind)}`, [id, identity.tenant.id, ...Object.values(input)])).rows[0];
+        await client.query("INSERT INTO v2_warehouse_grants(tenant_id,user_id,warehouse_id) VALUES($1,$2,$3)", [identity.tenant.id, identity.user.id, id]);
+        await client.query("SELECT set_config('app.creating_warehouse','',true)");
+        return row;
+      }
       const keys = ["tenant_id", ...Object.keys(input)];
       return (await client.query(`INSERT INTO ${kind} (${keys.join(", ")}) VALUES (${keys.map((_, i) => `$${i + 1}`).join(", ")}) RETURNING ${columns(kind)}`, [identity.tenant.id, ...Object.values(input)])).rows[0];
     });

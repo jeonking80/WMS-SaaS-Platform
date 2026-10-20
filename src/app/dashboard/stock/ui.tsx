@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { loadLookups } from "../lookup-client";
 import { useEffect, useRef, useState } from "react";
 import { FilterForm, Pager, emptyFilters, query, seoulTime, type Pagination } from "../list-controls";
 import { control, errorText, request, type MasterRow } from "../api-client";
@@ -60,7 +61,7 @@ export default function Stock({role = "viewer", initialFilters = {}}: {role?: st
       const [balances, ledger, check, lookup] = await Promise.all([
         request<{ stock: StockRow[];pagination:Pagination }>(`/api/stock?${query({...applied,date_from:"",date_to:"",date_field:"",kind:"",status:""},stockPage)}`),
         request<{ entries: LedgerRow[];pagination:Pagination }>(`/api/stock-ledger?${query({...applied,...(selection?{item_id:selection.item_id,location_id:selection.location_id,warehouse_id:selection.warehouse_id,q:""}:{})},ledgerPage)}`),
-        request<Reconciliation>("/api/stock/reconcile"),request<{warehouses:MasterRow[];locations:MasterRow[]}>("/api/lookups"),
+        request<Reconciliation>("/api/stock/reconcile"),loadLookups(),
       ]);
       if(generation!==listRequest.current)return;
       setStock(balances.stock);setStockPagination(balances.pagination);setLedgerPagination(ledger.pagination);setLookups(lookup);

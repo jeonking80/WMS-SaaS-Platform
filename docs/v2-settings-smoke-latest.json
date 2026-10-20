@@ -1,0 +1,3223 @@
+{
+  "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+  "configuration_effects": {
+    "configuration": {
+      "scenario": "mixed_pattern",
+      "mode": "auto",
+      "seed": 319,
+      "delay_ms": 100,
+      "event_count": 2,
+      "quantity_min": 5,
+      "quantity_max": 5,
+      "outage_seconds": 0,
+      "worker_count": 2,
+      "worker_role": "worker",
+      "working_start": "00:00",
+      "working_end": "24:00",
+      "shortage_ratio": 1,
+      "damage_ratio": 1,
+      "wrong_scan_ratio": 1,
+      "delay_ratio": 1,
+      "duplicate_ratio": 1,
+      "response_loss_ratio": 1,
+      "worker_interval_ms": 200,
+      "event_delay_ms": 200,
+      "handover_after_ms": 500,
+      "interrupt_after_operations": 3,
+      "warehouse_id": "99647df2-354e-4081-87a9-d86547971c2d",
+      "item_id": "abcfd5fa-22f4-471e-bf88-8679be7f87a6",
+      "receiving_id": "ef63f3ca-022a-43b4-86bd-d128543430e5",
+      "storage_id": "81b7a24b-6e37-4232-9112-bffb9baab7b1",
+      "staging_id": "c6321b94-dc3a-4584-840b-83efef416218",
+      "hold_id": "301b7d86-8fc6-4d0c-897d-acdf9000e39d",
+      "supplier_id": "8e9a85ef-f048-4cc5-bcf0-6085116c1167",
+      "customer_id": "8e9a85ef-f048-4cc5-bcf0-6085116c1167",
+      "destination_id": "9505da31-111a-4f1f-a50a-a524b69f198d",
+      "expected_at": "2026-11-01T00:00:00Z",
+      "due_at": "2026-11-02T00:00:00Z",
+      "duplicate": false,
+      "lose_response": false,
+      "generator_version": "2.0.0",
+      "scenario_version": "1.1",
+      "contract_version": "2.0",
+      "baseline": "unused_item_zero"
+    },
+    "selected_patterns": [
+      {
+        "shortage": true,
+        "damage": true,
+        "wrong_scan": true,
+        "quantity": 5
+      },
+      {
+        "shortage": true,
+        "damage": true,
+        "wrong_scan": true,
+        "quantity": 5
+      }
+    ],
+    "delayed_events": 4,
+    "duplicate_checks": 4,
+    "response_losses": 24,
+    "working_hours_waits": 0,
+    "interruption_completed": true,
+    "handover": {
+      "worker_index": 1,
+      "reason": "설정된 작업교대 실제 API 검증",
+      "tasks": [
+        {
+          "warehouse_id": "99647df2-354e-4081-87a9-d86547971c2d",
+          "command": "task.assign",
+          "request_id": "ca877738-1af3-4480-a18e-425084750781",
+          "payload": {
+            "object_type": "order",
+            "object_id": "65d098f6-dced-4bb5-b15f-9796805fb5e2",
+            "assignee_id": "machine:69696434-ca11-4348-8473-ab343124dbb2",
+            "reason": "설정된 작업교대 실제 API 검증"
+          }
+        }
+      ],
+      "stock_unchanged": true,
+      "assignment_verified": true,
+      "completed_at": "2026-10-20T13:40:34.461Z",
+      "assignee_id": "machine:69696434-ca11-4348-8473-ab343124dbb2"
+    }
+  },
+  "requirements": [
+    "INT-01",
+    "INT-02",
+    "SIM-01",
+    "SIM-02",
+    "SIM-03"
+  ],
+  "scenario": "mixed_pattern",
+  "scenario_version": "1.1",
+  "generator_version": "2.0.0",
+  "contract_version": "2.0",
+  "seed": 319,
+  "mode": "auto",
+  "target": {
+    "url": "http://127.0.0.1:3021",
+    "company_id": "69b9bc57-6220-4f93-825a-bdc03a5b23f4",
+    "environment": "test",
+    "source_system": "SIM-SHARED",
+    "warehouse_ids": [
+      "99647df2-354e-4081-87a9-d86547971c2d"
+    ],
+    "contract_version": "2.0",
+    "warehouses": [
+      {
+        "id": "99647df2-354e-4081-87a9-d86547971c2d",
+        "code": "MAIN",
+        "name": "Main"
+      }
+    ],
+    "fingerprint": "04589c6318f7869be050af6912c2f061bdbee264bb50c63972364e7b8a527cfb"
+  },
+  "created_at": "2026-10-20T13:40:33.541Z",
+  "generated_at": "2026-10-20T13:40:48.338Z",
+  "execution_status": "finished",
+  "verdict": "passed",
+  "expected": {
+    "locations": {
+      "ef63f3ca-022a-43b4-86bd-d128543430e5": {
+        "S": 0,
+        "R": 0,
+        "P": 0,
+        "Q": 0,
+        "B": 0
+      },
+      "81b7a24b-6e37-4232-9112-bffb9baab7b1": {
+        "S": 0,
+        "R": 0,
+        "P": 0,
+        "Q": 0,
+        "B": 0
+      },
+      "c6321b94-dc3a-4584-840b-83efef416218": {
+        "S": 0,
+        "R": 0,
+        "P": 0,
+        "Q": 0,
+        "B": 0
+      },
+      "301b7d86-8fc6-4d0c-897d-acdf9000e39d": {
+        "S": 0,
+        "R": 0,
+        "P": 0,
+        "Q": 0,
+        "B": 2
+      }
+    },
+    "order": {
+      "ordered": 10,
+      "reserved": 0,
+      "picked": 0,
+      "shipped": 10
+    },
+    "totals": {
+      "S": 0,
+      "R": 0,
+      "P": 0,
+      "Q": 0,
+      "B": 2
+    }
+  },
+  "actual": {
+    "ef63f3ca-022a-43b4-86bd-d128543430e5": {
+      "B": 0,
+      "P": 0,
+      "Q": 0,
+      "R": 0,
+      "S": 0,
+      "item_id": "abcfd5fa-22f4-471e-bf88-8679be7f87a6",
+      "location_id": "ef63f3ca-022a-43b4-86bd-d128543430e5",
+      "location_kind": "RECEIVING",
+      "reservation_blocked": false,
+      "A": 0,
+      "H": 0,
+      "locked": false
+    },
+    "81b7a24b-6e37-4232-9112-bffb9baab7b1": {
+      "B": 0,
+      "P": 0,
+      "Q": 0,
+      "R": 0,
+      "S": 0,
+      "item_id": "abcfd5fa-22f4-471e-bf88-8679be7f87a6",
+      "location_id": "81b7a24b-6e37-4232-9112-bffb9baab7b1",
+      "location_kind": "STORAGE",
+      "reservation_blocked": false,
+      "A": 0,
+      "H": 0,
+      "locked": false
+    },
+    "c6321b94-dc3a-4584-840b-83efef416218": {
+      "B": 0,
+      "P": 0,
+      "Q": 0,
+      "R": 0,
+      "S": 0,
+      "item_id": "abcfd5fa-22f4-471e-bf88-8679be7f87a6",
+      "location_id": "c6321b94-dc3a-4584-840b-83efef416218",
+      "location_kind": "STAGING",
+      "reservation_blocked": false,
+      "A": 0,
+      "H": 0,
+      "locked": false
+    },
+    "301b7d86-8fc6-4d0c-897d-acdf9000e39d": {
+      "B": 2,
+      "P": 0,
+      "Q": 0,
+      "R": 0,
+      "S": 0,
+      "item_id": "abcfd5fa-22f4-471e-bf88-8679be7f87a6",
+      "location_id": "301b7d86-8fc6-4d0c-897d-acdf9000e39d",
+      "location_kind": "HOLD",
+      "reservation_blocked": false,
+      "A": 0,
+      "H": 2,
+      "locked": false
+    }
+  },
+  "ledger": {
+    "ef63f3ca-022a-43b4-86bd-d128543430e5": {
+      "S": 0,
+      "R": 0,
+      "P": 0,
+      "Q": 0,
+      "B": 0
+    },
+    "81b7a24b-6e37-4232-9112-bffb9baab7b1": {
+      "S": 0,
+      "R": 0,
+      "P": 0,
+      "Q": 0,
+      "B": 0
+    },
+    "c6321b94-dc3a-4584-840b-83efef416218": {
+      "S": 0,
+      "R": 0,
+      "P": 0,
+      "Q": 0,
+      "B": 0
+    },
+    "301b7d86-8fc6-4d0c-897d-acdf9000e39d": {
+      "S": 0,
+      "R": 0,
+      "P": 0,
+      "Q": 0,
+      "B": 2
+    }
+  },
+  "differences": [],
+  "passed": true,
+  "boundary": {
+    "workflow_version": 312,
+    "ledger_rows": 30,
+    "at": "2026-10-20T13:40:48.335Z"
+  },
+  "unfinished": [],
+  "counts": {
+    "api_calls": 158,
+    "read_calls": 121,
+    "write_calls": 37,
+    "unique_external_events": 4,
+    "physical_commands": 24,
+    "expected_business_rejections": 4,
+    "confirmed": 24,
+    "client_retries": 0,
+    "ledger_rows": 30
+  },
+  "latency": {
+    "sample_count": 158,
+    "p95_ms": 76,
+    "scope": "local client request latency; no hosting or operational performance certification"
+  },
+  "not_executed": [
+    "8-hour shift profile",
+    "5400-event congestion profile",
+    "1-million-row read profile",
+    "60-second network outage",
+    "live database restore",
+    "physical PC/tablet/scanner validation",
+    "five-day field operation"
+  ],
+  "cleanup": {
+    "status": "not_executed",
+    "reason": "이력보존. 실제취소·반품·승인조정만 허용; 자동 DB초기화 없음."
+  },
+  "reproduction": {
+    "command": "npm start",
+    "configuration": {
+      "scenario": "mixed_pattern",
+      "mode": "auto",
+      "seed": 319,
+      "delay_ms": 100,
+      "event_count": 2,
+      "quantity_min": 5,
+      "quantity_max": 5,
+      "outage_seconds": 0,
+      "worker_count": 2,
+      "worker_role": "worker",
+      "working_start": "00:00",
+      "working_end": "24:00",
+      "shortage_ratio": 1,
+      "damage_ratio": 1,
+      "wrong_scan_ratio": 1,
+      "delay_ratio": 1,
+      "duplicate_ratio": 1,
+      "response_loss_ratio": 1,
+      "worker_interval_ms": 200,
+      "event_delay_ms": 200,
+      "handover_after_ms": 500,
+      "interrupt_after_operations": 3,
+      "warehouse_id": "99647df2-354e-4081-87a9-d86547971c2d",
+      "item_id": "abcfd5fa-22f4-471e-bf88-8679be7f87a6",
+      "receiving_id": "ef63f3ca-022a-43b4-86bd-d128543430e5",
+      "storage_id": "81b7a24b-6e37-4232-9112-bffb9baab7b1",
+      "staging_id": "c6321b94-dc3a-4584-840b-83efef416218",
+      "hold_id": "301b7d86-8fc6-4d0c-897d-acdf9000e39d",
+      "supplier_id": "8e9a85ef-f048-4cc5-bcf0-6085116c1167",
+      "customer_id": "8e9a85ef-f048-4cc5-bcf0-6085116c1167",
+      "destination_id": "9505da31-111a-4f1f-a50a-a524b69f198d",
+      "expected_at": "2026-11-01T00:00:00Z",
+      "due_at": "2026-11-02T00:00:00Z",
+      "duplicate": false,
+      "lose_response": false,
+      "generator_version": "2.0.0",
+      "scenario_version": "1.1",
+      "contract_version": "2.0",
+      "baseline": "unused_item_zero"
+    }
+  },
+  "evidence": [
+    {
+      "id": 1,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:33.542Z",
+      "kind": "created",
+      "details": {
+        "generator_version": "2.0.0",
+        "seed": 319,
+        "target": "04589c6318f7869be050af6912c2f061bdbee264bb50c63972364e7b8a527cfb"
+      }
+    },
+    {
+      "id": 2,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:33.558Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 14
+      }
+    },
+    {
+      "id": 3,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:33.574Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 12
+      }
+    },
+    {
+      "id": 4,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:33.578Z",
+      "kind": "configured_event_delay",
+      "details": {
+        "operation_id": "9b9f8dc0-1a06-47df-9432-91ca5eb921f7",
+        "delay_ms": 200
+      }
+    },
+    {
+      "id": 5,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:33.834Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 12
+      }
+    },
+    {
+      "id": 6,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:33.837Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "9b9f8dc0-1a06-47df-9432-91ca5eb921f7",
+        "role": "source",
+        "kind": "event",
+        "at_ms": 1792503633837,
+        "not_before": 1792503633777,
+        "worker_not_before": 0
+      }
+    },
+    {
+      "id": 7,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:33.856Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 17
+      }
+    },
+    {
+      "id": 8,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:33.876Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "POST",
+        "status": 202,
+        "latency_ms": 18
+      }
+    },
+    {
+      "id": 9,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:33.890Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "POST",
+        "status": 202,
+        "latency_ms": 12
+      }
+    },
+    {
+      "id": 10,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:33.891Z",
+      "kind": "duplicate_verified",
+      "details": {
+        "event_id": "d7789ebe-da19-4b01-9cb4-387f3283d594",
+        "receipt_id": "a1c5f25f-0e05-44ab-97bd-a88e0660c828"
+      }
+    },
+    {
+      "id": 11,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:33.892Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "9b9f8dc0-1a06-47df-9432-91ca5eb921f7"
+      }
+    },
+    {
+      "id": 12,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.027Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 13,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.116Z",
+      "kind": "api_call",
+      "details": {
+        "role": "process",
+        "path": "/api/v2/integration/process",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 87
+      }
+    },
+    {
+      "id": 14,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.129Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 15,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.160Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 29
+      }
+    },
+    {
+      "id": 16,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.163Z",
+      "kind": "event_applied",
+      "details": {
+        "operation_id": "9b9f8dc0-1a06-47df-9432-91ca5eb921f7",
+        "event_id": "d7789ebe-da19-4b01-9cb4-387f3283d594",
+        "receipt_id": "a1c5f25f-0e05-44ab-97bd-a88e0660c828"
+      }
+    },
+    {
+      "id": 17,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.297Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 18,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.299Z",
+      "kind": "handover_due",
+      "details": {
+        "elapsed_ms": 739
+      }
+    },
+    {
+      "id": 19,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.309Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 9
+      }
+    },
+    {
+      "id": 20,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.342Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 31
+      }
+    },
+    {
+      "id": 21,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.363Z",
+      "kind": "api_call",
+      "details": {
+        "role": "supervisor",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 404,
+        "latency_ms": 19
+      }
+    },
+    {
+      "id": 22,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.417Z",
+      "kind": "api_call",
+      "details": {
+        "role": "supervisor",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 52
+      }
+    },
+    {
+      "id": 23,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.448Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 28
+      }
+    },
+    {
+      "id": 24,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.462Z",
+      "kind": "handover_completed",
+      "details": {
+        "worker_index": 1,
+        "reason": "설정된 작업교대 실제 API 검증",
+        "tasks": [
+          {
+            "warehouse_id": "99647df2-354e-4081-87a9-d86547971c2d",
+            "command": "task.assign",
+            "request_id": "ca877738-1af3-4480-a18e-425084750781",
+            "payload": {
+              "object_type": "order",
+              "object_id": "65d098f6-dced-4bb5-b15f-9796805fb5e2",
+              "assignee_id": "machine:69696434-ca11-4348-8473-ab343124dbb2",
+              "reason": "설정된 작업교대 실제 API 검증"
+            }
+          }
+        ],
+        "stock_unchanged": true,
+        "assignment_verified": true,
+        "completed_at": "2026-10-20T13:40:34.461Z",
+        "assignee_id": "machine:69696434-ca11-4348-8473-ab343124dbb2"
+      }
+    },
+    {
+      "id": 25,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.596Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 12
+      }
+    },
+    {
+      "id": 26,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.599Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "abb67606-068a-4b2a-90c6-f15098b36033",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503634599,
+        "not_before": 0,
+        "worker_not_before": 0
+      }
+    },
+    {
+      "id": 27,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.628Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 409,
+        "latency_ms": 27
+      }
+    },
+    {
+      "id": 28,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.630Z",
+      "kind": "expected_business_rejection",
+      "details": {
+        "operation_id": "abb67606-068a-4b2a-90c6-f15098b36033",
+        "command": "order.reserve",
+        "reason": "INSUFFICIENT_STOCK"
+      }
+    },
+    {
+      "id": 29,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.761Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 9
+      }
+    },
+    {
+      "id": 30,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:34.764Z",
+      "kind": "configured_event_delay",
+      "details": {
+        "operation_id": "45277d87-88c2-42ab-aed2-09a07e5ea05a",
+        "delay_ms": 200
+      }
+    },
+    {
+      "id": 31,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.016Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 9
+      }
+    },
+    {
+      "id": 32,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.019Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "45277d87-88c2-42ab-aed2-09a07e5ea05a",
+        "role": "source",
+        "kind": "event",
+        "at_ms": 1792503635019,
+        "not_before": 1792503634963,
+        "worker_not_before": 0
+      }
+    },
+    {
+      "id": 33,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.030Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 34,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.044Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "POST",
+        "status": 202,
+        "latency_ms": 13
+      }
+    },
+    {
+      "id": 35,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.058Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "POST",
+        "status": 202,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 36,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.058Z",
+      "kind": "duplicate_verified",
+      "details": {
+        "event_id": "e1ff9b26-c696-4b95-baff-ffbead332cc0",
+        "receipt_id": "d90bcc91-97d4-4a24-a4c7-be91308e0ed1"
+      }
+    },
+    {
+      "id": 37,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.059Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "45277d87-88c2-42ab-aed2-09a07e5ea05a"
+      }
+    },
+    {
+      "id": 38,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.191Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 39,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.247Z",
+      "kind": "api_call",
+      "details": {
+        "role": "process",
+        "path": "/api/v2/integration/process",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 54
+      }
+    },
+    {
+      "id": 40,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.259Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 41,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.287Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 26
+      }
+    },
+    {
+      "id": 42,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.289Z",
+      "kind": "event_applied",
+      "details": {
+        "operation_id": "45277d87-88c2-42ab-aed2-09a07e5ea05a",
+        "event_id": "e1ff9b26-c696-4b95-baff-ffbead332cc0",
+        "receipt_id": "d90bcc91-97d4-4a24-a4c7-be91308e0ed1"
+      }
+    },
+    {
+      "id": 43,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.420Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 8
+      }
+    },
+    {
+      "id": 44,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.423Z",
+      "kind": "configured_interruption",
+      "details": {
+        "after_operations": 3
+      }
+    },
+    {
+      "id": 45,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.431Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 8
+      }
+    },
+    {
+      "id": 46,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.562Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 8
+      }
+    },
+    {
+      "id": 47,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.564Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "d1b04033-b6d8-4c5f-a670-685d9ecf656f",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503635564,
+        "not_before": 0,
+        "worker_not_before": 1792503634831
+      }
+    },
+    {
+      "id": 48,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.626Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 60
+      }
+    },
+    {
+      "id": 49,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.631Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "d1b04033-b6d8-4c5f-a670-685d9ecf656f"
+      }
+    },
+    {
+      "id": 50,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.764Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 51,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.794Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 28
+      }
+    },
+    {
+      "id": 52,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:35.929Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 53,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.064Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 54,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.066Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "f145ec13-c432-4ac2-8b4e-d69564f0c4be",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503636066,
+        "not_before": 1792503635998,
+        "worker_not_before": 1792503635998
+      }
+    },
+    {
+      "id": 55,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.113Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 46
+      }
+    },
+    {
+      "id": 56,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.116Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "f145ec13-c432-4ac2-8b4e-d69564f0c4be"
+      }
+    },
+    {
+      "id": 57,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.247Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 58,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.284Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 35
+      }
+    },
+    {
+      "id": 59,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.419Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 9
+      }
+    },
+    {
+      "id": 60,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.551Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 61,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.553Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "1becdb66-001e-4cfd-b4a3-a3111d206b48",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503636552,
+        "not_before": 1792503636488,
+        "worker_not_before": 1792503636488
+      }
+    },
+    {
+      "id": 62,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.608Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 54
+      }
+    },
+    {
+      "id": 63,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.610Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "1becdb66-001e-4cfd-b4a3-a3111d206b48"
+      }
+    },
+    {
+      "id": 64,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.742Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 9
+      }
+    },
+    {
+      "id": 65,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.790Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 46
+      }
+    },
+    {
+      "id": 66,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:36.930Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 14
+      }
+    },
+    {
+      "id": 67,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.063Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 68,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.065Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "420bb037-6141-4383-9d16-aae3c3a0866d",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503637065,
+        "not_before": 1792503636994,
+        "worker_not_before": 1792503636994
+      }
+    },
+    {
+      "id": 69,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.114Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 48
+      }
+    },
+    {
+      "id": 70,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.117Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "420bb037-6141-4383-9d16-aae3c3a0866d"
+      }
+    },
+    {
+      "id": 71,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.249Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 72,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.280Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 29
+      }
+    },
+    {
+      "id": 73,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.415Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 74,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.551Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 75,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.553Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "0a91451c-c298-46fb-a85e-0fa2c6614c7a",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503637553,
+        "not_before": 1792503637483,
+        "worker_not_before": 1792503637483
+      }
+    },
+    {
+      "id": 76,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.579Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 409,
+        "latency_ms": 25
+      }
+    },
+    {
+      "id": 77,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.581Z",
+      "kind": "expected_business_rejection",
+      "details": {
+        "operation_id": "0a91451c-c298-46fb-a85e-0fa2c6614c7a",
+        "command": "order.pick",
+        "reason": "WRONG_ITEM_SCAN"
+      }
+    },
+    {
+      "id": 78,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.715Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 9
+      }
+    },
+    {
+      "id": 79,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.850Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 80,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.853Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "f4e96cbf-c850-405c-9fdd-5ab746e1056a",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503637853,
+        "not_before": 1792503637783,
+        "worker_not_before": 1792503637783
+      }
+    },
+    {
+      "id": 81,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.950Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 95
+      }
+    },
+    {
+      "id": 82,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:37.952Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "f4e96cbf-c850-405c-9fdd-5ab746e1056a"
+      }
+    },
+    {
+      "id": 83,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:38.089Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 13
+      }
+    },
+    {
+      "id": 84,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:38.129Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 38
+      }
+    },
+    {
+      "id": 85,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:38.267Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 12
+      }
+    },
+    {
+      "id": 86,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:38.415Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 24
+      }
+    },
+    {
+      "id": 87,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:38.417Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "d1e58998-e292-4413-80a0-6248485bf1fc",
+        "role": "approver",
+        "kind": "command",
+        "at_ms": 1792503638417,
+        "not_before": 1792503638334,
+        "worker_not_before": 1792503638334
+      }
+    },
+    {
+      "id": 88,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:38.506Z",
+      "kind": "api_call",
+      "details": {
+        "role": "approver",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 86
+      }
+    },
+    {
+      "id": 89,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:38.508Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "d1e58998-e292-4413-80a0-6248485bf1fc"
+      }
+    },
+    {
+      "id": 90,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:38.640Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 9
+      }
+    },
+    {
+      "id": 91,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:38.677Z",
+      "kind": "api_call",
+      "details": {
+        "role": "approver",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 35
+      }
+    },
+    {
+      "id": 92,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:38.814Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 93,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:38.951Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 12
+      }
+    },
+    {
+      "id": 94,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:38.954Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "b09a1c4d-c6bd-42a7-8141-d4ff4add6db4",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503638954,
+        "not_before": 1792503638881,
+        "worker_not_before": 1792503638881
+      }
+    },
+    {
+      "id": 95,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:39.025Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 70
+      }
+    },
+    {
+      "id": 96,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:39.028Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "b09a1c4d-c6bd-42a7-8141-d4ff4add6db4"
+      }
+    },
+    {
+      "id": 97,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:39.165Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 14
+      }
+    },
+    {
+      "id": 98,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:39.201Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 34
+      }
+    },
+    {
+      "id": 99,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:39.341Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 13
+      }
+    },
+    {
+      "id": 100,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:39.484Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 18
+      }
+    },
+    {
+      "id": 101,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:39.486Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "f4545505-b4ec-463a-b398-31e0b05951e8",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503639486,
+        "not_before": 1792503639406,
+        "worker_not_before": 1792503639406
+      }
+    },
+    {
+      "id": 102,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:39.556Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 67
+      }
+    },
+    {
+      "id": 103,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:39.558Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "f4545505-b4ec-463a-b398-31e0b05951e8"
+      }
+    },
+    {
+      "id": 104,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:39.694Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 12
+      }
+    },
+    {
+      "id": 105,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:39.732Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 36
+      }
+    },
+    {
+      "id": 106,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:39.871Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 107,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.009Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 12
+      }
+    },
+    {
+      "id": 108,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.013Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "9275aade-7cab-45d2-a2dc-252e2035a030",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503640012,
+        "not_before": 1792503639939,
+        "worker_not_before": 1792503639939
+      }
+    },
+    {
+      "id": 109,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.075Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 60
+      }
+    },
+    {
+      "id": 110,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.078Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "9275aade-7cab-45d2-a2dc-252e2035a030"
+      }
+    },
+    {
+      "id": 111,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.224Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 23
+      }
+    },
+    {
+      "id": 112,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.259Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 33
+      }
+    },
+    {
+      "id": 113,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.397Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 114,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.532Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 115,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.535Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "da635754-1b6d-409e-bfe2-5272207d33a1",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503640535,
+        "not_before": 1792503640465,
+        "worker_not_before": 1792503640465
+      }
+    },
+    {
+      "id": 116,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.639Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 102
+      }
+    },
+    {
+      "id": 117,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.641Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "da635754-1b6d-409e-bfe2-5272207d33a1"
+      }
+    },
+    {
+      "id": 118,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.782Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 18
+      }
+    },
+    {
+      "id": 119,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.821Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 36
+      }
+    },
+    {
+      "id": 120,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.957Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 9
+      }
+    },
+    {
+      "id": 121,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:40.960Z",
+      "kind": "configured_event_delay",
+      "details": {
+        "operation_id": "3588344d-8e41-4186-9e4a-4d4f0b06706c",
+        "delay_ms": 200
+      }
+    },
+    {
+      "id": 122,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.222Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 20
+      }
+    },
+    {
+      "id": 123,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.226Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "3588344d-8e41-4186-9e4a-4d4f0b06706c",
+        "role": "source",
+        "kind": "event",
+        "at_ms": 1792503641226,
+        "not_before": 1792503641159,
+        "worker_not_before": 0
+      }
+    },
+    {
+      "id": 124,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.245Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 17
+      }
+    },
+    {
+      "id": 125,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.267Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "POST",
+        "status": 202,
+        "latency_ms": 19
+      }
+    },
+    {
+      "id": 126,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.284Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "POST",
+        "status": 202,
+        "latency_ms": 15
+      }
+    },
+    {
+      "id": 127,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.285Z",
+      "kind": "duplicate_verified",
+      "details": {
+        "event_id": "68eb5a36-693e-4465-8181-78e5677a1662",
+        "receipt_id": "c92e1d38-d14d-4aee-be36-12de7f88e2d8"
+      }
+    },
+    {
+      "id": 128,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.286Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "3588344d-8e41-4186-9e4a-4d4f0b06706c"
+      }
+    },
+    {
+      "id": 129,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.419Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 9
+      }
+    },
+    {
+      "id": 130,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.485Z",
+      "kind": "api_call",
+      "details": {
+        "role": "process",
+        "path": "/api/v2/integration/process",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 64
+      }
+    },
+    {
+      "id": 131,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.500Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 13
+      }
+    },
+    {
+      "id": 132,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.541Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 38
+      }
+    },
+    {
+      "id": 133,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.547Z",
+      "kind": "event_applied",
+      "details": {
+        "operation_id": "3588344d-8e41-4186-9e4a-4d4f0b06706c",
+        "event_id": "68eb5a36-693e-4465-8181-78e5677a1662",
+        "receipt_id": "c92e1d38-d14d-4aee-be36-12de7f88e2d8"
+      }
+    },
+    {
+      "id": 134,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.680Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 135,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.683Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "89533027-257d-44ff-9911-3ff099a028e4",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503641683,
+        "not_before": 0,
+        "worker_not_before": 1792503641025
+      }
+    },
+    {
+      "id": 136,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.757Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 409,
+        "latency_ms": 72
+      }
+    },
+    {
+      "id": 137,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.759Z",
+      "kind": "expected_business_rejection",
+      "details": {
+        "operation_id": "89533027-257d-44ff-9911-3ff099a028e4",
+        "command": "order.reserve",
+        "reason": "INSUFFICIENT_STOCK"
+      }
+    },
+    {
+      "id": 138,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.896Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 14
+      }
+    },
+    {
+      "id": 139,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:41.900Z",
+      "kind": "configured_event_delay",
+      "details": {
+        "operation_id": "592c84e5-7047-4f49-8fb3-03ce3af8c7c9",
+        "delay_ms": 200
+      }
+    },
+    {
+      "id": 140,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.154Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 141,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.156Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "592c84e5-7047-4f49-8fb3-03ce3af8c7c9",
+        "role": "source",
+        "kind": "event",
+        "at_ms": 1792503642156,
+        "not_before": 1792503642099,
+        "worker_not_before": 0
+      }
+    },
+    {
+      "id": 142,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.171Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 13
+      }
+    },
+    {
+      "id": 143,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.190Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "POST",
+        "status": 202,
+        "latency_ms": 18
+      }
+    },
+    {
+      "id": 144,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.205Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "POST",
+        "status": 202,
+        "latency_ms": 13
+      }
+    },
+    {
+      "id": 145,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.206Z",
+      "kind": "duplicate_verified",
+      "details": {
+        "event_id": "ea6b042a-d525-45a0-bad3-c509d2fd73dc",
+        "receipt_id": "616ccd0a-9918-4014-8104-03d7046d4dbb"
+      }
+    },
+    {
+      "id": 146,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.207Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "592c84e5-7047-4f49-8fb3-03ce3af8c7c9"
+      }
+    },
+    {
+      "id": 147,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.343Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 14
+      }
+    },
+    {
+      "id": 148,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.410Z",
+      "kind": "api_call",
+      "details": {
+        "role": "process",
+        "path": "/api/v2/integration/process",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 66
+      }
+    },
+    {
+      "id": 149,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.427Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/events",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 14
+      }
+    },
+    {
+      "id": 150,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.461Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 33
+      }
+    },
+    {
+      "id": 151,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.464Z",
+      "kind": "event_applied",
+      "details": {
+        "operation_id": "592c84e5-7047-4f49-8fb3-03ce3af8c7c9",
+        "event_id": "ea6b042a-d525-45a0-bad3-c509d2fd73dc",
+        "receipt_id": "616ccd0a-9918-4014-8104-03d7046d4dbb"
+      }
+    },
+    {
+      "id": 152,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.598Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 153,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.601Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "1dd7b863-5817-4d3b-8000-18f1c48a7289",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503642601,
+        "not_before": 0,
+        "worker_not_before": 1792503641960
+      }
+    },
+    {
+      "id": 154,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.690Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 87
+      }
+    },
+    {
+      "id": 155,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.693Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "1dd7b863-5817-4d3b-8000-18f1c48a7289"
+      }
+    },
+    {
+      "id": 156,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.837Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 17
+      }
+    },
+    {
+      "id": 157,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:42.881Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 42
+      }
+    },
+    {
+      "id": 158,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.020Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 12
+      }
+    },
+    {
+      "id": 159,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.156Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 160,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.159Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "97c7890b-e3fc-45d1-9a08-b1c65d72a88c",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503643159,
+        "not_before": 1792503643085,
+        "worker_not_before": 1792503643085
+      }
+    },
+    {
+      "id": 161,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.231Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 69
+      }
+    },
+    {
+      "id": 162,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.233Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "97c7890b-e3fc-45d1-9a08-b1c65d72a88c"
+      }
+    },
+    {
+      "id": 163,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.369Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 13
+      }
+    },
+    {
+      "id": 164,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.410Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 39
+      }
+    },
+    {
+      "id": 165,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.549Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 166,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.685Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 12
+      }
+    },
+    {
+      "id": 167,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.687Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "136547de-4e42-40e6-825c-32f334cfbe91",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503643687,
+        "not_before": 1792503643617,
+        "worker_not_before": 1792503643617
+      }
+    },
+    {
+      "id": 168,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.762Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 73
+      }
+    },
+    {
+      "id": 169,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.764Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "136547de-4e42-40e6-825c-32f334cfbe91"
+      }
+    },
+    {
+      "id": 170,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.900Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 12
+      }
+    },
+    {
+      "id": 171,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:43.956Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 54
+      }
+    },
+    {
+      "id": 172,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:44.113Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 30
+      }
+    },
+    {
+      "id": 173,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:44.259Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 174,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:44.261Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "80522a04-87ed-402e-a51b-7b5d7e03dee8",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503644261,
+        "not_before": 1792503644161,
+        "worker_not_before": 1792503644161
+      }
+    },
+    {
+      "id": 175,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:44.336Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 73
+      }
+    },
+    {
+      "id": 176,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:44.340Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "80522a04-87ed-402e-a51b-7b5d7e03dee8"
+      }
+    },
+    {
+      "id": 177,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:44.491Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 21
+      }
+    },
+    {
+      "id": 178,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:44.547Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 53
+      }
+    },
+    {
+      "id": 179,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:44.693Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 19
+      }
+    },
+    {
+      "id": 180,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:44.832Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 181,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:44.835Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "cadf9de3-70f7-49ac-b5b8-f49cd4e9bcf5",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503644835,
+        "not_before": 1792503644752,
+        "worker_not_before": 1792503644752
+      }
+    },
+    {
+      "id": 182,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:44.865Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 409,
+        "latency_ms": 28
+      }
+    },
+    {
+      "id": 183,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:44.867Z",
+      "kind": "expected_business_rejection",
+      "details": {
+        "operation_id": "cadf9de3-70f7-49ac-b5b8-f49cd4e9bcf5",
+        "command": "order.pick",
+        "reason": "WRONG_ITEM_SCAN"
+      }
+    },
+    {
+      "id": 184,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.004Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 14
+      }
+    },
+    {
+      "id": 185,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.137Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 9
+      }
+    },
+    {
+      "id": 186,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.139Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "8ea4de6f-a096-44d4-891a-e2223d795070",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503645139,
+        "not_before": 1792503645068,
+        "worker_not_before": 1792503645068
+      }
+    },
+    {
+      "id": 187,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.201Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 60
+      }
+    },
+    {
+      "id": 188,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.204Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "8ea4de6f-a096-44d4-891a-e2223d795070"
+      }
+    },
+    {
+      "id": 189,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.340Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 12
+      }
+    },
+    {
+      "id": 190,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.375Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 33
+      }
+    },
+    {
+      "id": 191,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.511Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 10
+      }
+    },
+    {
+      "id": 192,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.645Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 9
+      }
+    },
+    {
+      "id": 193,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.648Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "303dbfe9-df88-4028-bc33-0794ac227421",
+        "role": "approver",
+        "kind": "command",
+        "at_ms": 1792503645648,
+        "not_before": 1792503645579,
+        "worker_not_before": 1792503645579
+      }
+    },
+    {
+      "id": 194,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.714Z",
+      "kind": "api_call",
+      "details": {
+        "role": "approver",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 64
+      }
+    },
+    {
+      "id": 195,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.718Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "303dbfe9-df88-4028-bc33-0794ac227421"
+      }
+    },
+    {
+      "id": 196,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.852Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 197,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:45.900Z",
+      "kind": "api_call",
+      "details": {
+        "role": "approver",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 46
+      }
+    },
+    {
+      "id": 198,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.039Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 13
+      }
+    },
+    {
+      "id": 199,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.178Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 14
+      }
+    },
+    {
+      "id": 200,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.180Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "2ac64c55-266c-4348-b10a-ee5c178e7b85",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503646180,
+        "not_before": 1792503646104,
+        "worker_not_before": 1792503646104
+      }
+    },
+    {
+      "id": 201,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.264Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 81
+      }
+    },
+    {
+      "id": 202,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.268Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "2ac64c55-266c-4348-b10a-ee5c178e7b85"
+      }
+    },
+    {
+      "id": 203,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.403Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 204,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.446Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 41
+      }
+    },
+    {
+      "id": 205,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.584Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 13
+      }
+    },
+    {
+      "id": 206,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.727Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 16
+      }
+    },
+    {
+      "id": 207,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.730Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "ec124337-67b4-4821-a437-57ab2cb5f9f5",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503646730,
+        "not_before": 1792503646650,
+        "worker_not_before": 1792503646650
+      }
+    },
+    {
+      "id": 208,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.809Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 77
+      }
+    },
+    {
+      "id": 209,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.812Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "ec124337-67b4-4821-a437-57ab2cb5f9f5"
+      }
+    },
+    {
+      "id": 210,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.947Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 211,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:46.984Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 34
+      }
+    },
+    {
+      "id": 212,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:47.144Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 32
+      }
+    },
+    {
+      "id": 213,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:47.283Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 13
+      }
+    },
+    {
+      "id": 214,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:47.285Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "e681a99b-afe4-426d-9659-8603bd7aa595",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503647285,
+        "not_before": 1792503647190,
+        "worker_not_before": 1792503647190
+      }
+    },
+    {
+      "id": 215,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:47.351Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 64
+      }
+    },
+    {
+      "id": 216,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:47.354Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "e681a99b-afe4-426d-9659-8603bd7aa595"
+      }
+    },
+    {
+      "id": 217,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:47.488Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 218,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:47.524Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 34
+      }
+    },
+    {
+      "id": 219,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:47.665Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 13
+      }
+    },
+    {
+      "id": 220,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:47.800Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 221,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:47.802Z",
+      "kind": "initial_dispatch",
+      "details": {
+        "operation_id": "3501bc18-9375-40a6-bb81-2aba0e1f62e3",
+        "role": "worker:1",
+        "kind": "command",
+        "at_ms": 1792503647802,
+        "not_before": 1792503647728,
+        "worker_not_before": 1792503647728
+      }
+    },
+    {
+      "id": 222,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:47.880Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "POST",
+        "status": 200,
+        "latency_ms": 76
+      }
+    },
+    {
+      "id": 223,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:47.882Z",
+      "kind": "injected_response_loss",
+      "details": {
+        "operation_id": "3501bc18-9375-40a6-bb81-2aba0e1f62e3"
+      }
+    },
+    {
+      "id": 224,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:48.017Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 225,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:48.072Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker:1",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 53
+      }
+    },
+    {
+      "id": 226,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:48.212Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 12
+      }
+    },
+    {
+      "id": 227,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:48.226Z",
+      "kind": "api_call",
+      "details": {
+        "role": "source",
+        "path": "/api/v2/integration/connection",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 11
+      }
+    },
+    {
+      "id": 228,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:48.262Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 35
+      }
+    },
+    {
+      "id": 229,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:48.305Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker",
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 40
+      }
+    },
+    {
+      "id": 230,
+      "run_id": "033e1d7a-b922-43c3-9286-cadbe4ec0cb5",
+      "at": "2026-10-20T13:40:48.332Z",
+      "kind": "api_call",
+      "details": {
+        "role": "worker",
+        "path": "/api/v2/workflow/ledger",
+        "method": "GET",
+        "status": 200,
+        "latency_ms": 24
+      }
+    }
+  ]
+}

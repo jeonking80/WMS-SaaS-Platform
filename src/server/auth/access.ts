@@ -2,7 +2,7 @@ import { recordAuthenticatedUser, recordRequestIdentity, recordRequestResult } f
 import { getAuth } from "./config";
 import { getPool } from "../db/pool";
 
-export type Role = "admin" | "worker" | "viewer";
+export type Role = "admin" | "supervisor" | "worker" | "viewer";
 export type Identity = {
   user: { id: string; name: string; email: string };
   tenant: { id: string; name: string };
@@ -21,15 +21,27 @@ export async function requireIdentity(headers: Headers): Promise<Identity> {
   recordAuthenticatedUser(session.user.id);
   // This narrow authentication query intentionally precedes business RLS context.
   // Neither a query parameter nor a request body supplies the tenant or role.
-  const result = await getPool().query<{ tenant_id: string; tenant_name: string; role: Role }>(
-    `SELECT m.tenant_id, t.name AS tenant_name, m.role
+  const result = await getPool().query<{ tenant_id: string; tenant_name: string; role: Role; idle_lock_minutes: number }>(
+    `SELECT m.tenant_id, t.name AS tenant_name, m.role, t.idle_lock_minutes
        FROM memberships m JOIN tenants t ON t.id = m.tenant_id
-      WHERE m.user_id = $1 AND t.active = true`,
+      WHERE m.user_id = $1 AND m.status = 'active' AND t.active = true`,
     [session.user.id],
   );
   const membership = result.rows[0];
-  if (!membership || !["admin", "worker", "viewer"].includes(membership.role)) {
+  if (!membership || !["admin", "supervisor", "worker", "viewer"].includes(membership.role)) {
     throw new AccessError(403, "MEMBERSHIP_REQUIRED");
+  }
+  // Public auth/session polling cannot extend this server-side protected-request idle window.
+  // The conditional update serializes concurrent requests and refuses sessions already past the limit.
+  const sessionId = session.session?.id;
+  if (!sessionId) throw new AccessError(401, "UNAUTHENTICATED");
+  const active = await getPool().query<{id:string}>(`UPDATE "session" SET last_protected_at=CURRENT_TIMESTAMP
+    WHERE id=$1 AND "userId"=$2 AND "expiresAt">CURRENT_TIMESTAMP
+      AND last_protected_at>CURRENT_TIMESTAMP-($3::integer*interval '1 minute') RETURNING id`,
+    [sessionId,session.user.id,membership.idle_lock_minutes ?? 15]);
+  if (!active.rows.length) {
+    await getPool().query('DELETE FROM "session" WHERE id=$1 AND "userId"=$2',[sessionId,session.user.id]);
+    throw new AccessError(401, "UNAUTHENTICATED");
   }
   const identity: Identity = {
     user: { id: session.user.id, name: session.user.name, email: session.user.email },

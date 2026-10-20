@@ -2,6 +2,7 @@ import { openDocument } from "./document-ui";
 import { randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import pg from "pg";
+import { grantFixtureWarehouse } from "./warehouse-scope";
 
 const origin = "http://127.0.0.1:3100";
 const tenant = "00000000-0000-4000-8000-000000000001";
@@ -32,7 +33,9 @@ function fixtures(request: APIRequestContext) {
     const response = await request.post(`/api/${kind}`, { headers, data: { code: `${prefix}-${kind}`, name: `${prefix}-${kind}`, ...extra } });
     expect(response.status()).toBe(201);
     const row = (await response.json())[kind === "items" ? "item" : kind === "warehouses" ? "warehouse" : "location"];
-    ids[kind].push(row.id); return row.id as string;
+    ids[kind].push(row.id);
+    if (kind === "warehouses") await grantFixtureWarehouse(pool,tenant,row.id);
+    return row.id as string;
   }
   return {
     ids,
@@ -56,7 +59,7 @@ function fixtures(request: APIRequestContext) {
         await pool.query("DELETE FROM stock_balances WHERE location_id=ANY($1::uuid[]) AND item_id=ANY($2::uuid[])", [ids.locations, ids.items]);
         await pool.query("DELETE FROM inventory_document_lines WHERE document_id=ANY($1::uuid[])", [ids.documents]);
         await pool.query("DELETE FROM inventory_documents WHERE id=ANY($1::uuid[])", [ids.documents]);
-        for (const table of ["locations", "warehouses", "items"] as const) await pool.query(`DELETE FROM ${table} WHERE id=ANY($1::uuid[])`, [ids[table]]);
+        for (const table of ["locations", "warehouses", "items"] as const) await pool.query(`UPDATE ${table} SET active=false WHERE id=ANY($1::uuid[])`, [ids[table]]);
         await pool.query("COMMIT");
       } catch (error) { await pool.query("ROLLBACK"); throw error; } finally { await pool.end(); }
     },

@@ -1,0 +1,65 @@
+{
+  "recorded_at": "2026-10-20T14:01:23.683640+00:00",
+  "build_id": "OKmhv8KsLVWaXERwuuT7M",
+  "scope": "local regression; not full proposal completion or public deployment",
+  "github_actions_used": false,
+  "verify_command_exit": 1,
+  "verify_exit_reason": "Original E2E test fixtures and wait/locator assumptions failed; subsequent targeted reruns passed after test-only fixes. App source and built server were unchanged.",
+  "checks": {
+    "typescript": "passed",
+    "unit": {
+      "passed": 186
+    },
+    "integration": {
+      "passed": 156
+    },
+    "build": "passed",
+    "e2e": {
+      "suite_rerun_passed": 36,
+      "suite_rerun_failed": 2,
+      "corrected_targeted_passed": 2,
+      "distinct_test_cases_passed": 39,
+      "single_all_green_suite_after_final_test_fixes": false,
+      "additional_operational_ui_passed": 1
+    },
+    "simulator_unit": {
+      "passed": 19,
+      "report": "v2-simulator-freeze-latest.json"
+    },
+    "simulator_integration_after_compact_persistence": {
+      "passed": 9,
+      "actual_scenarios": 12
+    },
+    "final_typecheck": "passed"
+  },
+  "evidence": [
+    {
+      "path": "/tmp/wms-v2-verify18-recheck.log",
+      "sha256": "2d8c145184a3555b4fc03d0cf13cdd8503cc93154b333747cf42504f615b7732"
+    },
+    {
+      "path": "/tmp/wms-v2-e2e18-recheck.log",
+      "sha256": "d212044c200512d2380c8299404b8261a59dbe9cf0acd4477f02d1aafdcdd74f"
+    },
+    {
+      "path": "/tmp/wms-v2-ui-fixture-recheck2.log",
+      "sha256": "402a9fe4c092502edba320703a6160a58042eb2d9dedd07b1d4900395c434cd9"
+    },
+    {
+      "path": "/tmp/v2-integration-compact-final.log",
+      "sha256": "ac6efb89769992c7374af17ad97273626080c49c3d1d4030b35cf36a485ba9eb"
+    },
+    {
+      "path": "/tmp/wms-v2-typecheck-final.log",
+      "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+    }
+  ],
+  "pending": [
+    "Final build million-ledger performance: company B screen p95 2139ms exceeded 2000ms; investigation pending",
+    "25-minute congestion",
+    "8-hour shift",
+    "G4 real users/devices/provider",
+    "G5 five business days"
+  ],
+  "whole_proposal_complete": false
+}

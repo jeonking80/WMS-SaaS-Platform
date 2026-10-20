@@ -1,0 +1,92 @@
+{
+  "generated_at": "2026-10-20T14:22:02.907909+00:00",
+  "scope": "Actual PostgreSQL and authenticated Next route handlers; isolated schema and NOSUPERUSER NOBYPASSRLS role. Pool injection selects the real dedicated test database, with no business service mocks.",
+  "test": "tests/integration/v2-integration-query.test.ts",
+  "test_sha256": "427fd00f93541a0b106775ba8f351f942c50290c1125be83d61e290e9f12730f",
+  "fixture": {
+    "envelopes": 101,
+    "accepted_through": "acceptEvent real durable PostgreSQL service",
+    "synthetic_reader_statuses": {
+      "applied": 100,
+      "quarantined": 1
+    },
+    "other_source_envelopes": 1,
+    "disclaimer": "Only result statuses are set by SQL for a reader fixture. This is not evidence of 100 completed business workflows. Performance baseline database is untouched."
+  },
+  "before_fix": {
+    "started_at": "2026-10-20T14:19:51Z",
+    "tests_failed": 4,
+    "observed_error_filter_returned": 100,
+    "observed_error_filter_states": "applied",
+    "expected_error_filter_returned": 1,
+    "hidden_record_external_id": "QUERY-101-QUARANTINED",
+    "reason": "status and external_id alias ignored; response missing counts/has_more"
+  },
+  "after_fix": {
+    "started_at": "2026-10-20T14:20:23Z",
+    "tests_passed": 4,
+    "duration_seconds": 1.27,
+    "error_filtered_count": 1,
+    "total_count": 101,
+    "status_counts": {
+      "accepted": 0,
+      "dependency_wait": 0,
+      "applied": 100,
+      "business_rejected": 0,
+      "retry_wait": 0,
+      "quarantined": 1
+    },
+    "page_lengths": [
+      100,
+      1,
+      0
+    ],
+    "exact_external_aliases": [
+      "external_entity_id",
+      "external_id"
+    ],
+    "counts_exclude_cursor": true,
+    "counts_and_page_same_sql_snapshot": true,
+    "machine_other_source_http": 403,
+    "machine_other_warehouse_http": 403,
+    "foreign_tenant_count": 0,
+    "foreign_warehouse_count": 0,
+    "unscoped_raw_rls_rows": 0,
+    "malformed_input_http": 400,
+    "schema_and_role_cleaned": true
+  },
+  "compatibility_regression": {
+    "started_at": "2026-10-20T14:21:14Z",
+    "tests_passed": 6,
+    "tests_skipped": 7,
+    "duration_seconds": 3.13,
+    "includes": [
+      "all 4 new reader tests",
+      "existing accepted event persistence/restart/replay/polling",
+      "existing source-specific UUID isolation"
+    ]
+  },
+  "typecheck": "PASS: scoped TypeScript includes acceptance, cutover, query test, helper, and acceptance browser spec",
+  "browser_result": {
+    "status": "passed",
+    "spec": "tests/e2e/v2-integration-list.spec.ts",
+    "build_id": "-oBhg3XQlSYuVZ5MbZfge",
+    "duration_seconds": 3.1,
+    "source_log": "/tmp/wms-v2-verify-pagination-final.log",
+    "scope": [
+      "unique new tenant and warehouse reader-only 100 applied + 101st quarantined fixture",
+      "homepage error total and focused original event",
+      "unfiltered 100+1 sequence pagination",
+      "server status/source/exact external search",
+      "real retry on original durable event; no inventory effect"
+    ],
+    "not_claimed": "Other full-suite failures are outside this individual test verdict. Synthetic applied statuses do not demonstrate 100 business successes."
+  },
+  "not_claimed": [
+    "100 successful business operations",
+    "final production performance",
+    "25-minute congestion",
+    "8-hour shift",
+    "field/operator acceptance"
+  ]
+}

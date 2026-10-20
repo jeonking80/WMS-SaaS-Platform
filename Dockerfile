@@ -15,6 +15,13 @@ COPY --chown=node:node db ./db
 USER node
 CMD ["npm", "run", "db:migrate"]
 
+FROM node:24.19.0-bookworm-slim AS integration-worker
+WORKDIR /app
+ENV NODE_ENV=production
+COPY --chown=node:node src/server/v2/integration/worker.mjs ./worker.mjs
+USER node
+CMD ["node", "worker.mjs"]
+
 FROM dependencies AS builder
 ENV NEXT_TELEMETRY_DISABLED=1 WMS_STANDALONE=1
 COPY . .

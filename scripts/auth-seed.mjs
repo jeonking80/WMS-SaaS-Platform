@@ -47,6 +47,8 @@ try {
         'INSERT INTO memberships (user_id, tenant_id, role) VALUES ($1, $2, $3)',
         [userId, tenantId, role],
       );
+      await client.query("SELECT set_config('app.tenant_id',$1,true)", [tenantId]);
+      await client.query('INSERT INTO v2_warehouse_grants(tenant_id,user_id,warehouse_id) SELECT tenant_id,$2,id FROM warehouses WHERE tenant_id=$1 ON CONFLICT DO NOTHING', [tenantId,userId]);
     }
   }
   await client.query('COMMIT');

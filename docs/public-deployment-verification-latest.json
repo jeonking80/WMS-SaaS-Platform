@@ -1,0 +1,82 @@
+{
+  "origin": "https://wms-saa-s-platform.vercel.app",
+  "startedAt": "2026-10-20T09:26:39.076Z",
+  "synthetic": true,
+  "prefix": "PUBLIC-2026-10-20-60354d97",
+  "checks": [
+    "admin login through public browser UI with TLS verification",
+    "dedicated synthetic masters and address-book entry created",
+    "INBOUND created and saved through public UI with document number",
+    "INBOUND posted through public UI",
+    "inbound stock 100/0",
+    "OUTBOUND created and saved through public UI with document number",
+    "OUTBOUND posted through public UI with committed-response loss and same-key retry",
+    "worker outbound retry leaves stock 70/0 without duplicate deduction",
+    "TRANSFER created and saved through public UI with document number",
+    "TRANSFER posted through public UI",
+    "transfer stock 50/20 preserves total 70",
+    "four ledger entries, actor names and public stock UI reconciliation",
+    "viewer history UI and delivery snapshot; worker/viewer mutation restrictions",
+    "synthetic stock restored to zero by linked reversal documents",
+    "pre-existing stock unchanged"
+  ],
+  "documents": [
+    {
+      "id": "4dd85309-9e4e-4903-b3a8-b82641c98d44",
+      "number": "WMS-000014",
+      "kind": "INBOUND",
+      "reversalId": "7d66e7d2-ff18-47aa-915f-df2accf1ce1e"
+    },
+    {
+      "id": "11f5fe81-ebe4-4b5b-b11f-f254db6a7a6e",
+      "number": "WMS-000015",
+      "kind": "OUTBOUND",
+      "reversalId": "4dcdc533-2a94-4180-bb8f-e124f653072e"
+    },
+    {
+      "id": "3000882e-0dc0-432e-a8fd-1c720bc4f651",
+      "number": "WMS-000016",
+      "kind": "TRANSFER",
+      "reversalId": "bd071303-527e-4771-9e47-f72343b59845"
+    }
+  ],
+  "masters": [
+    {
+      "kind": "items",
+      "id": "e7bdd765-249d-4e7b-9b62-22f553d97264"
+    },
+    {
+      "kind": "warehouses",
+      "id": "558ca27f-fe04-493b-badd-71df97df6415"
+    },
+    {
+      "kind": "locations",
+      "id": "11163173-c91d-4b05-a784-e18f9a5db247"
+    },
+    {
+      "kind": "locations",
+      "id": "08a28752-ad7e-4045-b993-bbd73152a3de"
+    }
+  ],
+  "completed": true,
+  "restored": true,
+  "limitations": [
+    "Public second-tenant isolation requires a separate deployed tenant identity; not established by a missing UUID.",
+    "The public app does not expose a deployment commit SHA."
+  ],
+  "deliveryDestinationId": "28ebe139-8796-4e00-945b-1479f889b8bb",
+  "ledgerDeltas": [
+    -20,
+    20,
+    -30,
+    100
+  ],
+  "finishedAt": "2026-10-20T09:29:23.547Z",
+  "evidenceSource": {
+    "threadTitle": "공개 배포 검증 이어가기",
+    "threadId": "01a1589b-0b84-72c9-9b49-187a894740a2",
+    "method": "Recovered from completed execution output; not rerun in this environment"
+  },
+  "exitCode": 0,
+  "subsequentIsolationEvidence": "public-isolation-verification-latest.json"
+}

@@ -1,0 +1,36 @@
+{
+  "origin": "https://wms-saa-s-platform.vercel.app",
+  "startedAt": "2026-10-20T10:29:49.436Z",
+  "completed": true,
+  "checks": [
+    {
+      "direction": "70000000 -> 71000000",
+      "foreignFixtureConfirmed": true,
+      "foreignStockAndLedgerEmpty": true,
+      "detailAndHistory404": true,
+      "cancel404": true,
+      "documentUnchanged": true,
+      "stockUnchanged": true,
+      "reconciled": true
+    },
+    {
+      "direction": "71000000 -> 70000000",
+      "foreignFixtureConfirmed": true,
+      "foreignStockAndLedgerEmpty": true,
+      "detailAndHistory404": true,
+      "cancel404": true,
+      "documentUnchanged": true,
+      "stockUnchanged": true,
+      "reconciled": true
+    }
+  ],
+  "evidenceSource": {
+    "threadTitle": "공개 배포 검증 이어가기",
+    "threadId": "01a1589b-0b84-72c9-9b49-187a894740a2",
+    "method": "Recovered from completed execution output; not rerun in this environment"
+  },
+  "exitCode": 0,
+  "verificationSourceCommit": "df28128a1a9ed0e737b77dd4381dceca9d209888",
+  "verifierSha256": "669079333a9dfc80529fdbeb2b2e31b5064998321018f3f35989437bd56c6fa4",
+  "scope": "Public bidirectional API isolation; no separate browser UI isolation check."
+}

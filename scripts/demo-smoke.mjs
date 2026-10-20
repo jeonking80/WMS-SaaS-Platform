@@ -6,7 +6,13 @@ import { setTimeout as delay } from 'node:timers/promises';
 
 const origin = new URL(process.env.DEMO_ORIGIN ?? 'http://127.0.0.1:3000').origin;
 if (!origin.startsWith('https://') && !/^http:\/\/(127\.0\.0\.1|localhost):/.test(origin)) throw new Error('Use HTTPS or a loopback origin.');
-const browser = await chromium.launch({ executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined });
+const proxy = origin.startsWith('https://') && process.env.NODE_USE_ENV_PROXY === '1'
+  ? process.env.HTTPS_PROXY ?? process.env.HTTP_PROXY
+  : undefined;
+const browser = await chromium.launch({
+  executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || undefined,
+  ...(proxy ? { proxy: { server: proxy } } : {}),
+});
 const contexts = [];
 async function request(context, path, status = 200, method = 'get', data) {
   const response = await context.request[method](path, { headers: { Origin: origin }, data });

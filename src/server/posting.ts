@@ -42,6 +42,9 @@ async function post(identity: Identity, rawId: string, rawVersion: number, rawKe
     }
     if (document.status !== "DRAFT") throw new DomainError(409, "INVALID_STATE");
     if (document.version !== version) throw new DomainError(409, "VERSION_CONFLICT");
+    if (outbound && (typeof document.recipient_name !== "string" || !document.recipient_name.trim() || typeof document.delivery_address !== "string" || !document.delivery_address.trim())) {
+      throw new DomainError(400, "DELIVERY_REQUIRED");
+    }
     const linesResult = await client.query<{ item_id: string; quantity: number }>("SELECT item_id, quantity FROM inventory_document_lines WHERE document_id=$1 ORDER BY item_id", [id]);
     const lines = linesResult.rows;
     if (lines.length < 1 || lines.length > 20 || new Set(lines.map((line) => line.item_id)).size !== lines.length || lines.some((line) => !Number.isInteger(line.quantity) || line.quantity < 1 || line.quantity > 1_000_000_000)) {

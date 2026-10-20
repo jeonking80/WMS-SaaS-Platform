@@ -22,7 +22,7 @@ describe("document input boundary", () => {
   });
   it("requires direction-specific locations and distinct transfers", () => {
     expect(() => parseDocument({ ...input(), source_location_id: source })).toThrow();
-    expect(() => parseDocument({ ...input(), kind: "OUTBOUND" })).toThrow();
+    expect(() => parseDocument({ ...input(), kind: "OUTBOUND", recipient_name: "Recipient", delivery_address: "Address" })).toThrow();
     expect(() => parseDocument({ ...input(), kind: "TRANSFER", source_location_id: destination })).toThrow();
     expect(parseDocument({ ...input(), kind: "TRANSFER", source_location_id: source }).kind).toBe("TRANSFER");
   });

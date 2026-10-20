@@ -79,7 +79,7 @@ async function effects(id: string, item: string) {
   }));
 }
 async function outbound(lines: { item_id: string; quantity: number }[]) {
-  return createDocument(tenant, { kind: 'OUTBOUND', warehouse_id: warehouse, source_location_id: location, destination_location_id: null, note: '', lines });
+  return createDocument(tenant, { kind: 'OUTBOUND', recipient_name: 'Test recipient', delivery_address: 'Test delivery address', warehouse_id: warehouse, source_location_id: location, destination_location_id: null, note: '', lines });
 }
 async function stocked(quantity = 100) {
   const d = await draft(quantity);

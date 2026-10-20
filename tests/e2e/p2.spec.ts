@@ -122,7 +122,7 @@ test("P2 master data and document lifecycle enforce roles, tenant isolation and 
     expect((await request.patch(`/api/items/${item.id}`, { headers, data: { name: "forbidden" } })).status()).toBe(403);
     const transfer = await document({ ...body, kind: "TRANSFER", source_location_id: location.id, destination_location_id: transferLocation.id });
     expect((await request.post(`/api/documents/${transfer.id}/cancel`, { headers, data: { version: transfer.version } })).status()).toBe(200);
-    const workerDraft = await document({ ...body, kind: "OUTBOUND", destination_location_id: null, source_location_id: location.id });
+    const workerDraft = await document({ ...body, kind: "OUTBOUND", recipient_name: "Test recipient", delivery_address: "Test delivery address", destination_location_id: null, source_location_id: location.id });
     expect((await request.patch(`/api/documents/${workerDraft.id}`, { headers, data: { ...body, version: workerDraft.version, lines: [{ item_id: item.id, quantity: 1_000_000_000 }] } })).status()).toBe(200);
     const workerCurrent = (await (await request.get(`/api/documents/${workerDraft.id}`)).json()).document as Row;
     expect((await request.post(`/api/documents/${workerDraft.id}/cancel`, { headers, data: { version: workerCurrent.version } })).status()).toBe(200);
@@ -196,7 +196,7 @@ test("P2 browser creates master data and saves, edits and cancels a document", a
     await page.goto("/dashboard/documents");
     await page.getByRole("button", { name: "새 전표", exact: true }).click();
     await page.getByRole("combobox", { name: "창고", exact: true }).selectOption(ids.warehouses[0]);
-    await page.getByRole("combobox", { name: "도착 로케이션", exact: true }).selectOption(ids.locations[0]);
+    await page.getByRole("combobox", { name: "도착 보관위치", exact: true }).selectOption(ids.locations[0]);
     await page.getByRole("combobox", { name: "품목 1", exact: true }).selectOption(ids.items[0]);
     await page.getByLabel("수량 1", { exact: true }).fill("3");
     await page.getByRole("textbox", { name: "메모", exact: true }).fill("browser draft");

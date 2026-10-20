@@ -71,7 +71,7 @@ export function pagedDocuments(tenant: string, filters: QueryFilters, history = 
   if (filters.item_id) c.clauses.push(`EXISTS (SELECT 1 FROM inventory_document_lines dl WHERE (dl.tenant_id,dl.document_id)=(d.tenant_id,d.id) AND dl.item_id=${c.bind(filters.item_id)})`);
   if (filters.q) {
     const p = c.bind(literalSearch(filters.q));
-    c.clauses.push(`(d.id::text ILIKE ${p} ESCAPE E'\\\\' OR d.note ILIKE ${p} ESCAPE E'\\\\' OR EXISTS (SELECT 1 FROM inventory_document_lines dl JOIN items i ON (i.tenant_id,i.id)=(dl.tenant_id,dl.item_id) WHERE (dl.tenant_id,dl.document_id)=(d.tenant_id,d.id) AND (i.code ILIKE ${p} ESCAPE E'\\\\' OR i.name ILIKE ${p} ESCAPE E'\\\\')))`);
+    c.clauses.push(`(d.id::text ILIKE ${p} ESCAPE E'\\\\' OR d.note ILIKE ${p} ESCAPE E'\\\\' OR d.recipient_name ILIKE ${p} ESCAPE E'\\\\' OR d.delivery_address ILIKE ${p} ESCAPE E'\\\\' OR EXISTS (SELECT 1 FROM inventory_document_lines dl JOIN items i ON (i.tenant_id,i.id)=(dl.tenant_id,dl.item_id) WHERE (dl.tenant_id,dl.document_id)=(d.tenant_id,d.id) AND (i.code ILIKE ${p} ESCAPE E'\\\\' OR i.name ILIKE ${p} ESCAPE E'\\\\')))`);
   }
   c.dates(`d.${filters.date_field}`, filters);
   return paged(tenant, `SELECT d.*, w.name AS warehouse_name, sl.code AS source_location_code, dl.code AS destination_location_code, r.id AS reversal_document_id FROM inventory_documents d JOIN warehouses w ON (w.tenant_id,w.id)=(d.tenant_id,d.warehouse_id) LEFT JOIN locations sl ON (sl.tenant_id,sl.id)=(d.tenant_id,d.source_location_id) LEFT JOIN locations dl ON (dl.tenant_id,dl.id)=(d.tenant_id,d.destination_location_id) LEFT JOIN inventory_documents r ON (r.tenant_id,r.reversal_of_id)=(d.tenant_id,d.id)`, c, "created_at DESC, id DESC", filters, "documents");

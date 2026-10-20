@@ -6,6 +6,7 @@ export type DocumentKind = "INBOUND" | "OUTBOUND" | "TRANSFER";
 export type DocumentInput = {
   kind: DocumentKind; warehouse_id: string; source_location_id: string | null;
   destination_location_id: string | null; note: string;
+  recipient_name?: string | null; delivery_address?: string | null;
   lines: { item_id: string; quantity: number }[];
 };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -21,6 +22,19 @@ export function documentId(value: string): string {
 export function documentVersion(value: unknown): number {
   if (typeof value !== "number" || !Number.isInteger(value) || value < 1 || value > 2147483646) return invalid();
   return value;
+}
+function deliveryFields(kind: DocumentKind, recipient: unknown, address: unknown) {
+  const field = (value: unknown, limit: number): string | null => {
+    if (value == null) return null;
+    if (typeof value !== "string") return invalid();
+    const trimmed = value.trim();
+    if (trimmed.length > limit) return invalid();
+    return trimmed || null;
+  };
+  const recipient_name = field(recipient, 128);
+  const delivery_address = field(address, 500);
+  if (kind === "OUTBOUND" ? !recipient_name || !delivery_address : recipient_name !== null || delivery_address !== null) return invalid();
+  return { recipient_name, delivery_address };
 }
 export function parseDocument(body: Record<string, unknown>): DocumentInput {
   if (!["INBOUND", "OUTBOUND", "TRANSFER"].includes(body.kind as string)) return invalid();
@@ -42,7 +56,7 @@ export function parseDocument(body: Record<string, unknown>): DocumentInput {
     return { item_id, quantity: row.quantity };
   });
   if (new Set(lines.map((line) => line.item_id)).size !== lines.length) return invalid();
-  return { kind, warehouse_id, source_location_id, destination_location_id, note, lines };
+  return { kind, warehouse_id, source_location_id, destination_location_id, note, ...deliveryFields(kind, body.recipient_name, body.delivery_address), lines };
 }
 async function references(client: PoolClient, input: DocumentInput) {
   const missing = () => { throw new DomainError(404, "REFERENCE_NOT_FOUND"); };
@@ -96,8 +110,9 @@ export function getDocument(tenantId: string, id: string, history = false) {
 }
 export function createDocument(tenantId: string, input: DocumentInput) {
   return withTenant(tenantId, async (client) => {
+    const delivery = deliveryFields(input.kind, input.recipient_name, input.delivery_address);
     await references(client, input);
-    const result = await client.query("INSERT INTO inventory_documents (tenant_id, kind, warehouse_id, source_location_id, destination_location_id, note) VALUES ($1,$2,$3,$4,$5,$6) RETURNING id", [tenantId, input.kind, input.warehouse_id, input.source_location_id, input.destination_location_id, input.note]);
+    const result = await client.query("INSERT INTO inventory_documents (tenant_id, kind, warehouse_id, source_location_id, destination_location_id, note, recipient_name, delivery_address) VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id", [tenantId, input.kind, input.warehouse_id, input.source_location_id, input.destination_location_id, input.note, delivery.recipient_name, delivery.delivery_address]);
     const id = result.rows[0].id as string;
     await addLines(client, tenantId, id, input);
     return detail(client, id);
@@ -112,8 +127,9 @@ export function updateDocument(tenantId: string, rawId: string, version: number,
     if (row.version !== version) throw new DomainError(409, "VERSION_CONFLICT");
     if (row.status !== "DRAFT") throw new DomainError(409, "INVALID_STATE");
     if (input) {
+      const delivery = deliveryFields(input.kind, input.recipient_name, input.delivery_address);
       await references(client, input);
-      await client.query("UPDATE inventory_documents SET kind=$2, warehouse_id=$3, source_location_id=$4, destination_location_id=$5, note=$6, version=version+1, updated_at=clock_timestamp() WHERE id=$1", [id, input.kind, input.warehouse_id, input.source_location_id, input.destination_location_id, input.note]);
+      await client.query("UPDATE inventory_documents SET kind=$2, warehouse_id=$3, source_location_id=$4, destination_location_id=$5, note=$6, recipient_name=$7, delivery_address=$8, version=version+1, updated_at=clock_timestamp() WHERE id=$1", [id, input.kind, input.warehouse_id, input.source_location_id, input.destination_location_id, input.note, delivery.recipient_name, delivery.delivery_address]);
       await client.query("DELETE FROM inventory_document_lines WHERE document_id=$1", [id]);
       await addLines(client, tenantId, id, input);
     } else {

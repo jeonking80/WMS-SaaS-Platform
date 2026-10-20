@@ -81,7 +81,7 @@ async function effects(id: string, item: string) {
   }));
 }
 async function outbound(lines: { item_id: string; quantity: number }[]) {
-  return createDocument(tenant, { kind: 'OUTBOUND', warehouse_id: warehouse, source_location_id: location, destination_location_id: null, note: '', lines });
+  return createDocument(tenant, { kind: 'OUTBOUND', recipient_name: 'Test recipient', delivery_address: 'Test delivery address', warehouse_id: warehouse, source_location_id: location, destination_location_id: null, note: '', lines });
 }
 async function stocked(quantity = 100) {
   const d = await draft(quantity);
@@ -235,7 +235,7 @@ describe('P5 transfer and reversal with restricted PostgreSQL application role',
     const destination = await secondLocation();
     const document = await transfer(inbound.item, destination, 60);
     await postDocument(identity, document.id, 1, randomUUID());
-    const outgoing = await createDocument(tenant, { kind: 'OUTBOUND', warehouse_id: warehouse, source_location_id: destination, destination_location_id: null, note: '', lines: [{ item_id: inbound.item, quantity: 1 }] });
+    const outgoing = await createDocument(tenant, { kind: 'OUTBOUND', recipient_name: 'Test recipient', delivery_address: 'Test delivery address', warehouse_id: warehouse, source_location_id: destination, destination_location_id: null, note: '', lines: [{ item_id: inbound.item, quantity: 1 }] });
     await postDocument(identity, outgoing.id, 1, randomUUID());
     before = await snapshot();
     await expect(reverseDocument(identity, document.id, 2, randomUUID())).rejects.toMatchObject({ status: 409, code: 'INSUFFICIENT_STOCK' });

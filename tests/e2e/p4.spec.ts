@@ -44,7 +44,7 @@ function fixtures(request: APIRequestContext) {
       return { item, warehouse, location, document, body, itemCode: `${prefix}-items` };
     },
     async outbound(warehouse: string, location: string, item: string, quantity = 80) {
-      const response = await request.post("/api/documents", { headers, data: { kind: "OUTBOUND", warehouse_id: warehouse, source_location_id: location, note: prefix, lines: [{ item_id: item, quantity }] } });
+      const response = await request.post("/api/documents", { headers, data: { kind: "OUTBOUND", recipient_name: "Test recipient", delivery_address: "Test delivery address", warehouse_id: warehouse, source_location_id: location, note: prefix, lines: [{ item_id: item, quantity }] } });
       expect(response.status()).toBe(201);
       const document = (await response.json()).document as Document;
       ids.documents.push(document.id); return document;

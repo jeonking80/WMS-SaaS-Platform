@@ -49,7 +49,7 @@ function fixtures(request: APIRequestContext) {
     },
     async destination(warehouse: string) { return master("locations", { warehouse_id: warehouse, code: `${prefix}-destination` }); },
     async outbound(warehouse: string, location: string, item: string, quantity = 80) {
-      const response = await request.post("/api/documents", { headers, data: { kind: "OUTBOUND", warehouse_id: warehouse, source_location_id: location, note: prefix, lines: [{ item_id: item, quantity }] } });
+      const response = await request.post("/api/documents", { headers, data: { kind: "OUTBOUND", recipient_name: "Test recipient", delivery_address: "Test delivery address", warehouse_id: warehouse, source_location_id: location, note: prefix, lines: [{ item_id: item, quantity }] } });
       expect(response.status()).toBe(201);
       const document = (await response.json()).document as Document;
       ids.documents.push(document.id); return document;
@@ -180,7 +180,15 @@ test("P6 browser refreshes tenant data after logout and history is read only at 
     await expect(page).toHaveURL(/\/login$/);
     await page.getByLabel("이메일", { exact: true }).fill("admin.b@example.test");
     await page.getByLabel("비밀번호", { exact: true }).fill(process.env.DEMO_PASSWORD!);
-    await page.getByRole("button", { name: "로그인", exact: true }).click();
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const [response] = await Promise.all([
+        page.waitForResponse(r => new URL(r.url()).pathname === "/api/auth/sign-in/email" && r.request().method() === "POST"),
+        page.getByRole("button", { name: "로그인", exact: true }).click(),
+      ]);
+      if (response.status() !== 429 || attempt === 3) { expect(response.status()).toBe(200); break; }
+      const retryAfter = Number(response.headers()["retry-after"] ?? 10);
+      await page.waitForTimeout(Math.min(60, Math.max(1, Number.isFinite(retryAfter) ? retryAfter : 10)) * 1000 + 250);
+    }
     await expect(page).toHaveURL(/\/dashboard$/);
     await expect(page.getByTestId("current-company")).toHaveText("데모 고객사 B");
     await expect(page.getByText(data.document.id, { exact: true })).toHaveCount(0);
@@ -245,7 +253,7 @@ test("P6 stock browser searches, paginates and distinguishes loading, empty and 
     await expect(page.getByRole("status").filter({ hasText: "불러오는 중" })).toBeVisible();
     await expect(stock.getByText("등록된 재고가 없습니다.", { exact: true })).toHaveCount(0);
     release();
-    await expect(page.getByRole("alert")).toBeVisible();
+    await expect(page.getByRole("alert").filter({ hasText: "서버에 연결할 수 없습니다." })).toBeVisible();
     await expect(stock.getByText("등록된 재고가 없습니다.", { exact: true })).toHaveCount(0);
     await expect(page.getByText("현재 재고와 변동 이력의 수량이 일치합니다.", { exact: true })).toHaveCount(0);
     await expect(stock.locator("tbody tr")).toHaveCount(0);

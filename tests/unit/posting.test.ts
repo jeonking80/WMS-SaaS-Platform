@@ -69,7 +69,7 @@ describe("inbound posting boundaries", () => {
 describe("unified outbound posting", () => {
   const secondId = "10000000-0000-4000-8000-000000000002";
   function outbound(lines = [{ item_id: id, quantity: 3 }]) {
-    query.mockResolvedValueOnce({ rows: [{ ...document, kind: "OUTBOUND", warehouse_id: id, source_location_id: secondId }] })
+    query.mockResolvedValueOnce({ rows: [{ ...document, kind: "OUTBOUND", recipient_name: "Test recipient", delivery_address: "Test delivery address", warehouse_id: id, source_location_id: secondId }] })
       .mockResolvedValueOnce({ rows: [] }).mockResolvedValueOnce({ rows: [] })
       .mockResolvedValueOnce({ rows: lines })
       .mockResolvedValueOnce({ rowCount: 1 }).mockResolvedValueOnce({ rowCount: 1 });

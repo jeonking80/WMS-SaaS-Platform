@@ -27,7 +27,7 @@ let server, browser, seeded = false;
 let serverOutput = '';
 const report = {
   started_at: new Date().toISOString(), fixture: { tenant, documents: 10000, ledger: 10000, balances: 10000, items: 100, locations: 100, audits: 10000 },
-  method: { production_build: 'prebuilt .next; this script never builds', concurrency: 1, warmups: 1, measured_repeats: 5, target_ms: 2000, statistic: 'nearest-rank p95; 5 samples means p95=max', browser_timing: 'full navigation until populated table rows visible and two animation frames', exclusions: ['fixture seed', 'server startup', 'login', 'warmup'], scope: 'local latency measurement, not a load test; all synthetic documents are original posted INBOUND quantity=1 across 7 days' },
+  method: { production_build: 'prebuilt .next; this script never builds', concurrency: 1, warmups: 1, measured_repeats: 5, target_ms: 2000, statistic: 'nearest-rank p95; 5 samples means p95=max', browser_timing: 'full navigation until fixture table rows visible; home until metrics, 7-day chart and recent posted documents visible; then two animation frames', exclusions: ['fixture seed', 'server startup', 'login', 'warmup'], scope: 'local latency measurement, not a load test; all synthetic documents are original posted INBOUND quantity=1 across 7 days' },
   machine: { platform: `${platform()} ${release()}`, cpu: cpus()[0]?.model, logical_cpus: cpus().length, ram_bytes: totalmem(), node: process.version }, api: {}, browser: {},
 };
 function summarize(samples) {
@@ -87,6 +87,22 @@ try {
   // Bulk fixture loading changes cardinalities; refresh planner statistics before warmup.
   for (const table of ['inventory_documents','inventory_document_lines','stock_ledger','stock_balances','audit_logs','items','locations','warehouses']) await client.query(`ANALYZE ${table}`);
   report.method.planner_statistics = 'ANALYZE after bulk fixture seed, before warmup';
+  if (process.env.PERF_EXPLAIN === '1') {
+    const source = await readFile('src/server/queries.ts','utf8');
+    const joins = source.match(/const stockJoins = `([^`]+)`/)[1];
+    const select = source.slice(source.indexOf('export function pagedLedger')).match(/return paged\(tenant, `([^`]+)`/)[1]
+      .replace('${stockJoins}', joins)
+      .replace('${documentNumberSql("d")}', "('WMS-' || lpad(d.document_no::text, greatest(6, length(d.document_no::text)), '0'))");
+    const explainClient = new pg.Client({connectionString:process.env.DATABASE_URL});
+    await explainClient.connect();
+    await explainClient.query('BEGIN');
+    try {
+      await explainClient.query("SELECT set_config('app.tenant_id',$1,true)",[tenant]);
+      await explainClient.query("SET LOCAL statement_timeout='60s'");
+      report.ledger_explain = (await explainClient.query(`EXPLAIN (ANALYZE,BUFFERS,FORMAT JSON) WITH filtered AS (${select}), page AS (SELECT * FROM filtered ORDER BY created_at DESC,id DESC LIMIT 25 OFFSET 0) SELECT (SELECT count(*)::int FROM filtered) total,COALESCE((SELECT json_agg(page ORDER BY created_at DESC,id DESC) FROM page),'[]'::json) rows`)).rows[0]['QUERY PLAN'];
+    } finally { await explainClient.query('ROLLBACK'); await explainClient.end(); }
+  }
+
   report.machine.cgroup = {};
   for (const name of ['memory.max','cpu.max']) {
     try { report.machine.cgroup[name] = (await readFile(`/sys/fs/cgroup/${name}`,'utf8')).trim(); }
@@ -135,16 +151,22 @@ try {
     report.api[endpoint] = summarize(samples);
   }
   const page = await context.newPage();
-  for (const [path, sections] of [['/dashboard/stock',['현재 재고','재고 변동 이력']],['/dashboard/documents',[]],['/dashboard/history',[]],['/dashboard/audit',[]],['/dashboard',['최근 7일 확정 현황']]]) {
+  for (const [path, sections] of [['/dashboard/stock',['현재 재고','재고 변동 이력']],['/dashboard/documents',[]],['/dashboard/history',[]],['/dashboard/audit',[]],['/dashboard',['최근 확정 전표']]]) {
     const samples=[];
     for (let run=0;run<6;run++) {
       const start=performance.now();
-      await page.goto(path);
+      const navigation = await page.goto(path);
+      if (!navigation?.ok()) throw new Error(`${path}: navigation failed`);
+      await expect(page.getByTestId('current-company')).toHaveText(user);
+      if (path === '/dashboard') {
+        await expect(page.getByRole('heading',{name:'오늘의 운영 현황',exact:true})).toBeVisible();
+        await expect(page.getByRole('img',{name:/최근 7일 추이/})).toBeVisible();
+      }
       if (sections.length) {
-        for (const heading of sections) await expect(page.locator('section').filter({has:page.getByRole('heading',{name:heading,exact:true})}).locator('tbody tr').first()).toBeVisible();
+        for (const heading of sections) await expect(page.getByRole('heading',{name:heading,exact:true}).locator('xpath=ancestor::section[1]').locator('tbody tr').first()).toBeVisible();
       } else await expect(page.locator('tbody tr').first()).toBeVisible();
       await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
-      if (run) samples.push({ms:performance.now()-start,rendered_rows:await page.locator('tbody tr').count()});
+      if (run) samples.push({ms:performance.now()-start,rendered_rows:await page.locator('tbody tr:visible').count()});
     }
     report.browser[path]=summarize(samples);
   }

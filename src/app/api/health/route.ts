@@ -1,5 +1,8 @@
+import { withRequestLog } from "@/server/request-log";
 export const dynamic = "force-dynamic";
 
-export function GET() {
+function handleGET() {
   return Response.json({ status: "ok" }, { headers: { "Cache-Control": "no-store" } });
 }
+
+export const GET = withRequestLog("health", handleGET);

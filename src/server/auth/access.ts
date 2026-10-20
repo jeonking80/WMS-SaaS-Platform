@@ -1,3 +1,4 @@
+import { recordAuthenticatedUser, recordRequestIdentity, recordRequestResult } from "../request-log";
 import { getAuth } from "./config";
 import { getPool } from "../db/pool";
 
@@ -17,6 +18,7 @@ export class AccessError extends Error {
 export async function requireIdentity(headers: Headers): Promise<Identity> {
   const session = await getAuth().api.getSession({ headers });
   if (!session) throw new AccessError(401, "UNAUTHENTICATED");
+  recordAuthenticatedUser(session.user.id);
   // This narrow authentication query intentionally precedes business RLS context.
   // Neither a query parameter nor a request body supplies the tenant or role.
   const result = await getPool().query<{ tenant_id: string; tenant_name: string; role: Role }>(
@@ -29,11 +31,13 @@ export async function requireIdentity(headers: Headers): Promise<Identity> {
   if (!membership || !["admin", "worker", "viewer"].includes(membership.role)) {
     throw new AccessError(403, "MEMBERSHIP_REQUIRED");
   }
-  return {
+  const identity: Identity = {
     user: { id: session.user.id, name: session.user.name, email: session.user.email },
     tenant: { id: membership.tenant_id, name: membership.tenant_name },
     role: membership.role,
   };
+  recordRequestIdentity(identity);
+  return identity;
 }
 
 export async function getCurrentIdentity(headers: Headers): Promise<Identity | null> {
@@ -51,7 +55,9 @@ export function requireRole(identity: Identity, allowed: readonly Role[]): void 
 
 export function apiError(error: unknown): Response {
   if (error instanceof AccessError) {
+    recordRequestResult(error.code);
     return Response.json({ error: error.code }, { status: error.status, headers: { "Cache-Control": "no-store" } });
   }
+  recordRequestResult("SERVICE_UNAVAILABLE");
   return Response.json({ error: "SERVICE_UNAVAILABLE" }, { status: 503, headers: { "Cache-Control": "no-store" } });
 }

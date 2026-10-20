@@ -54,7 +54,7 @@ try {
         ['/dashboard','합성 데이터 · 공개 조회 전용 시연',35],
         ['/dashboard/stock','현재 재고와 입출고·이동 원장',45],
         ['/dashboard/history','확정 전표 이력 · 읽기 전용 조회',40],
-        ['/dashboard/stock?search=DEMO-COFFEE','원두 입출고·이동 수량 확인',30],
+        ['/dashboard/stock?item_id=70000000-0000-4000-8000-000000000010','원두 입출고·이동 수량 확인',30],
         ['/dashboard','권한·테넌트 격리와 원장 대조는 별도 자동 검증',30],
       ]) {
         await page.goto(path);
@@ -69,7 +69,7 @@ try {
           await expect(page.getByRole('heading',{name:'전표 상세 / 수정'})).toBeVisible();
           await page.getByRole('heading',{name:'전표 상세 / 수정'}).scrollIntoViewIfNeeded();
         }
-        if (path.includes('search=')) {
+        if (path.includes('item_id=')) {
           await page.getByLabel('검색어').first().fill('DEMO-COFFEE');
           await page.getByRole('button',{name:'검색 적용',exact:true}).first().click();
           await expect(page.locator('tbody tr').first()).toBeVisible();

@@ -1,3 +1,4 @@
+import { recordRequestResult } from "./request-log";
 import { AccessError } from "./auth/access";
 
 export class DomainError extends Error {
@@ -33,14 +34,19 @@ export async function readBody(request: Request): Promise<Record<string, unknown
 
 export function apiError(error: unknown): Response {
   if (error instanceof DomainError || error instanceof AccessError) {
-    return json({ error: error.code }, error.status);
+    return errorJson({ error: error.code }, error.status);
   }
   const code = error && typeof error === "object" && "code" in error ? error.code : undefined;
   if (["40001", "40P01", "55P03", "57014"].includes(String(code))) {
-    return json({ error: "RETRYABLE_TRANSACTION" }, 503);
+    return errorJson({ error: "RETRYABLE_TRANSACTION" }, 503);
   }
-  if (code === "23505") return json({ error: "CONFLICT" }, 409);
-  if (code === "23503") return json({ error: "REFERENCE_CONFLICT" }, 409);
-  if (code === "23514" || code === "22P02") return json({ error: "INVALID_INPUT" }, 400);
-  return json({ error: "SERVICE_UNAVAILABLE" }, 503);
+  if (code === "23505") return errorJson({ error: "CONFLICT" }, 409);
+  if (code === "23503") return errorJson({ error: "REFERENCE_CONFLICT" }, 409);
+  if (code === "23514" || code === "22P02") return errorJson({ error: "INVALID_INPUT" }, 400);
+  return errorJson({ error: "SERVICE_UNAVAILABLE" }, 503);
+}
+
+function errorJson(body: { error: string }, status: number): Response {
+  recordRequestResult(body.error);
+  return json(body, status);
 }

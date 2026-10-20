@@ -13,15 +13,22 @@ const target = `wms_restore_drill_${token}`;
 const file = `backups/drill-${token}.dump`;
 const owned = [];
 let ctx, sourceClient, targetClient, app;
-const tables = ['tenants','user','session','account','verification','memberships','items','warehouses','locations','inventory_documents','inventory_document_lines','stock_balances','stock_ledger','idempotency_requests','audit_logs','pgmigrations'];
+const tables = ['tenants','user','session','account','verification','memberships','items','warehouses','locations','inventory_documents','inventory_document_lines','stock_balances','stock_ledger','idempotency_requests','audit_logs','delivery_destinations','pgmigrations'];
 async function fingerprint(client) {
+  const actualTables = (await client.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename")).rows.map(row => row.tablename);
+  assert.deepEqual(actualTables, [...tables].sort(), 'Every public application table must be fingerprinted.');
   const counts = {}, hash = createHash('sha256');
   for (const table of tables) {
     const result = await client.query(`SELECT row_to_json(t)::text AS value FROM ${pg.escapeIdentifier(table)} t ORDER BY row_to_json(t)::text`);
     counts[table] = result.rowCount;
     hash.update(JSON.stringify([table, result.rows]));
   }
-  return { counts, sha256: hash.digest('hex') };
+  const sequences = {};
+  for (const { sequencename } of (await client.query("SELECT sequencename FROM pg_sequences WHERE schemaname='public' ORDER BY sequencename")).rows) {
+    sequences[sequencename] = (await client.query(`SELECT last_value::text,is_called FROM public.${pg.escapeIdentifier(sequencename)}`)).rows[0];
+  }
+  hash.update(JSON.stringify(sequences));
+  return { counts, sequences, sha256: hash.digest('hex') };
 }
 async function connect(url, database) {
   const binding = new URL(url); binding.pathname = `/${database}`;
@@ -42,6 +49,7 @@ try {
   await sourceClient.query('GRANT SELECT,INSERT,UPDATE,DELETE ON public."user",session,account,verification TO wms_app');
   await sourceClient.query('GRANT SELECT,INSERT,UPDATE,DELETE ON items,warehouses,locations,inventory_documents,inventory_document_lines TO wms_app');
   await sourceClient.query('GRANT SELECT,INSERT,UPDATE ON stock_balances TO wms_app; GRANT SELECT,INSERT ON stock_ledger,audit_logs,idempotency_requests TO wms_app; GRANT SELECT ON tenants,memberships TO wms_app');
+  await sourceClient.query('GRANT SELECT,INSERT,UPDATE ON delivery_destinations TO wms_app');
   const tenant = randomUUID(), foreign = randomUUID(), warehouse = randomUUID(), location = randomUUID(), item = randomUUID();
   await sourceClient.query('INSERT INTO tenants(id,name) VALUES($1,\'Restore synthetic A\'),($2,\'Restore synthetic B\')', [tenant,foreign]);
   const user = `restore-${token}`, credential = randomUUID()+randomUUID(), sessionToken = randomUUID()+randomUUID();
@@ -54,16 +62,22 @@ try {
   await sourceClient.query("INSERT INTO warehouses(id,tenant_id,code,name) VALUES($1,$2,'RESTORE','Restore warehouse')",[warehouse,tenant]);
   await sourceClient.query("INSERT INTO locations(id,tenant_id,warehouse_id,code,name) VALUES($1,$2,$3,'RESTORE','Restore location')",[location,tenant,warehouse]);
   await sourceClient.query("INSERT INTO items(id,tenant_id,code,name) VALUES($1,$2,'RESTORE','Restore item')",[item,tenant]);
+  const destination = randomUUID();
+  await sourceClient.query("INSERT INTO delivery_destinations(id,tenant_id,recipient_name,name,postal_code,address_line1,address_line2) VALUES($1,$2,'Restore recipient','Restore destination','12345','Restore address','Suite 7')",[destination,tenant]);
   for (const [kind,quantity] of [['INBOUND',100],['OUTBOUND',-30]]) {
     const document = randomUUID();
-    await sourceClient.query(`INSERT INTO inventory_documents(id,tenant_id,kind,status,warehouse_id,source_location_id,destination_location_id,posted_at) VALUES($1,$2,$3,'POSTED',$4,$5,$6,CURRENT_TIMESTAMP)`,[document,tenant,kind,warehouse,quantity<0?location:null,quantity>0?location:null]);
+    await sourceClient.query(`INSERT INTO inventory_documents(id,tenant_id,kind,status,warehouse_id,source_location_id,destination_location_id,posted_at,recipient_name,delivery_address,delivery_destination_id) VALUES($1,$2,$3,'POSTED',$4,$5,$6,CURRENT_TIMESTAMP,$7,$8,$9)`,[document,tenant,kind,warehouse,quantity<0?location:null,quantity>0?location:null,kind==='OUTBOUND'?'Restore recipient':null,kind==='OUTBOUND'?'Restore address Suite 7':null,kind==='OUTBOUND'?destination:null]);
     await sourceClient.query('INSERT INTO inventory_document_lines(tenant_id,document_id,item_id,quantity) VALUES($1,$2,$3,$4)',[tenant,document,item,Math.abs(quantity)]);
     await sourceClient.query('INSERT INTO stock_ledger(tenant_id,document_id,warehouse_id,location_id,item_id,quantity_delta) VALUES($1,$2,$3,$4,$5,$6)',[tenant,document,warehouse,location,item,quantity]);
     await sourceClient.query('INSERT INTO audit_logs(tenant_id,document_id,actor_id,action) VALUES($1,$2,$3,$4)',[tenant,document,user,`POST_${kind}`]);
     await sourceClient.query('INSERT INTO idempotency_requests(tenant_id,key,request_hash,response) VALUES($1,$2,$3,$4::jsonb)',[tenant,`restore-${document}`,createHash('sha256').update(JSON.stringify({document,kind,quantity})).digest('hex'),JSON.stringify({document:{id:document,status:'POSTED',kind},status:200})]);
   }
   await sourceClient.query('INSERT INTO stock_balances(tenant_id,warehouse_id,location_id,item_id,quantity) VALUES($1,$2,$3,$4,70)',[tenant,warehouse,location,item]);
+  // Advance beyond MAX(document_no): restore must preserve sequence state, including gaps.
+  await sourceClient.query("SELECT nextval(pg_get_serial_sequence('inventory_documents','document_no'))");
   const before = await fingerprint(sourceClient);
+  assert.equal(before.counts.pgmigrations,10);
+  assert.equal(before.counts.delivery_destinations,1);
   for (const table of ['user','account','session','verification','memberships']) assert.equal(before.counts[table],1);
   for (const table of ['audit_logs','idempotency_requests']) assert.equal(before.counts[table],2);
   const sourceCtx = { ...ctx, database: source };
@@ -76,7 +90,7 @@ try {
   targetClient = await connect(ctx.url,target);
   assert.deepEqual(await fingerprint(targetClient),before);
   const security = await targetClient.query("SELECT relname FROM pg_class WHERE relnamespace='public'::regnamespace AND relrowsecurity AND relforcerowsecurity ORDER BY relname");
-  assert.deepEqual(security.rows.map(row => row.relname),['audit_logs','idempotency_requests','inventory_document_lines','inventory_documents','items','locations','stock_balances','stock_ledger','warehouses']);
+  assert.deepEqual(security.rows.map(row => row.relname),['audit_logs','delivery_destinations','idempotency_requests','inventory_document_lines','inventory_documents','items','locations','stock_balances','stock_ledger','warehouses']);
   const reconciliation = await targetClient.query(`SELECT COUNT(*)::int AS mismatches FROM stock_balances b FULL JOIN (SELECT tenant_id,warehouse_id,location_id,item_id,SUM(quantity_delta) quantity FROM stock_ledger GROUP BY 1,2,3,4) l USING(tenant_id,warehouse_id,location_id,item_id) WHERE COALESCE(b.quantity,0)<>COALESCE(l.quantity,0)`);
   assert.equal(reconciliation.rows[0].mismatches,0);
   app = await connect(process.env.DATABASE_URL,target);
@@ -86,8 +100,12 @@ try {
   assert.equal((await app.query('SELECT role FROM memberships WHERE user_id=$1',[user])).rows[0].role,'admin');
   assert.equal((await app.query('SELECT token FROM session WHERE "userId"=$1',[user])).rows[0].token,sessionToken);
   assert.deepEqual(role,{name:'wms_app',rolsuper:false,rolbypassrls:false,owns_tables:false});
+  assert.equal((await app.query('SELECT * FROM delivery_destinations')).rowCount,0);
   assert.equal((await app.query('SELECT * FROM stock_balances')).rowCount,0);
   await app.query("SELECT set_config('app.tenant_id',$1,false)",[tenant]);
+  assert.equal((await app.query('SELECT * FROM delivery_destinations')).rowCount,1);
+  const restoredOutbound = (await app.query("SELECT d.document_no::text,d.recipient_name,d.delivery_address,d.delivery_destination_id,a.address_line2 FROM inventory_documents d JOIN delivery_destinations a ON a.id=d.delivery_destination_id WHERE d.kind='OUTBOUND'")).rows[0];
+  assert.deepEqual(restoredOutbound,{document_no:'2',recipient_name:'Restore recipient',delivery_address:'Restore address Suite 7',delivery_destination_id:destination,address_line2:'Suite 7'});
   assert.equal((await app.query('SELECT quantity FROM stock_balances')).rows[0].quantity,'70');
   assert.equal((await app.query('SELECT * FROM stock_ledger')).rowCount,2);
   await assert.rejects(app.query('UPDATE stock_ledger SET quantity_delta=1'), {code:'42501'});
@@ -104,7 +122,11 @@ try {
   assert.equal((await app.query('SELECT * FROM idempotency_requests')).rowCount,0);
   await assert.rejects(app.query("INSERT INTO items(tenant_id,code,name) VALUES($1,'CROSS-TENANT','Forbidden')",[tenant]), {code:'42501'});
   assert.deepEqual(await fingerprint(sourceClient),before);
-  console.log(JSON.stringify({result:'PASS',archive_bytes:archive.bytes,fixture:{tenants:2,users:1,accounts:1,expired_sessions:1,expired_verifications:1,memberships:1,documents:2,ledger_entries:2,audit_entries:2,idempotency_responses:2,balance:70},row_counts:before.counts,source_sha256:before.sha256,restored_identical:true,source_unchanged:true,forced_rls_tables:security.rowCount,reconciliation_mismatches:0,application_role:'authenticated wms_app; nonowner/nonsuperuser/no BYPASSRLS',checks:['restored credential hash verifies; expired session and membership preserved','tenant isolation and cross-tenant write refusal','ledger/audit/idempotency updates denied','balance delete denied','schema create denied','existing target refused','source target refused','archive overwrite refused']},null,2));
+  const maxNumber = BigInt((await targetClient.query('SELECT MAX(document_no)::text AS value FROM inventory_documents')).rows[0].value);
+  const nextDocument = (await targetClient.query("INSERT INTO inventory_documents(tenant_id,kind,warehouse_id,destination_location_id) VALUES($1,'INBOUND',$2,$3) RETURNING document_no::text",[tenant,warehouse,location])).rows[0];
+  assert(BigInt(nextDocument.document_no)>maxNumber);
+  assert.equal(nextDocument.document_no,'4');
+  console.log(JSON.stringify({result:'PASS',verified_at:new Date().toISOString(),migrations:10,tables_checked:tables.length,sequence_states:before.sequences,next_restored_document_no:nextDocument.document_no,archive_bytes:archive.bytes,fixture:{tenants:2,users:1,accounts:1,expired_sessions:1,expired_verifications:1,memberships:1,documents:2,delivery_destinations:1,linked_outbound_snapshots:1,ledger_entries:2,audit_entries:2,idempotency_responses:2,balance:70},row_counts:before.counts,source_sha256:before.sha256,restored_identical:true,source_unchanged:true,forced_rls_tables:security.rowCount,reconciliation_mismatches:0,application_role:'authenticated wms_app; nonowner/nonsuperuser/no BYPASSRLS',checks:['all public tables included; sequence state identical; next document number exceeds existing numbers','linked outbound recipient/address snapshot and address-book record preserved','restored credential hash verifies; expired session and membership preserved','tenant isolation and cross-tenant write refusal','ledger/audit/idempotency updates denied','balance delete denied','schema create denied','existing target refused','source target refused','archive overwrite refused']},null,2));
 } catch(error) { safeFailure('Restore verification',error); }
 finally {
   await Promise.all([app?.end(),sourceClient?.end(),targetClient?.end()]);

@@ -1,3 +1,4 @@
+import { withRequestLog } from "@/server/request-log";
 import { DomainError, apiError, json, readBody, requireMutationOrigin } from "@/server/api";
 import { requireIdentity, requireRole } from "@/server/auth/access";
 import { documentVersion } from "@/server/documents";
@@ -7,7 +8,7 @@ import { reverseDocument } from "@/server/reverse";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request, context: { params: Promise<{ id: string }> }) {
+async function handlePOST(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const identity = await requireIdentity(request.headers);
     requireRole(identity, ["admin"]);
@@ -20,3 +21,5 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
     return json(await reverseDocument(identity, (await context.params).id, documentVersion(body.version), key));
   } catch (error) { return apiError(error); }
 }
+
+export const POST = withRequestLog("documents.reverse", handlePOST, true);

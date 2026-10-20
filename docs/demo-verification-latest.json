@@ -1,0 +1,16 @@
+{
+  "scenario": "16.2",
+  "synthetic": true,
+  "origin": "http://127.0.0.1:3100",
+  "checks": [
+    "same-idempotency-key retry",
+    "inbound 100 outbound 30 retry leaves 70",
+    "transfer 50/20; ledger +100,-30,-20,+20; reconciliation",
+    "tenant B stock/ledger empty and A document 404"
+  ],
+  "completed": true,
+  "capturedAt": "2026-10-20T08:12:09.149Z",
+  "durationSeconds": 207.375,
+  "video": "assets/current-walkthrough.mp4",
+  "cleaned": true
+}

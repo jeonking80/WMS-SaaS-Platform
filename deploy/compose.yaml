@@ -1,0 +1,67 @@
+name: wms-production
+
+services:
+  db:
+    image: postgres:17.9-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-wms_demo}
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+    volumes:
+      - database:/var/lib/postgresql/data
+    networks: [database]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U postgres -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  web:
+    image: wms-web:${IMAGE_TAG:-local}
+    build:
+      context: ..
+      target: runner
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set restricted wms_app DATABASE_URL}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?Set BETTER_AUTH_SECRET}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?Set HTTPS origin}
+    ports:
+      - "127.0.0.1:${APP_PORT:-3000}:3000"
+    networks: [database, frontend]
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+  operations:
+    image: wms-operations:${IMAGE_TAG:-local}
+    build:
+      context: ..
+      target: operations
+    profiles: [operations]
+    environment:
+      BOOTSTRAP_DATABASE_URL: ${BOOTSTRAP_DATABASE_URL:-}
+      MIGRATION_DATABASE_URL: ${MIGRATION_DATABASE_URL:-}
+      WMS_DEMO_SEED: ${WMS_DEMO_SEED:-}
+      DEMO_DATABASE_NAME: ${DEMO_DATABASE_NAME:-}
+      DEMO_VIEWER_PASSWORD: ${DEMO_VIEWER_PASSWORD:-}
+      DEMO_WORKER_PASSWORD: ${DEMO_WORKER_PASSWORD:-}
+      DEMO_ADMIN_PASSWORD: ${DEMO_ADMIN_PASSWORD:-}
+      DATABASE_URL: ${DATABASE_URL:?Set restricted wms_app DATABASE_URL}
+    networks: [database]
+    depends_on:
+      db:
+        condition: service_healthy
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+
+networks:
+  database:
+    internal: true
+  frontend:
+
+volumes:
+  database:

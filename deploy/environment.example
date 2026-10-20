@@ -1,0 +1,18 @@
+# Copy outside the checkout (or to ignored deploy/production.env), chmod 600.
+# Generate independent strong secrets. URL-encode password URL components.
+POSTGRES_DB=wms_demo
+POSTGRES_PASSWORD=REPLACE_WITH_ADMIN_PASSWORD
+BOOTSTRAP_DATABASE_URL=postgresql://postgres:REPLACE_WITH_ADMIN_PASSWORD@db:5432/wms_demo
+MIGRATION_DATABASE_URL=postgresql://wms_migrator:REPLACE_WITH_MIGRATOR_PASSWORD@db:5432/wms_demo
+DATABASE_URL=postgresql://wms_app:REPLACE_WITH_APP_PASSWORD@db:5432/wms_demo
+BETTER_AUTH_SECRET=REPLACE_WITH_AT_LEAST_32_RANDOM_CHARACTERS
+BETTER_AUTH_URL=https://wms.example.com
+APP_PORT=3000
+IMAGE_TAG=local
+
+# Optional synthetic demo provisioning only; leave unset for business data.
+# WMS_DEMO_SEED=synthetic-only
+# DEMO_DATABASE_NAME=wms_demo
+# DEMO_VIEWER_PASSWORD=
+# DEMO_WORKER_PASSWORD=
+# DEMO_ADMIN_PASSWORD=

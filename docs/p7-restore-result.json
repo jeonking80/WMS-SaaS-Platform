@@ -1,0 +1,51 @@
+{
+  "result": "PASS",
+  "archive_bytes": 58114,
+  "fixture": {
+    "tenants": 2,
+    "users": 1,
+    "accounts": 1,
+    "expired_sessions": 1,
+    "expired_verifications": 1,
+    "memberships": 1,
+    "documents": 2,
+    "ledger_entries": 2,
+    "audit_entries": 2,
+    "idempotency_responses": 2,
+    "balance": 70
+  },
+  "row_counts": {
+    "tenants": 2,
+    "user": 1,
+    "session": 1,
+    "account": 1,
+    "verification": 1,
+    "memberships": 1,
+    "items": 1,
+    "warehouses": 1,
+    "locations": 1,
+    "inventory_documents": 2,
+    "inventory_document_lines": 2,
+    "stock_balances": 1,
+    "stock_ledger": 2,
+    "idempotency_requests": 2,
+    "audit_logs": 2,
+    "pgmigrations": 7
+  },
+  "source_sha256": "251e96c60e301a5bf42d6de8c4a2a3b369f0cac9f6df84491331e69014620a3d",
+  "restored_identical": true,
+  "source_unchanged": true,
+  "forced_rls_tables": 9,
+  "reconciliation_mismatches": 0,
+  "application_role": "authenticated wms_app; nonowner/nonsuperuser/no BYPASSRLS",
+  "checks": [
+    "restored credential hash verifies; expired session and membership preserved",
+    "tenant isolation and cross-tenant write refusal",
+    "ledger/audit/idempotency updates denied",
+    "balance delete denied",
+    "schema create denied",
+    "existing target refused",
+    "source target refused",
+    "archive overwrite refused"
+  ]
+}

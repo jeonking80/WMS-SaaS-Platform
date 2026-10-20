@@ -10,3 +10,8 @@ next-env.d.ts
 !.env.example
 *.log
 .DS_Store
+
+# Local database backups and deployment secrets
+backups/
+artifacts/
+deploy/*.env

@@ -1,0 +1,3 @@
+# Deployment runtime secrets are local operator files.
+*.env
+*.env.*

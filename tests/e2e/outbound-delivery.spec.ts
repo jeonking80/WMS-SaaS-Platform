@@ -24,7 +24,7 @@ function fixtures(request: APIRequestContext) {
   const url = new URL(connectionString);
   if (!["127.0.0.1", "localhost"].includes(url.hostname) || !["/wms_lite", "/wms_test"].includes(url.pathname)) throw new Error("Delivery fixtures require an isolated local database.");
   const pool = new pg.Pool({ connectionString, max: 1 });
-  const ids = { documents: [] as string[], locations: [] as string[], warehouses: [] as string[], items: [] as string[], keys: [] as string[] };
+  const ids = { documents: [] as string[], locations: [] as string[], warehouses: [] as string[], items: [] as string[], keys: [] as string[], destinations: [] as string[] };
   const prefix = `DELIVERY-${randomUUID()}`;
   const headers = { origin };
   async function master(kind: "items" | "warehouses" | "locations", extra = {}) {
@@ -49,6 +49,11 @@ function fixtures(request: APIRequestContext) {
       const document = (await response.json()).document as Document;
       ids.documents.push(document.id); return document;
     },
+    async destination(recipient: string, address: string) {
+      const response = await request.post("/api/delivery-destinations", { headers, data: { recipient_name: recipient, name: prefix, postal_code: "04524", address_line1: address, address_line2: "" } });
+      expect(response.status()).toBe(201);
+      const destination = (await response.json()).destination; ids.destinations.push(destination.id); return destination;
+    },
     async auditCount(document: string) {
       const client = await pool.connect();
       try {
@@ -70,6 +75,7 @@ function fixtures(request: APIRequestContext) {
         await pool.query("DELETE FROM stock_balances WHERE location_id=ANY($1::uuid[]) AND item_id=ANY($2::uuid[])", [ids.locations, ids.items]);
         await pool.query("DELETE FROM inventory_document_lines WHERE document_id=ANY($1::uuid[])", [ids.documents]);
         await pool.query("DELETE FROM inventory_documents WHERE id=ANY($1::uuid[])", [ids.documents]);
+        await pool.query("DELETE FROM delivery_destinations WHERE id=ANY($1::uuid[])", [ids.destinations]);
         for (const table of ["locations", "warehouses", "items"] as const) await pool.query(`DELETE FROM ${table} WHERE id=ANY($1::uuid[])`, [ids[table]]);
         await pool.query("COMMIT");
       } catch (error) { await pool.query("ROLLBACK"); throw error; } finally { await pool.end(); }
@@ -81,7 +87,7 @@ async function post(request: APIRequestContext, document: Document, key: string)
   return request.post(`/api/documents/${document.id}/post`, { headers: { origin, "Idempotency-Key": key }, data: { version: document.version } });
 }
 
-test("outbound delivery is required, editable, confirmed, and retained in history", async ({ page }) => {
+test("outbound delivery choice is required, editable, confirmed, and snapshotted in history", async ({ page }) => {
   test.setTimeout(180_000);
   const fixture = fixtures(page.request);
   const headers = { origin };
@@ -95,6 +101,8 @@ test("outbound delivery is required, editable, confirmed, and retained in histor
     }
     const adminDraft = await fixture.outbound(warehouse, location, item, 1);
     expect((await (await page.request.get(`/api/documents/${adminDraft.id}`)).json()).document).toMatchObject({ recipient_name: "Test recipient", delivery_address: "Test delivery address" });
+    const firstDestination = await fixture.destination("Delivery customer", "Seoul delivery address");
+    const updatedDestination = await fixture.destination("Updated customer", "Updated address Floor 2");
     await login(page.request, "viewer.a@example.test");
     expect((await page.request.post("/api/documents", { headers, data: { ...body, recipient_name: "Recipient", delivery_address: "Address" } })).status()).toBe(403);
     await page.goto("/dashboard/documents");
@@ -107,19 +115,23 @@ test("outbound delivery is required, editable, confirmed, and retained in histor
     await page.getByRole("combobox", { name: "출발 보관위치", exact: true }).selectOption(location);
     await page.getByRole("combobox", { name: "품목 1", exact: true }).selectOption(item);
     await page.getByLabel("수량 1", { exact: true }).fill("2");
-    await page.getByLabel("받는 거래처", { exact: true }).fill("  Delivery customer  ");
-    await page.getByRole("textbox", { name: "배송지", exact: true }).fill("  Seoul delivery address  ");
+    await page.getByLabel("거래처·배송지 검색", { exact: true }).fill(firstDestination.recipient_name);
+    await page.getByRole("button", { name: new RegExp(`${firstDestination.recipient_name} · ${firstDestination.name}`) }).click();
+    await expect(page.getByTestId("destination-summary")).toContainText("Delivery customer");
     const creation = page.waitForResponse(r => r.url().endsWith("/api/documents") && r.request().method() === "POST");
     await page.getByRole("button", { name: "전표 저장", exact: true }).click();
     const response = await creation; expect(response.status()).toBe(201);
+    expect(response.request().postDataJSON()).toMatchObject({ delivery_destination_id: firstDestination.id });
     const document = (await response.json()).document; fixture.ids.documents.push(document.id);
     expect(document).toMatchObject({ recipient_name: "Delivery customer", delivery_address: "Seoul delivery address" });
-    await page.getByLabel("받는 거래처", { exact: true }).fill("Updated customer");
-    await page.getByRole("textbox", { name: "배송지", exact: true }).fill("Updated address\nFloor 2");
+    await page.getByLabel("거래처·배송지 검색", { exact: true }).fill(updatedDestination.recipient_name);
+    await page.getByRole("button", { name: new RegExp(`${updatedDestination.recipient_name} · ${updatedDestination.name}`) }).click();
     await expect(page.getByRole("button", { name: "출고 확정", exact: true })).toBeDisabled();
     const update = page.waitForResponse(r => r.url().endsWith(`/api/documents/${document.id}`) && r.request().method() === "PATCH");
     await page.getByRole("button", { name: "전표 저장", exact: true }).click();
-    expect((await update).status()).toBe(200);
+    const updateResponse = await update;
+    expect(updateResponse.status()).toBe(200);
+    expect(updateResponse.request().postDataJSON()).toMatchObject({ delivery_destination_id: updatedDestination.id });
     await page.getByRole("button", { name: "출고 확정", exact: true }).click();
     await expect(page.getByRole("dialog")).toContainText("Updated customer");
     await expect(page.getByRole("dialog")).toContainText("Updated address");
@@ -128,6 +140,9 @@ test("outbound delivery is required, editable, confirmed, and retained in histor
     await expect(page.getByText("배송지: Updated address", { exact: false })).toBeVisible();
     await expect(page.getByRole("textbox", { name: "배송지", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "전표 저장", exact: true })).toHaveCount(0);
+    // Editing the address book later must not rewrite the posted document snapshot.
+    await login(page.request);
+    expect((await page.request.patch(`/api/delivery-destinations/${updatedDestination.id}`, { headers, data: { recipient_name: "Changed address book recipient", address_line1: "Changed address book address" } })).status()).toBe(200);
     await page.goto("/dashboard/history");
     await page.getByRole("button", { name: `전표 ${document.id} 열기`, exact: true }).click();
     await expect(page.getByText("받는 거래처: Updated customer", { exact: true })).toBeVisible();

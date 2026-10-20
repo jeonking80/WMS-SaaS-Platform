@@ -145,7 +145,7 @@ for (const loseResponse of [false, true]) test(`P4 browser posts outbound and ha
       await page.getByLabel("수량 1", { exact: true }).fill("80");
       await expect(page.getByRole("button", { name: "출고 확정", exact: true })).toBeDisabled();
       await page.getByRole("button", { name: "전표 저장", exact: true }).click();
-      await expect(page.getByRole("status")).toHaveText("전표를 저장했습니다.");
+      await expect(page.getByRole("status").filter({ hasText: "전표를 저장했습니다." })).toHaveText("전표를 저장했습니다.");
     }
     const keys: string[] = [];
     if (loseResponse) await page.route(`**/api/documents/${outbound.id}/post`, async route => {

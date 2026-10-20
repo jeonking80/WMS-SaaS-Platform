@@ -224,7 +224,7 @@ Playwright는 초기 화면·상태 API, 보호 화면의 로그인 필요 여�
 
 ## 출고처·배송지 보완 (2026-10-20)
 
-출고는 창고 내부 도착 위치 대신 받는 거래처와 외부 배송지를 기록한다. `POST /api/documents`와 초안 `PATCH /api/documents/{id}`에서 OUTBOUND는 `recipient_name`(받는 거래처, 최대 128자), `delivery_address`(배송지, 최대 500자)를 모두 요구한다. 문자열의 앞뒤 공백을 제거하고 빈 값·잘못된 형식·길이 초과는 400 INVALID_INPUT이다. INBOUND/TRANSFER에는 비어 있거나 null인 값만 허용하며 null로 저장한다.
+출고는 창고 내부 도착 위치 대신 받는 거래처와 외부 배송지를 기록한다. 주소록 선택 방식은 아래 절을 따른다. 이전 클라이언트가 `delivery_destination_id`를 생략하면 `POST /api/documents`와 초안 `PATCH /api/documents/{id}`의 OUTBOUND에 `recipient_name`(받는 거래처, 최대 128자), `delivery_address`(배송지, 최대 500자)를 모두 요구한다. 문자열의 앞뒤 공백을 제거하고 빈 값·잘못된 형식·길이 초과는 400 INVALID_INPUT이다. INBOUND/TRANSFER에는 비어 있거나 null인 값만 허용하며 null로 저장한다.
 
 ```json
 {
@@ -240,3 +240,15 @@ Playwright는 초기 화면·상태 API, 보호 화면의 로그인 필요 여�
 목록·상세·확정 이력에 두 필드를 반환하고 전표 검색어 q로 거래처와 주소도 검색한다. 초안에서만 수정하며 변경 후 다시 저장해야 확정할 수 있다. 확인창에는 출발 보관위치·출고처·배송지를 함께 표시한다.
 
 기존 확정 전표의 미등록 정보는 null로 보존하며 기록을 소급 수정하지 않는다. 기존 출고 초안은 두 항목을 채워 저장한 뒤 확정한다. 저장값이 누락된 초안의 확정은 재고 변경 없이 400 DELIVERY_REQUIRED다. 이미 성공한 멱등 요청은 과거 배송정보가 null이어도 기존 응답을 반환한다. 확정 취소의 반대 전표는 재고를 되돌리는 기록이므로 배송지 없이 생성할 수 있고 원본 배송정보는 유지한다.
+
+## 배송지 주소록과 출고 선택
+
+`GET /api/delivery-destinations`는 관리자·작업자에게 같은 회사의 활성 배송지를 반환한다. `q`는 거래처명·배송지 이름·주소·우편번호를 문자 그대로 부분 검색한다(최대 100자). `page=1`, `page_size=20`이 기본이며 최대 100개다. `include_inactive=true`는 관리자만 사용할 수 있다. 응답은 `{ destinations, pagination: { page, page_size, total, total_pages } }`다.
+
+각 배송지는 `{ id, tenant_id, recipient_name, name, postal_code, address_line1, address_line2, active, created_at, updated_at, delivery_address }`다. `delivery_address`는 기본 주소와 비어 있지 않은 상세주소를 공백으로 결합한 값이다. 전표 저장 때 주소를 복사하므로 이후 주소록 수정은 과거 전표에 반영되지 않는다.
+
+`POST /api/delivery-destinations`와 `PATCH /api/delivery-destinations/{id}`는 관리자만 변경할 수 있고 Origin 검사를 유지한다. 생성 입력은 `{ recipient_name, name, postal_code?, address_line1, address_line2? }`, 수정은 같은 필드 중 변경할 필드와 선택적 `active`다. 알 수 없는 필드, 빈 수정, 길이 초과, 잘못된 우편번호는 400이며 회사 안의 거래처명/배송지 이름 중복은 409다. 생성 201, 수정 200으로 `{ destination }`을 반환한다. 상세 GET은 관리자·작업자에게 허용하고 작업자에게 비활성은 404다. 다른 회사의 ID는 조회/수정 모두 404이며 조회자의 모든 주소록 요청은 403이다.
+
+출고 전표 POST/PATCH에 `delivery_destination_id`(UUID)를 지정하면 서버가 해당 회사의 활성 주소록을 읽어 `recipient_name`, `delivery_address`를 결정한다. 함께 보낸 텍스트는 사용하지 않는다. 없는 ID·다른 회사·비활성 배송지는 404 REFERENCE_NOT_FOUND다. 입고·이동에는 null/생략만 허용한다. 전표 응답에는 nullable `delivery_destination_id`가 포함된다. 이전 텍스트 전표도 기존 스냅샷으로 조회·수정·확정할 수 있다.
+
+화면은 출고에서 검색 결과를 선택하며, 관리자는 같은 화면의 ‘새 배송지 등록’ 또는 ‘배송지 관리’에서 등록·수정할 수 있다. 등록 시 Daum 우편번호 검색으로 기본 주소를 선택하고 상세주소만 입력한다. 외부 검색은 사용자 클릭 때 불러오며 로딩 실패 시 재시도를 제공한다. API 키나 유료 지도 상품 설정은 필요하지 않다.

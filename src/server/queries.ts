@@ -1,8 +1,9 @@
+import { documentNumberSql } from "./document-number";
 import { DomainError } from "./api";
 import { withTenant } from "./db/tenant";
 
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-export type QueryFilters = { page: number; page_size: number; q?: string; warehouse_id?: string; location_id?: string; item_id?: string; document_id?: string; kind?: string; status?: string; action?: string; date_from?: string; date_to?: string; date_field: "created_at" | "posted_at" | "reversed_at" };
+export type QueryFilters = { page: number; page_size: number; q?: string; originals_only?: boolean; warehouse_id?: string; location_id?: string; item_id?: string; document_id?: string; kind?: string; status?: string; action?: string; date_from?: string; date_to?: string; date_field: "created_at" | "posted_at" | "reversed_at" };
 function invalid(): never { throw new DomainError(400, "INVALID_INPUT"); }
 export function parseQuery(params: URLSearchParams): QueryFilters {
   const integer = (key: string, fallback: number, max: number) => {
@@ -17,6 +18,11 @@ export function parseQuery(params: URLSearchParams): QueryFilters {
   for (const key of ["warehouse_id", "location_id", "item_id", "document_id"] as const) {
     const raw = params.get(key);
     if (raw !== null) { if (!uuid.test(raw)) invalid(); result[key] = raw.toLowerCase(); }
+  }
+  const originalsOnly = params.get("originals_only");
+  if (originalsOnly !== null) {
+    if (originalsOnly !== "true" && originalsOnly !== "false") invalid();
+    result.originals_only = originalsOnly === "true";
   }
   const q = params.get("q")?.trim();
   if (q && q.length > 100) invalid();
@@ -62,6 +68,7 @@ async function paged(tenant: string, select: string, conditions: Conditions, ord
 }
 export function pagedDocuments(tenant: string, filters: QueryFilters, history = false) {
   const c = new Conditions();
+  if (filters.originals_only) c.clauses.push("d.reversal_of_id IS NULL");
   if (history) {
     if (filters.status && !["POSTED", "REVERSED"].includes(filters.status)) throw new DomainError(403, "ROLE_FORBIDDEN");
     c.clauses.push("d.status IN ('POSTED','REVERSED')");
@@ -71,10 +78,10 @@ export function pagedDocuments(tenant: string, filters: QueryFilters, history = 
   if (filters.item_id) c.clauses.push(`EXISTS (SELECT 1 FROM inventory_document_lines dl WHERE (dl.tenant_id,dl.document_id)=(d.tenant_id,d.id) AND dl.item_id=${c.bind(filters.item_id)})`);
   if (filters.q) {
     const p = c.bind(literalSearch(filters.q));
-    c.clauses.push(`(d.id::text ILIKE ${p} ESCAPE E'\\\\' OR d.note ILIKE ${p} ESCAPE E'\\\\' OR d.recipient_name ILIKE ${p} ESCAPE E'\\\\' OR d.delivery_address ILIKE ${p} ESCAPE E'\\\\' OR EXISTS (SELECT 1 FROM inventory_document_lines dl JOIN items i ON (i.tenant_id,i.id)=(dl.tenant_id,dl.item_id) WHERE (dl.tenant_id,dl.document_id)=(d.tenant_id,d.id) AND (i.code ILIKE ${p} ESCAPE E'\\\\' OR i.name ILIKE ${p} ESCAPE E'\\\\')))`);
+    c.clauses.push(`(${documentNumberSql("d")} ILIKE ${p} ESCAPE E'\\\\' OR d.id::text ILIKE ${p} ESCAPE E'\\\\' OR d.note ILIKE ${p} ESCAPE E'\\\\' OR d.recipient_name ILIKE ${p} ESCAPE E'\\\\' OR d.delivery_address ILIKE ${p} ESCAPE E'\\\\' OR EXISTS (SELECT 1 FROM inventory_document_lines dl JOIN items i ON (i.tenant_id,i.id)=(dl.tenant_id,dl.item_id) WHERE (dl.tenant_id,dl.document_id)=(d.tenant_id,d.id) AND (i.code ILIKE ${p} ESCAPE E'\\\\' OR i.name ILIKE ${p} ESCAPE E'\\\\')))`);
   }
   c.dates(`d.${filters.date_field}`, filters);
-  return paged(tenant, `SELECT d.*, w.name AS warehouse_name, sl.code AS source_location_code, dl.code AS destination_location_code, r.id AS reversal_document_id FROM inventory_documents d JOIN warehouses w ON (w.tenant_id,w.id)=(d.tenant_id,d.warehouse_id) LEFT JOIN locations sl ON (sl.tenant_id,sl.id)=(d.tenant_id,d.source_location_id) LEFT JOIN locations dl ON (dl.tenant_id,dl.id)=(d.tenant_id,d.destination_location_id) LEFT JOIN inventory_documents r ON (r.tenant_id,r.reversal_of_id)=(d.tenant_id,d.id)`, c, "created_at DESC, id DESC", filters, "documents");
+  return paged(tenant, `SELECT d.*, ${documentNumberSql("d")} AS document_number, (SELECT count(*)::int FROM inventory_document_lines lines WHERE (lines.tenant_id,lines.document_id)=(d.tenant_id,d.id)) AS line_count, (SELECT COALESCE(sum(quantity),0)::text FROM inventory_document_lines lines WHERE (lines.tenant_id,lines.document_id)=(d.tenant_id,d.id)) AS total_quantity, w.name AS warehouse_name, sl.code AS source_location_code, dl.code AS destination_location_code, r.id AS reversal_document_id FROM inventory_documents d JOIN warehouses w ON (w.tenant_id,w.id)=(d.tenant_id,d.warehouse_id) LEFT JOIN locations sl ON (sl.tenant_id,sl.id)=(d.tenant_id,d.source_location_id) LEFT JOIN locations dl ON (dl.tenant_id,dl.id)=(d.tenant_id,d.destination_location_id) LEFT JOIN inventory_documents r ON (r.tenant_id,r.reversal_of_id)=(d.tenant_id,d.id)`, c, "created_at DESC, id DESC", filters, "documents");
 }
 const stockJoins = ` JOIN warehouses w ON (w.tenant_id,w.id)=(s.tenant_id,s.warehouse_id) JOIN locations l ON (l.tenant_id,l.id)=(s.tenant_id,s.location_id) JOIN items i ON (i.tenant_id,i.id)=(s.tenant_id,s.item_id)`;
 export function pagedStock(tenant: string, filters: QueryFilters) {
@@ -85,13 +92,13 @@ export function pagedStock(tenant: string, filters: QueryFilters) {
 export function pagedLedger(tenant: string, filters: QueryFilters) {
   const c = new Conditions();
   c.equal("s.warehouse_id", filters.warehouse_id); c.equal("s.location_id", filters.location_id); c.equal("s.item_id", filters.item_id); c.equal("d.kind", filters.kind); c.equal("d.status", filters.status); c.equal("s.document_id", filters.document_id);
-  c.dates("s.created_at", filters); c.search(["i.code", "i.name", "s.document_id::text"], filters.q);
-  return paged(tenant, `SELECT s.id,s.document_id,s.warehouse_id,s.location_id,s.item_id,w.name AS warehouse_name,l.code AS location_code,i.code AS item_code,i.name AS item_name,s.quantity_delta::text,s.created_at,d.kind,d.status,d.reversal_of_id FROM stock_ledger s${stockJoins} JOIN inventory_documents d ON (d.tenant_id,d.id)=(s.tenant_id,s.document_id)`, c, "created_at DESC, id DESC", filters, "entries");
+  c.dates("s.created_at", filters); c.search(["i.code", "i.name", "s.document_id::text", documentNumberSql("d")], filters.q);
+  return paged(tenant, `SELECT s.id,s.document_id,s.warehouse_id,s.location_id,s.item_id,w.name AS warehouse_name,l.code AS location_code,i.code AS item_code,i.name AS item_name,s.quantity_delta::text,s.created_at,d.kind,d.status,d.reversal_of_id,${documentNumberSql("d")} AS document_number,actor.name AS actor_name,CASE WHEN d.reversal_of_id IS NOT NULL THEN 'REVERSAL' ELSE d.kind END AS human_kind FROM stock_ledger s${stockJoins} JOIN inventory_documents d ON (d.tenant_id,d.id)=(s.tenant_id,s.document_id) LEFT JOIN LATERAL (SELECT u.name FROM audit_logs a JOIN "user" u ON u.id=a.actor_id WHERE a.tenant_id=d.tenant_id AND a.document_id=COALESCE(d.reversal_of_id,d.id) AND a.action=CASE WHEN d.reversal_of_id IS NULL THEN 'POST_' || d.kind ELSE 'REVERSE_DOCUMENT' END ORDER BY a.created_at DESC,a.id DESC LIMIT 1) actor ON true`, c, "created_at DESC, id DESC", filters, "entries");
 }
 export function pagedAuditLogs(tenant: string, filters: QueryFilters) {
   const c = new Conditions();
-  c.equal("a.document_id", filters.document_id); c.equal("a.action", filters.action); c.dates("a.created_at", filters); c.search(["a.document_id::text", "a.action", "u.name"], filters.q);
-  return paged(tenant, `SELECT a.id,a.document_id,a.actor_id,u.name AS actor_name,a.action,a.created_at FROM audit_logs a JOIN "user" u ON u.id=a.actor_id`, c, "created_at DESC, id DESC", filters, "entries");
+  c.equal("a.document_id", filters.document_id); c.equal("a.action", filters.action); c.dates("a.created_at", filters); c.search(["a.document_id::text", "a.action", "u.name", documentNumberSql("d")], filters.q);
+  return paged(tenant, `SELECT a.id,a.document_id,a.actor_id,u.name AS actor_name,a.action,a.created_at,${documentNumberSql("d")} AS document_number FROM audit_logs a JOIN "user" u ON u.id=a.actor_id LEFT JOIN inventory_documents d ON (d.tenant_id,d.id)=(a.tenant_id,a.document_id)`, c, "created_at DESC, id DESC", filters, "entries");
 }
 export function listLookups(tenant: string) {
   return withTenant(tenant, async client => {

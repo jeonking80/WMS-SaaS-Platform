@@ -5,8 +5,13 @@ describe("query boundaries", () => {
   it("defaults pagination and trims searches", () => {
     expect(parse("q=++hello++")).toMatchObject({ page: 1, page_size: 25, q: "hello", date_field: "created_at" });
   });
-  it.each(["page=0", "page=-1", "page=1.5", "page=1e2", "page_size=101", "page_size=0", "warehouse_id=oops", "kind=DROP", "status=unknown", "date_field=note", "date_from=2025-02-29", "date_to=2026-13-01", "date_from=2026-02-03&date_to=2026-02-02", `q=${"x".repeat(101)}`])("rejects invalid boundary %s", query => {
+  it.each(["originals_only=1", "originals_only=", "originals_only=TRUE", "page=0", "page=-1", "page=1.5", "page=1e2", "page_size=101", "page_size=0", "warehouse_id=oops", "kind=DROP", "status=unknown", "date_field=note", "date_from=2025-02-29", "date_to=2026-13-01", "date_from=2026-02-03&date_to=2026-02-02", `q=${"x".repeat(101)}`])("rejects invalid boundary %s", query => {
     expect(() => parse(query)).toThrow("INVALID_INPUT");
+  });
+  it("validates explicit original-document filtering without changing the default", () => {
+    expect(parse("originals_only=true").originals_only).toBe(true);
+    expect(parse("originals_only=false").originals_only).toBe(false);
+    expect(parse("").originals_only).toBeUndefined();
   });
   it("accepts leap dates and normalizes UUID filters", () => {
     expect(parse("date_from=2024-02-29&warehouse_id=ABCDEFAB-0000-0000-0000-000000000001")).toMatchObject({ date_from: "2024-02-29", warehouse_id: "abcdefab-0000-0000-0000-000000000001" });

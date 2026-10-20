@@ -179,25 +179,32 @@ test("P2 browser creates master data and saves, edits and cancels a document", a
     await page.goto("/dashboard/master");
     await expect(page.getByRole("heading", { name: "기준정보 관리" })).toBeVisible();
     async function create(kind: "items" | "warehouses" | "locations", title: string) {
-      await page.getByLabel(`${title} 코드`, { exact: true }).fill(`${code}-${kind}`);
-      await page.getByLabel(`${title} 이름`, { exact: true }).fill(`${code} ${title}`);
-      if (kind === "locations") await page.getByRole("combobox", { name: "소속 창고", exact: true }).selectOption(ids.warehouses[0]);
-      const responsePromise = page.waitForResponse(response => response.url().endsWith(`/api/${kind}`) && response.request().method() === "POST");
+      await page.getByRole("button", { name: title, exact: true }).click();
       await page.getByRole("button", { name: `${title} 등록`, exact: true }).click();
+      const dialog = page.getByRole("dialog");
+      await dialog.getByLabel(`${title} 코드`, { exact: true }).fill(`${code}-${kind}`);
+      await dialog.getByLabel(`${title} 이름`, { exact: true }).fill(`${code} ${title}`);
+      if (kind === "locations") await dialog.getByRole("combobox", { name: "소속 창고", exact: true }).selectOption(ids.warehouses[0]);
+      const responsePromise = page.waitForResponse(response => response.url().endsWith(`/api/${kind}`) && response.request().method() === "POST");
+      await dialog.getByRole("button", { name: "저장", exact: true }).click();
       const response = await responsePromise;
       expect(response.status()).toBe(201);
       const singular = kind === "items" ? "item" : kind === "warehouses" ? "warehouse" : "location";
       ids[kind].push((await response.json())[singular].id);
-      await expect(page.getByLabel(`${title} ${code}-${kind.toUpperCase()} 이름`, { exact: true })).toBeVisible();
+      await expect(dialog).toHaveCount(0);
+      await page.getByLabel("검색어", { exact: true }).fill(`${code}-${kind}`);
+      await page.getByRole("button", { name: "검색 적용", exact: true }).click();
+      await expect(page.getByRole("button", { name: `${title} ${code}-${kind.toUpperCase()} 수정`, exact: true })).toBeVisible();
     }
     await create("items", "품목");
     await create("warehouses", "창고");
-    await create("locations", "로케이션");
+    await create("locations", "보관위치");
     await page.goto("/dashboard/documents");
     await page.getByRole("button", { name: "새 전표", exact: true }).click();
     await page.getByRole("combobox", { name: "창고", exact: true }).selectOption(ids.warehouses[0]);
     await page.getByRole("combobox", { name: "도착 보관위치", exact: true }).selectOption(ids.locations[0]);
-    await page.getByRole("combobox", { name: "품목 1", exact: true }).selectOption(ids.items[0]);
+    await page.getByLabel("품목 1 검색", { exact: true }).fill(`${code}-items`);
+    await page.getByRole("combobox", { name: "품목 1 검색 결과", exact: true }).selectOption({ label: `${code}-ITEMS · ${code} 품목` });
     await page.getByLabel("수량 1", { exact: true }).fill("3");
     await page.getByRole("textbox", { name: "메모", exact: true }).fill("browser draft");
     const createResponse = page.waitForResponse(response => response.url().endsWith("/api/documents") && response.request().method() === "POST");
@@ -206,7 +213,7 @@ test("P2 browser creates master data and saves, edits and cancels a document", a
     expect(saved.status()).toBe(201);
     const savedDocument = (await saved.json()).document as Row;
     ids.documents.push(savedDocument.id);
-    await expect(page.getByRole("status")).toHaveText("전표를 저장했습니다.");
+    await expect(page.getByRole("status").filter({ hasText: "전표를 저장했습니다." })).toHaveText("전표를 저장했습니다.");
     const concurrentUpdate = await page.request.patch(`/api/documents/${savedDocument.id}`, {
       headers: { origin },
       data: {
@@ -221,6 +228,11 @@ test("P2 browser creates master data and saves, edits and cancels a document", a
     expect((await conflictResponse).status()).toBe(409);
     await expect(page.getByRole("alert").filter({ hasText: "최신 전표를 다시 불러오세요." })).toBeVisible();
     await expect(page.getByRole("button", { name: "전표 저장", exact: true })).toBeDisabled();
+    page.once("dialog", async dialog => {
+      expect(dialog.type()).toBe("confirm");
+      expect(dialog.message()).toContain("저장하지 않은 변경 내용");
+      await dialog.accept();
+    });
     await page.getByRole("button", { name: "최신 전표 다시 불러오기", exact: true }).click();
     await expect(page.getByRole("textbox", { name: "메모", exact: true })).toHaveValue("another operator");
     await expect(page.getByLabel("수량 1", { exact: true })).toHaveValue("4");
@@ -230,10 +242,15 @@ test("P2 browser creates master data and saves, edits and cancels a document", a
     await page.getByRole("button", { name: "전표 저장", exact: true }).click();
     expect((await updateResponse).status()).toBe(200);
     await expect(page.getByLabel("수량 1", { exact: true })).toHaveValue("5");
+    page.once("dialog", async dialog => {
+      expect(dialog.type()).toBe("confirm");
+      expect(dialog.message()).toBe("이 초안 전표를 취소할까요?");
+      await dialog.accept();
+    });
     const cancelResponse = page.waitForResponse(response => response.url().endsWith(`/api/documents/${ids.documents[0]}/cancel`));
     await page.getByRole("button", { name: "전표 취소", exact: true }).click();
     expect((await cancelResponse).status()).toBe(200);
-    await expect(page.getByRole("status")).toHaveText("전표를 취소했습니다.");
+    await expect(page.getByRole("status").filter({ hasText: "전표를 취소했습니다." })).toHaveText("전표를 취소했습니다.");
     await expect(page.getByRole("textbox", { name: "메모", exact: true })).toBeDisabled();
     await expect(page.getByRole("button", { name: "전표 저장", exact: true })).toHaveCount(0);
     await login(page.request, "viewer.a@example.test");

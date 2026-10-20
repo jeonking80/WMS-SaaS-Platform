@@ -1,3 +1,4 @@
+import { searchMaster } from "./master-search";
 import type { PoolClient } from "pg";
 import { DomainError, apiError, json, readBody, requireMutationOrigin } from "./api";
 import { requireIdentity, requireRole } from "./auth/access";
@@ -58,6 +59,7 @@ export async function masterCollection(request: Request, kind: MasterKind) {
     const mutation = request.method === "POST";
     requireRole(identity, mutation ? ["admin"] : ["admin", "worker"]);
     if (mutation) requireMutationOrigin(request);
+    if (!mutation && ["q", "page", "page_size", "active"].some(key => new URL(request.url).searchParams.has(key))) return json(await searchMaster(identity.tenant.id, kind, new URL(request.url).searchParams));
     const input = mutation ? validateMasterInput(await readBody(request), kind) : null;
     const warehouseId = !mutation && kind === "locations" ? new URL(request.url).searchParams.get("warehouse_id") : null;
     if (warehouseId !== null && !uuid.test(warehouseId)) throw new DomainError(400, "INVALID_INPUT");

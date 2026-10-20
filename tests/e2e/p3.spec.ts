@@ -1,3 +1,4 @@
+import { openDocument } from "./document-ui";
 import { randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import pg from "pg";
@@ -41,7 +42,7 @@ function fixtures(request: APIRequestContext) {
       const response = await request.post("/api/documents", { headers, data: body });
       expect(response.status()).toBe(201);
       const document = (await response.json()).document as Document; ids.documents.push(document.id);
-      return { item, warehouse, location, document, body, itemCode: `${prefix}-items` };
+      return { item, warehouse, location, document, body, itemCode: `${prefix}-items`.toUpperCase(), itemName: `${prefix}-items` };
     },
     key() { const key = randomUUID(); ids.keys.push(key); return key; },
     async cleanup() {
@@ -111,7 +112,7 @@ for (const loseResponse of [false, true]) test(`P3 browser posts 100 units${lose
   try {
     await login(page.request); const { item, location, document, itemCode } = await fixture.create();
     await page.goto("/dashboard/documents");
-    await page.getByRole("button", { name: `전표 ${document.id} 열기`, exact: true }).click();
+    await openDocument(page, document.id);
     const path = `/api/documents/${document.id}/post`;
     const keys: string[] = [];
     if (loseResponse) await page.route(`**${path}`, async route => {
@@ -125,7 +126,8 @@ for (const loseResponse of [false, true]) test(`P3 browser posts 100 units${lose
       await page.getByRole("button", { name: "입고 확정 다시 시도", exact: true }).click();
       await expect.poll(() => keys.length).toBe(2); expect(keys[0]).toBeTruthy(); expect(keys[1]).toBe(keys[0]);
     }
-    await expect(page.getByText(/입고 확정됨 · 읽기 전용/)).toBeVisible();
+    await expect(page.getByText("입고 확정됨", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("읽기 전용", { exact: true })).toBeVisible();
     await expect(page.getByRole("textbox", { name: "메모", exact: true })).toBeDisabled();
     await assertStock(page.request, item, location, document.id);
     await page.getByRole("link", { name: "재고 조회", exact: true }).click();
@@ -133,7 +135,8 @@ for (const loseResponse of [false, true]) test(`P3 browser posts 100 units${lose
     await expect(page.getByRole("heading", { name: "현재 재고", exact: true })).toBeVisible();
     await expect(page.locator("section").filter({ has: page.getByRole("heading", { name: "현재 재고", exact: true }) }).getByRole("row").filter({ hasText: itemCode }).getByRole("cell", { name: "100", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: "재고 변동 이력", exact: true })).toBeVisible();
-    await expect(page.getByRole("row").filter({ hasText: document.id }).getByRole("cell", { name: "+100", exact: true })).toBeVisible();
+    const detail = await (await page.request.get(`/api/documents/${document.id}`)).json();
+    await expect(page.getByRole("row").filter({ hasText: detail.document.document_number }).getByRole("cell", { name: "+100", exact: true })).toBeVisible();
     await expect(page.getByText("현재 재고와 변동 이력의 수량이 일치합니다.", { exact: true })).toBeVisible();
   } finally { await fixture.cleanup(); }
 });

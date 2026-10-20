@@ -31,7 +31,7 @@ describe('document destination resolution', () => {
     query.mockImplementation(async (sql: string) => {
       if (sql.includes('FROM delivery_destinations')) return { rows: [{ recipient_name: 'Real', address_line1: 'Seoul', address_line2: '101' }] };
       if (sql.includes('INSERT INTO inventory_documents')) return { rows: [{ id }] };
-      if (sql.includes('SELECT * FROM inventory_documents')) return { rows: [{ id }] };
+      if (sql.startsWith('SELECT d.*,')) return { rows: [{ id }] };
       return { rows: [], rowCount: 1 };
     });
     await createDocument(id, parseDocument({ ...outbound, recipient_name: 'Fake', delivery_address: 'Fake' }));

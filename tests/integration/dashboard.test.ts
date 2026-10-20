@@ -6,6 +6,9 @@ const state = vi.hoisted(() => ({ pool: undefined as pg.Pool | undefined }));
 vi.mock('../../src/server/db/pool', () => ({ getPool: () => state.pool }));
 import { getDashboard } from '../../src/server/dashboard';
 import { withTenant } from '../../src/server/db/tenant';
+import { searchMaster } from '../../src/server/master-search';
+import { pagedDocuments, pagedLedger, pagedAuditLogs, parseQuery } from '../../src/server/queries';
+import { getDocument } from '../../src/server/documents';
 import { validateMasterInput } from '../../src/server/master-data';
 const databaseUrl = process.env.TEST_DATABASE_URL;
 if (!databaseUrl || !decodeURIComponent(new URL(databaseUrl).pathname).endsWith('_test')) throw new Error('Dedicated TEST_DATABASE_URL required.');
@@ -74,4 +77,68 @@ it('validates minimum stock input and database bounds', async () => {
   for (const min_stock of [-1,1.5,1_000_000_001,'2',null]) expect(() => validateMasterInput({min_stock},'items',true)).toThrow();
   expect(() => validateMasterInput({min_stock:2},'warehouses',true)).toThrow();
   await expect(withTenant(tenants[0], client => client.query('UPDATE items SET min_stock=-1 WHERE id=$1',[missingItem]))).rejects.toMatchObject({code:'23514'});
+});
+
+it('numbers drafts and reversals uniquely, preserves numbers through updates, and protects draft dashboard rows', async () => {
+  const visible = await getDashboard(tenants[0], new Date('2026-10-20T03:00:00Z'), true);
+  expect(visible.setup).toEqual({items:2,warehouses:1,locations:1,destinations:0});
+  expect(visible.pending).toHaveLength(1);
+  expect(visible.pending[0].document_number).toMatch(/^WMS-\d{6,}$/);
+  expect((await getDashboard(tenants[0])).pending).toEqual([]);
+  const docs = await pagedDocuments(tenants[0], parseQuery(new URLSearchParams()));
+  const rows = docs.documents as { id:string; document_number:string; reversal_of_id:string|null }[];
+  expect(new Set(rows.map(d => d.document_number)).size).toBe(rows.length);
+  const reversal = rows.find(d => d.reversal_of_id)!;
+  const detail = await getDocument(tenants[0], reversal.id);
+  expect(detail.original_document_number).toBe(rows.find(d => d.id === reversal.reversal_of_id)!.document_number);
+  const draft = visible.pending[0];
+  await withTenant(tenants[0], client => client.query("UPDATE inventory_documents SET note='changed' WHERE id=$1",[draft.id]));
+  expect((await getDocument(tenants[0], draft.id)).document_number).toBe(draft.document_number);
+  await expect(withTenant(tenants[0], client => client.query('UPDATE inventory_documents SET document_no=DEFAULT WHERE id=$1',[draft.id]))).rejects.toMatchObject({code:'23514'});
+  const found = await pagedDocuments(tenants[0], parseQuery(new URLSearchParams({q:draft.document_number})));
+  expect(found.documents).toHaveLength(1);
+});
+it('paginates tenant item options and treats SQL wildcard characters literally', async () => {
+  await withTenant(tenants[0], client => client.query("INSERT INTO items(tenant_id,code,name) VALUES ($1,'PERCENT%_','literal')",[tenants[0]]));
+  const result = await searchMaster(tenants[0], 'items', new URLSearchParams({q:'%_'}), true);
+  expect(result.items).toHaveLength(1);
+  expect(result.pagination.total).toBe(1);
+  expect((await searchMaster(tenants[1], 'items', new URLSearchParams({q:'%_'}), true)).items).toEqual([]);
+  const page = await searchMaster(tenants[0], 'items', new URLSearchParams({page:'2',page_size:'1'}), true);
+  expect(page.items).toHaveLength(1);
+  expect(page.pagination).toMatchObject({page:2,page_size:1,total:4,total_pages:4});
+  expect((await searchMaster(tenants[0], 'items', new URLSearchParams({active_only:'true'}), true)).pagination.total).toBe(3);
+});
+
+it('links posted ledger actor and reversal ledger actor to their actual audit operations', async () => {
+  await owner.query(`INSERT INTO "${schema}"."user"(id,name,email) VALUES ('poster','Poster','poster@example.test'),('reverser','Reverser','reverser@example.test')`);
+  const rows = await withTenant(tenants[0], async client => {
+    const reversal = (await client.query('SELECT * FROM inventory_documents WHERE reversal_of_id IS NOT NULL')).rows[0];
+    const item = (await client.query("SELECT id FROM items WHERE code='STOCK'")).rows[0];
+    await client.query("INSERT INTO audit_logs(tenant_id,document_id,actor_id,action) VALUES ($1,$2,'poster','POST_INBOUND'),($1,$2,'reverser','REVERSE_DOCUMENT')",[tenants[0],reversal.reversal_of_id]);
+    await client.query('INSERT INTO stock_ledger(tenant_id,document_id,warehouse_id,location_id,item_id,quantity_delta) VALUES ($1,$2,$3,$4,$5,3),($1,$6,$3,$4,$5,-3)',[tenants[0],reversal.reversal_of_id,reversal.warehouse_id,reversal.source_location_id,item.id,reversal.id]);
+    return reversal;
+  });
+  const result = await pagedLedger(tenants[0],parseQuery(new URLSearchParams()));
+  const entries = result.entries as {document_id:string;actor_name:string;human_kind:string;document_number:string}[];
+  expect(entries.find(e => e.document_id===rows.reversal_of_id)).toMatchObject({actor_name:'Poster',human_kind:'INBOUND'});
+  expect(entries.find(e => e.document_id===rows.id)).toMatchObject({actor_name:'Reverser',human_kind:'REVERSAL'});
+  const audit = await pagedAuditLogs(tenants[0],parseQuery(new URLSearchParams()));
+  expect((audit.entries as {document_number:string}[]).every(a => /^WMS-\d{6,}$/.test(a.document_number))).toBe(true);
+});
+
+it('matches dashboard history drilldowns by excluding compensation documents while retaining reversed originals', async () => {
+  const all = await pagedDocuments(tenants[0],parseQuery(new URLSearchParams()),true);
+  const originals = await pagedDocuments(tenants[0],parseQuery(new URLSearchParams({originals_only:'true'})),true);
+  const unrestricted = await pagedDocuments(tenants[0],parseQuery(new URLSearchParams({originals_only:'false'})),true);
+  const rows = originals.documents as {status:string;reversal_of_id:string|null}[];
+  expect(rows.every(d => d.reversal_of_id === null)).toBe(true);
+  expect(rows.some(d => d.status === 'REVERSED')).toBe(true);
+  expect(originals.pagination.total).toBe(all.pagination.total - 1);
+  expect(unrestricted.pagination.total).toBe(all.pagination.total);
+  const dashboard = await getDashboard(tenants[0],new Date('2026-10-20T03:00:00Z'));
+  for (const kind of ['INBOUND','OUTBOUND']) {
+    const history = await pagedDocuments(tenants[0],parseQuery(new URLSearchParams({originals_only:'true',kind,date_field:'posted_at',date_from:'2026-10-20',date_to:'2026-10-20'})),true);
+    expect(history.pagination.total).toBe(kind === 'INBOUND' ? dashboard.metrics.today_inbound : dashboard.metrics.today_outbound);
+  }
 });

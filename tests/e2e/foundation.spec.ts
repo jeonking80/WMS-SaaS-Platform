@@ -3,8 +3,9 @@ import { expect, test } from "@playwright/test";
 test("초기 화면은 프로젝트와 현재 개발 상태를 명시한다", async ({ page }) => {
   await page.goto("/");
 
-  await expect(page.getByRole("heading", { name: "WMS Lite", exact: true })).toBeVisible();
-  await expect(page.getByTestId("development-status")).toContainText("초기 개발 단계");
+  await expect(page.getByRole("link", { name: "WMS Lite", exact: true })).toHaveAttribute("href", "/");
+  await expect(page.getByRole("heading", { level: 1, name: "매일의 창고 업무, 명확한 재고의 흐름.", exact: true })).toBeVisible();
+  await expect(page.getByTestId("development-status")).toContainText("입출고·이동 전표, 재고 조회와 확정 이력");
 });
 
 test("앱 생존 확인 API는 캐시하지 않는 상태 응답을 반환한다", async ({ request }) => {

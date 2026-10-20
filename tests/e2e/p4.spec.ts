@@ -1,3 +1,4 @@
+import { openDocument } from "./document-ui";
 import { randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import pg from "pg";
@@ -41,7 +42,7 @@ function fixtures(request: APIRequestContext) {
       const response = await request.post("/api/documents", { headers, data: body });
       expect(response.status()).toBe(201);
       const document = (await response.json()).document as Document; ids.documents.push(document.id);
-      return { item, warehouse, location, document, body, itemCode: `${prefix}-items` };
+      return { item, warehouse, location, document, body, itemCode: `${prefix}-items`.toUpperCase(), itemName: `${prefix}-items` };
     },
     async outbound(warehouse: string, location: string, item: string, quantity = 80) {
       const response = await request.post("/api/documents", { headers, data: { kind: "OUTBOUND", recipient_name: "Test recipient", delivery_address: "Test delivery address", warehouse_id: warehouse, source_location_id: location, note: prefix, lines: [{ item_id: item, quantity }] } });
@@ -139,7 +140,7 @@ for (const loseResponse of [false, true]) test(`P4 browser posts outbound and ha
     expect((await post(page.request, inbound, fixture.key())).status()).toBe(200);
     const outbound = await fixture.outbound(warehouse, location, item, loseResponse ? 80 : 79);
     await page.goto("/dashboard/documents");
-    await page.getByRole("button", { name: `전표 ${outbound.id} 열기`, exact: true }).click();
+    await openDocument(page, outbound.id);
     await expect(page.getByText(/참고 재고.*100/)).toBeVisible();
     if (!loseResponse) {
       await page.getByLabel("수량 1", { exact: true }).fill("80");
@@ -159,13 +160,14 @@ for (const loseResponse of [false, true]) test(`P4 browser posts outbound and ha
       await page.getByRole("button", { name: "출고 확정 다시 시도", exact: true }).click();
       await expect.poll(() => keys.length).toBe(2); expect(keys[0]).toBeTruthy(); expect(keys[1]).toBe(keys[0]);
     }
-    await expect(page.getByText(/출고 확정됨 · 읽기 전용/)).toBeVisible();
+    await expect(page.getByText("출고 확정됨", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("읽기 전용", { exact: true })).toBeVisible();
     await expect(page.getByLabel("수량 1", { exact: true })).toBeDisabled();
     await assertEffects(page.request, item, location, outbound.id, "20", "-80");
     expect(await fixture.auditCount(outbound.id)).toBe(1);
     const shortage = await fixture.outbound(warehouse, location, item);
     await page.getByRole("button", { name: "목록 새로고침", exact: true }).click();
-    await page.getByRole("button", { name: `전표 ${shortage.id} 열기`, exact: true }).click();
+    await openDocument(page, shortage.id);
     await expect(page.getByText(/참고 재고.*20/)).toBeVisible();
     await page.getByRole("button", { name: "출고 확정", exact: true }).click();
     await page.getByRole("button", { name: "확정 실행", exact: true }).click();

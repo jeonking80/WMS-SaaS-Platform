@@ -1,30 +1,3 @@
 import Link from "next/link";
-
-const principles = [
-  { title: "고객사별 데이터 분리", description: "각 회사가 자신의 창고와 품목을 독립적으로 관리합니다." },
-  { title: "정확한 재고 처리", description: "입고·출고·이동을 전표로 연결하고 재고 변화를 검증합니다." },
-  { title: "추적 가능한 작업이력", description: "누가, 언제, 어떤 작업으로 재고를 변경했는지 확인합니다." },
-];
-
-export default function Home() {
-  return (
-    <main className="mx-auto max-w-5xl px-6 py-16 sm:py-24">
-      <p className="text-sm font-semibold tracking-widest text-slate-500">WAREHOUSE MANAGEMENT</p>
-      <h1 className="mt-4 text-5xl font-bold tracking-tight">WMS Lite</h1>
-      <p className="mt-6 max-w-2xl text-xl leading-relaxed text-slate-600">고객사별 물류·창고 운영관리</p>
-      <section aria-label="개발 진행 상태" className="mt-10 rounded-2xl border border-blue-200 bg-blue-50 p-6">
-        <h2 className="font-semibold text-blue-950">인증·회사 접근 기능 구성 단계</h2>
-        <p data-testid="development-status" className="mt-2 leading-relaxed text-blue-900">현재 초기 개발 단계입니다. 회사 계정으로 로그인할 수 있으며 입출고·재고 관리 기능은 순차적으로 구현할 예정입니다.</p>
-        <Link href="/login" className="mt-5 inline-block rounded-lg bg-blue-800 px-5 py-3 font-semibold text-white hover:bg-blue-900">로그인</Link>
-      </section>
-      <section aria-label="프로젝트 목표" className="mt-8 grid gap-5 md:grid-cols-3">
-        {principles.map((principle) => (
-          <article key={principle.title} className="rounded-2xl border border-slate-200 bg-white p-6">
-            <h2 className="font-semibold">{principle.title}</h2>
-            <p className="mt-3 text-sm leading-7 text-slate-600">{principle.description}</p>
-          </article>
-        ))}
-      </section>
-    </main>
-  );
-}
+const capabilities=[{number:"01",title:"입고부터 이동까지",description:"입고·출고·보관위치 이동 전표를 작성하고 확정하여 재고를 반영합니다."},{number:"02",title:"필요한 재고를 빠르게",description:"품목·창고·로케이션별 재고와 최소 재고 미달 품목을 확인합니다."},{number:"03",title:"기록으로 이어지는 운영",description:"확정 이력과 관리자 감사 로그로 작업 내용을 확인합니다."}];
+export default function Home(){return <main className="min-h-screen bg-white"><header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6"><Link href="/" className="flex items-center gap-3 text-xl font-extrabold"><span className="brand-mark" aria-hidden="true">W</span>WMS Lite</Link><Link href="/login" className="secondary-action">로그인 →</Link></header><section className="border-y border-slate-100 bg-slate-50"><div className="mx-auto grid max-w-6xl items-center gap-12 px-6 py-16 md:grid-cols-[1.1fr_1fr] md:py-24"><div><p className="eyebrow !text-blue-600">YOUR DAILY WAREHOUSE WORKSPACE</p><h1 className="mt-5 text-4xl font-extrabold leading-tight tracking-tight text-slate-900 sm:text-5xl">매일의 창고 업무,<br/><span className="text-blue-600">명확한 재고의 흐름.</span></h1><p className="mt-6 max-w-lg text-base leading-8 text-slate-600">회사별 품목과 창고, 입출고 전표와 현재 재고를 한곳에서 관리하는 창고 운영 워크스페이스입니다.</p><Link href="/login" className="primary-action mt-8 !px-6 !py-3">회사 계정으로 로그인 →</Link><p className="mt-4 text-xs text-slate-500">관리자 · 작업자 · 조회자 권한에 맞는 업무 공간</p></div><div className="rounded-2xl bg-[#111f35] p-8 text-white shadow-xl"><p className="text-xs font-semibold tracking-widest text-blue-300">CONNECTED OPERATIONS</p><h2 className="mt-3 text-2xl font-bold">전표에서 재고, 이력까지</h2><div className="mt-8 space-y-4">{[["01","기준정보 준비","품목 · 창고 · 로케이션 · 배송지"],["02","입출고 업무 처리","초안 작성 · 전표 확정 · 확정 취소"],["03","재고와 기록 확인","현재 재고 · 변동 이력 · 운영 현황"]].map(([n,title,detail])=><div key={n} className="flex gap-4 rounded-xl border border-slate-600/50 bg-slate-700/40 p-5"><span className="font-mono text-sm text-blue-300">{n}</span><div><h3 className="text-sm font-bold">{title}</h3><p className="mt-1 text-xs text-slate-300">{detail}</p></div></div>)}</div></div></div></section><section aria-label="주요 기능" className="mx-auto grid max-w-6xl gap-8 px-6 py-14 md:grid-cols-3">{capabilities.map(c=><article key={c.number}><p className="text-xs font-bold text-blue-600">{c.number}</p><h2 className="mt-3 text-lg font-bold">{c.title}</h2><p className="mt-3 text-sm leading-7 text-slate-500">{c.description}</p></article>)}</section><section aria-label="개발 진행 상태" className="mx-auto max-w-6xl border-t border-slate-200 px-6 py-8"><h2 className="text-sm font-semibold">현재 제공 기능</h2><p data-testid="development-status" className="mt-2 text-sm leading-7 text-slate-500">회사 계정 로그인, 기준정보·배송지 관리, 입출고·이동 전표, 재고 조회와 확정 이력을 제공합니다. 역할에 따라 접근 가능한 메뉴와 작업이 달라집니다.</p></section><footer className="mx-auto flex max-w-6xl justify-between px-6 py-6 text-xs text-slate-400"><span>WMS Lite</span><span>고객사별 창고 운영관리</span></footer></main>}

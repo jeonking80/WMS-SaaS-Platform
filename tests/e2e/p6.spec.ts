@@ -1,3 +1,4 @@
+import { openDocument } from "./document-ui";
 import { randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import pg from "pg";
@@ -40,7 +41,7 @@ function fixtures(request: APIRequestContext) {
       const response = await request.post("/api/documents", { headers, data: body });
       expect(response.status()).toBe(201);
       const document = (await response.json()).document as Document; ids.documents.push(document.id);
-      return { item, warehouse, location, document, body, itemCode: `${prefix}-items` };
+      return { item, warehouse, location, document, body, itemCode: `${prefix}-items`.toUpperCase(), itemName: `${prefix}-items` };
     },
     async transfer(warehouse: string, source: string, destination: string, item: string) {
       const response = await request.post("/api/documents", { headers, data: { kind: "TRANSFER", warehouse_id: warehouse, source_location_id: source, destination_location_id: destination, note: prefix, lines: [{ item_id: item, quantity: 60 }] } });
@@ -138,6 +139,10 @@ test("P6 paginated search, confirmed history and role/tenant boundaries", async 
     for (const email of ["worker.a@example.test", "viewer.a@example.test"]) {
       await login(request, email);
       expect((await request.get("/api/audit-logs")).status()).toBe(403);
+      const options = await collection(request, `/api/item-options?q=${encodeURIComponent(fixture.prefix)}&page_size=7`, "items");
+      expect(options.pagination.total).toBe(31);
+      expect(options.rows).toHaveLength(7);
+      expect(options.rows.every(row => String(row.code).includes(fixture.prefix.toUpperCase()))).toBe(true);
       const history = await collection(request, `/api/documents?view=history&warehouse_id=${data.warehouse}&page_size=100`, "documents");
       expect(history.pagination.total).toBe(30); expect(history.rows.every(row => row.status === "POSTED")).toBe(true);
       expect((await request.get(`/api/documents/${data.documents[0].id}?view=history`)).status()).toBe(200);
@@ -152,6 +157,9 @@ test("P6 paginated search, confirmed history and role/tenant boundaries", async 
       const result = await collection(request, `/api/${endpoint}${endpoint.includes("?") ? "&" : "?"}warehouse_id=${data.warehouse}`, key);
       expect(result.pagination.total).toBe(0); expect(result.rows).toEqual([]);
     }
+    const foreignOptions = await collection(request, `/api/item-options?q=${encodeURIComponent(fixture.prefix)}`, "items");
+    expect(foreignOptions.pagination.total).toBe(0);
+    expect(foreignOptions.rows).toEqual([]);
     const foreignDashboard = await (await request.get("/api/dashboard")).json();
     expect(JSON.stringify(foreignDashboard)).not.toContain(fixture.prefix);
     expect(foreignDashboard.recent.some((row: Row) => fixture.ids.documents.includes(row.id as string))).toBe(false);
@@ -172,7 +180,7 @@ test("P6 browser refreshes tenant data after logout and history is read only at 
     await page.goto("/dashboard");
     await expect(page.getByTestId("current-company")).toHaveText("데모 고객사 A");
     await page.getByRole("link", { name: "확정 이력", exact: true }).click();
-    await page.getByRole("button", { name: `전표 ${data.document.id} 열기`, exact: true }).click();
+    await openDocument(page, data.document.id, true);
     await expect(page.getByRole("button", { name: "전표 저장", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "확정 취소", exact: true })).toHaveCount(0);
     expect(await page.evaluate(() => document.body.scrollWidth <= window.innerWidth)).toBe(true);
@@ -258,5 +266,82 @@ test("P6 stock browser searches, paginates and distinguishes loading, empty and 
     await expect(page.getByText("현재 재고와 변동 이력의 수량이 일치합니다.", { exact: true })).toHaveCount(0);
     await expect(stock.locator("tbody tr")).toHaveCount(0);
     await page.unroute("**/api/stock?**");
+  } finally { await fixture.cleanup(); }
+});
+
+test("completion workflow searches master pages, writes from dashboard and drills into stock history", async ({ page }) => {
+  test.setTimeout(240_000);
+  const fixture = fixtures(page.request);
+  try {
+    await login(page.request);
+    const data = await seed(page.request, fixture);
+    await page.goto("/dashboard/master?tab=items");
+    await page.getByLabel("검색어", { exact: true }).fill(fixture.prefix);
+    await page.getByRole("button", { name: "검색 적용", exact: true }).click();
+    await expect(page.getByText("총 30건 · 1 / 2 페이지", { exact: true })).toBeVisible();
+    await page.getByRole("button", { name: "다음 페이지", exact: true }).click();
+    await expect(page.getByText("총 30건 · 2 / 2 페이지", { exact: true })).toBeVisible();
+    await expect(page.locator("tbody tr")).toHaveCount(10);
+    const row = page.locator("tbody tr").first();
+    const itemName = await row.locator("td").nth(1).innerText();
+    await row.getByRole("button", { name: / 수정$/ }).click();
+    const editor = page.getByRole("dialog", { name: "품목 수정", exact: true });
+    await editor.getByLabel("품목 이름", { exact: true }).fill(`${itemName} edited`);
+    await editor.getByRole("button", { name: "저장", exact: true }).click();
+    await expect(editor).toHaveCount(0);
+    await expect(page.getByText(`${itemName} edited`, { exact: true })).toBeVisible();
+
+    await page.goto("/dashboard");
+    await page.getByRole("link", { name: "입고 작성", exact: true }).click();
+    await expect(page.getByRole("combobox", { name: "전표 유형", exact: true })).toHaveValue("INBOUND");
+    await page.getByRole("combobox", { name: "창고", exact: true }).selectOption(data.warehouse);
+    await page.getByRole("combobox", { name: "도착 보관위치", exact: true }).selectOption(data.location);
+    await page.getByLabel("품목 1 검색", { exact: true }).fill(data.itemCode);
+    await page.getByRole("combobox", { name: "품목 1 검색 결과", exact: true }).selectOption({ label: `${data.itemCode} · ${data.itemName}` });
+    await page.getByLabel("수량 1", { exact: true }).fill("7");
+    const savedResponse = page.waitForResponse(response => new URL(response.url()).pathname === "/api/documents" && response.request().method() === "POST");
+    await page.getByRole("button", { name: "전표 저장", exact: true }).click();
+    const saved = await savedResponse;
+    expect(saved.status()).toBe(201);
+    const document = (await saved.json()).document;
+    fixture.ids.documents.push(document.id);
+    expect(document.document_number).toMatch(/^WMS-\d{6,}$/);
+    await expect(page.getByText(document.document_number, { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(document.id, { exact: true })).toHaveCount(0);
+    await page.getByRole("button", { name: "입고 확정", exact: true }).click();
+    await page.getByRole("button", { name: "확정 실행", exact: true }).click();
+    await expect(page.getByText("입고 확정됨", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("읽기 전용", { exact: true })).toBeVisible();
+    await expect(page.getByLabel("수량 1", { exact: true })).toBeDisabled();
+
+    await page.goto(`/dashboard/stock?item_id=${data.item}`);
+    const stock = page.locator("section").filter({ has: page.getByRole("heading", { name: "현재 재고", exact: true }) });
+    await expect(stock.locator("tbody tr")).toHaveCount(1);
+    await expect(stock.getByRole("cell", { name: "107", exact: true })).toBeVisible();
+    const ledgerResponse = page.waitForResponse(response => {
+      const url = new URL(response.url());
+      return url.pathname === "/api/stock-ledger" && url.searchParams.get("item_id") === data.item && url.searchParams.get("location_id") === data.location;
+    });
+    await stock.getByRole("button", { name: /변동 이력 보기$/ }).click();
+    expect((await ledgerResponse).status()).toBe(200);
+    const ledger = page.locator("section").filter({ has: page.getByRole("heading", { name: "재고 변동 이력", exact: true }) });
+    await expect(ledger.locator("tbody tr")).toHaveCount(2);
+    await expect(ledger.getByRole("columnheader", { name: "작업자", exact: true })).toBeVisible();
+    await expect(ledger.getByText("작업자 정보 없음", { exact: true })).toHaveCount(0);
+    await ledger.getByRole("link", { name: document.document_number, exact: true }).click();
+    await expect(page).toHaveURL(new RegExp(`/dashboard/history\\?id=${document.id}$`));
+    await expect(page.getByLabel("수량 1", { exact: true })).toHaveValue("7");
+    await expect(page.getByRole("button", { name: "전표 저장", exact: true })).toHaveCount(0);
+
+    await login(page.request, "viewer.a@example.test");
+    await page.goto("/dashboard");
+    await expect(page.getByRole("link", { name: "입고 작성", exact: true })).toHaveCount(0);
+    await expect(page.locator(`a[href*="${data.draft.id}"]`)).toHaveCount(0);
+    const dashboard = await (await page.request.get("/api/dashboard")).json();
+    expect(dashboard.pending ?? []).toEqual([]);
+    expect(JSON.stringify(dashboard)).not.toContain(data.draft.id);
+    await page.goto(`/dashboard/history?id=${data.draft.id}`);
+    await expect(page.getByRole("alert").filter({ hasText: "접근 권한이 없습니다." })).toBeVisible();
+    await expect(page.getByRole("button", { name: "전표 저장", exact: true })).toHaveCount(0);
   } finally { await fixture.cleanup(); }
 });

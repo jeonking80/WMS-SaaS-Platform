@@ -1,3 +1,4 @@
+import { documentNumberSql } from "./document-number";
 import { apiError, json } from "./api";
 import { requireIdentity } from "./auth/access";
 import { withTenant } from "./db/tenant";
@@ -8,11 +9,13 @@ export type Dashboard = {
   metrics: { stocked_items: number; today_inbound: number; today_outbound: number; today_reversals: number; pending_outbound: number; low_stock_items: number };
   daily: { date: string; inbound: number; outbound: number; reversals: number }[];
   low_stock: { id: string; code: string; name: string; min_stock: string; quantity: string }[];
-  recent: { id: string; kind: string; status: string; posted_at: string | null; reversed_at: string | null; reversal_of_id: string | null }[];
+  setup: { items: number; warehouses: number; locations: number; destinations: number };
+  pending: { id: string; document_number: string; kind: string; recipient_name: string | null; warehouse_name: string; created_at: string }[];
+  recent: { id: string; document_number: string; kind: string; status: string; posted_at: string | null; reversed_at: string | null; reversal_of_id: string | null }[];
 };
 
 /** A single statement gives every aggregate the same PostgreSQL snapshot. */
-export async function getDashboard(tenantId: string, now = new Date()): Promise<Dashboard> {
+export async function getDashboard(tenantId: string, now = new Date(), includePending = false): Promise<Dashboard> {
   const asOf = now.toISOString();
   return withTenant(tenantId, async client => {
     const result = await client.query<{ dashboard: Dashboard }>(`
@@ -36,6 +39,8 @@ export async function getDashboard(tenantId: string, now = new Date()): Promise<
       )
       SELECT jsonb_build_object(
         'timezone','Asia/Seoul','as_of',$1::text,
+        'setup',jsonb_build_object('items',(SELECT count(*)::int FROM items WHERE active),'warehouses',(SELECT count(*)::int FROM warehouses WHERE active),'locations',(SELECT count(*)::int FROM locations WHERE active),'destinations',(SELECT count(*)::int FROM delivery_destinations WHERE active)),
+        'pending',COALESCE((SELECT jsonb_agg(to_jsonb(p) ORDER BY p.created_at DESC,p.id DESC) FROM (SELECT d.id,${documentNumberSql("d")} AS document_number,d.kind,d.recipient_name,w.name AS warehouse_name,d.created_at FROM inventory_documents d JOIN warehouses w ON (w.tenant_id,w.id)=(d.tenant_id,d.warehouse_id) WHERE $2::boolean AND d.status='DRAFT' ORDER BY d.created_at DESC,d.id DESC LIMIT 10) p),'[]'::jsonb),
         'metrics',jsonb_build_object(
           'stocked_items',(SELECT count(*)::int FROM balances WHERE quantity>0),
           'today_inbound',(SELECT inbound FROM daily,clock WHERE day=today),
@@ -46,8 +51,8 @@ export async function getDashboard(tenantId: string, now = new Date()): Promise<
         'daily',(SELECT jsonb_agg(jsonb_build_object('date',to_char(day,'YYYY-MM-DD'),'inbound',inbound,'outbound',outbound,'reversals',reversals) ORDER BY day) FROM daily),
         'low_stock',COALESCE((SELECT jsonb_agg(to_jsonb(s) ORDER BY s.code,s.id) FROM (SELECT * FROM shortages ORDER BY code,id LIMIT 20) s),'[]'::jsonb),
         'recent',COALESCE((SELECT jsonb_agg(to_jsonb(r) ORDER BY COALESCE(r.reversed_at,r.posted_at) DESC,r.id DESC)
-          FROM (SELECT id,kind,status,posted_at,reversed_at,reversal_of_id FROM inventory_documents WHERE status IN ('POSTED','REVERSED') ORDER BY COALESCE(reversed_at,posted_at) DESC NULLS LAST,id DESC LIMIT 10) r),'[]'::jsonb)
-      ) AS dashboard`, [asOf]);
+          FROM (SELECT id,${documentNumberSql("inventory_documents")} AS document_number,kind,status,posted_at,reversed_at,reversal_of_id FROM inventory_documents WHERE status IN ('POSTED','REVERSED') ORDER BY COALESCE(reversed_at,posted_at) DESC NULLS LAST,id DESC LIMIT 10) r),'[]'::jsonb)
+      ) AS dashboard`, [asOf, includePending]);
     return { ...result.rows[0].dashboard, as_of: asOf };
   });
 }
@@ -55,6 +60,6 @@ export async function getDashboard(tenantId: string, now = new Date()): Promise<
 export async function dashboardRequest(request: Request) {
   try {
     const identity = await requireIdentity(request.headers);
-    return json(await getDashboard(identity.tenant.id));
+    return json(await getDashboard(identity.tenant.id, new Date(), identity.role !== "viewer"));
   } catch (error) { return apiError(error); }
 }

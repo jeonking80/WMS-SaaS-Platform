@@ -1,3 +1,4 @@
+import { openDocument } from "./document-ui";
 import { randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import pg from "pg";
@@ -41,7 +42,7 @@ function fixtures(request: APIRequestContext) {
       const response = await request.post("/api/documents", { headers, data: body });
       expect(response.status()).toBe(201);
       const document = (await response.json()).document as Document; ids.documents.push(document.id);
-      return { item, warehouse, location, document, body, itemCode: `${prefix}-items` };
+      return { item, warehouse, location, document, body, itemCode: `${prefix}-items`.toUpperCase(), itemName: `${prefix}-items` };
     },
     async outbound(warehouse: string, location: string, item: string, quantity = 80) {
       const response = await request.post("/api/documents", { headers, data: { kind: "OUTBOUND", recipient_name: "Test recipient", delivery_address: "Test delivery address", warehouse_id: warehouse, source_location_id: location, note: prefix, lines: [{ item_id: item, quantity }] } });
@@ -93,7 +94,7 @@ test("outbound delivery choice is required, editable, confirmed, and snapshotted
   const headers = { origin };
   try {
     await login(page.request);
-    const { item, warehouse, location, document: inbound } = await fixture.create();
+    const { item, itemCode, warehouse, location, document: inbound } = await fixture.create();
     expect((await post(page.request, inbound, fixture.key())).status()).toBe(200);
     const body = { kind: "OUTBOUND", warehouse_id: warehouse, source_location_id: location, lines: [{ item_id: item, quantity: 2 }] };
     for (const missing of [{}, { recipient_name: "Recipient" }, { delivery_address: "Address" }, { recipient_name: "   ", delivery_address: "Address" }]) {
@@ -113,7 +114,8 @@ test("outbound delivery choice is required, editable, confirmed, and snapshotted
     await page.getByRole("combobox", { name: "전표 유형", exact: true }).selectOption("OUTBOUND");
     await page.getByRole("combobox", { name: "창고", exact: true }).selectOption(warehouse);
     await page.getByRole("combobox", { name: "출발 보관위치", exact: true }).selectOption(location);
-    await page.getByRole("combobox", { name: "품목 1", exact: true }).selectOption(item);
+    await page.getByLabel("품목 1 검색", { exact: true }).fill(itemCode);
+    await page.getByRole("combobox", { name: "품목 1 검색 결과", exact: true }).selectOption(item);
     await page.getByLabel("수량 1", { exact: true }).fill("2");
     await page.getByLabel("거래처·배송지 검색", { exact: true }).fill(firstDestination.recipient_name);
     await page.getByRole("button", { name: new RegExp(`${firstDestination.recipient_name} · ${firstDestination.name}`) }).click();
@@ -136,7 +138,8 @@ test("outbound delivery choice is required, editable, confirmed, and snapshotted
     await expect(page.getByRole("dialog")).toContainText("Updated customer");
     await expect(page.getByRole("dialog")).toContainText("Updated address");
     await page.getByRole("button", { name: "확정 실행", exact: true }).click();
-    await expect(page.getByText(/출고 확정됨 · 읽기 전용/)).toBeVisible();
+    await expect(page.getByText("출고 확정됨", { exact: true }).first()).toBeVisible();
+    await expect(page.getByText("읽기 전용", { exact: true })).toBeVisible();
     await expect(page.getByText("배송지: Updated address", { exact: false })).toBeVisible();
     await expect(page.getByRole("textbox", { name: "배송지", exact: true })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "전표 저장", exact: true })).toHaveCount(0);
@@ -144,7 +147,7 @@ test("outbound delivery choice is required, editable, confirmed, and snapshotted
     await login(page.request);
     expect((await page.request.patch(`/api/delivery-destinations/${updatedDestination.id}`, { headers, data: { recipient_name: "Changed address book recipient", address_line1: "Changed address book address" } })).status()).toBe(200);
     await page.goto("/dashboard/history");
-    await page.getByRole("button", { name: `전표 ${document.id} 열기`, exact: true }).click();
+    await openDocument(page, document.id);
     await expect(page.getByText("받는 거래처: Updated customer", { exact: true })).toBeVisible();
     await expect(page.getByText("배송지: Updated address", { exact: false })).toBeVisible();
     await login(page.request, "admin.b@example.test");

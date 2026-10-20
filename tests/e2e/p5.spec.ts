@@ -1,3 +1,4 @@
+import { openDocument } from "./document-ui";
 import { randomUUID } from "node:crypto";
 import { expect, test, type APIRequestContext } from "@playwright/test";
 import pg from "pg";
@@ -40,7 +41,7 @@ function fixtures(request: APIRequestContext) {
       const response = await request.post("/api/documents", { headers, data: body });
       expect(response.status()).toBe(201);
       const document = (await response.json()).document as Document; ids.documents.push(document.id);
-      return { item, warehouse, location, document, body, itemCode: `${prefix}-items` };
+      return { item, warehouse, location, document, body, itemCode: `${prefix}-items`.toUpperCase(), itemName: `${prefix}-items` };
     },
     async transfer(warehouse: string, source: string, destination: string, item: string) {
       const response = await request.post("/api/documents", { headers, data: { kind: "TRANSFER", warehouse_id: warehouse, source_location_id: source, destination_location_id: destination, note: prefix, lines: [{ item_id: item, quantity: 60 }] } });
@@ -161,12 +162,12 @@ for (const loseResponse of [false, true]) test(`P5 browser transfers and reverse
     const destination = await fixture.destination(warehouse);
     const transfer = await fixture.transfer(warehouse, location, destination, item);
     await page.goto("/dashboard/documents");
-    await page.getByRole("button", { name: `전표 ${transfer.id} 열기`, exact: true }).click();
+    await openDocument(page, transfer.id);
     await page.getByLabel("수량 1", { exact: true }).fill("59");
     await expect(page.getByRole("button", { name: "이동 확정", exact: true })).toBeDisabled();
     await page.getByLabel("수량 1", { exact: true }).fill("60");
     await page.getByRole("button", { name: "전표 저장", exact: true }).click();
-    await expect(page.getByRole("status")).toHaveText("전표를 저장했습니다.");
+    await expect(page.getByRole("status").filter({ hasText: "전표를 저장했습니다." })).toHaveText("전표를 저장했습니다.");
     await page.getByRole("button", { name: "이동 확정", exact: true }).click();
     await page.getByRole("button", { name: "확정 실행", exact: true }).click();
     await expect(page.getByLabel("수량 1", { exact: true })).toBeDisabled();
@@ -183,17 +184,17 @@ for (const loseResponse of [false, true]) test(`P5 browser transfers and reverse
       await page.getByRole("button", { name: "확정 취소 다시 시도", exact: true }).click();
       await expect.poll(() => keys.length).toBe(2); expect(keys[0]).toBeTruthy(); expect(keys[1]).toBe(keys[0]);
     }
-    await page.getByRole("button", { name: "반대 전표 열기", exact: true }).click();
+    await page.getByRole("button", { name: /^반대 전표 열기/ }).click();
     await expect(page.getByRole("button", { name: "확정 취소", exact: true })).toHaveCount(0);
     await expect(page.getByLabel("수량 1", { exact: true })).toBeDisabled();
-    await page.getByRole("button", { name: "원본 전표 열기", exact: true }).click();
-    await expect(page.getByRole("button", { name: "반대 전표 열기", exact: true })).toBeVisible();
+    await page.getByRole("button", { name: /^원본 전표 열기/ }).click();
+    await expect(page.getByRole("button", { name: /^반대 전표 열기/ })).toBeVisible();
     await transferBalances(page.request, item, location, destination, [100, 0]);
     const another = await fixture.transfer(warehouse, location, destination, item);
     expect((await post(page.request, another, fixture.key())).status()).toBe(200);
     await login(page.request, "worker.a@example.test");
     await page.reload();
-    await page.getByRole("button", { name: `전표 ${another.id} 열기`, exact: true }).click();
+    await openDocument(page, another.id);
     await expect(page.getByRole("button", { name: "확정 취소", exact: true })).toHaveCount(0);
   } finally { await fixture.cleanup(); }
 });

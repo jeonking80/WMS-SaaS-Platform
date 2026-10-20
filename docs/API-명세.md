@@ -1,6 +1,6 @@
 # WMS Lite API 명세
 
-**상태:** 6단계 검색·필터·페이지 처리, 역할별 확정 이력, 대시보드·감사 조회와 최소재고 설정을 구현했다.
+**구현 상태:** 검색·페이지 처리, 역할별 확정 이력, 대시보드·감사, 최소재고에 더해 기준정보 페이지 검색, 모든 역할의 품목 선택 검색, 고정 전표번호와 업무 화면 간 연결을 제공한다. 이번 변경의 전체 검증·운영 반영 완료를 뜻하지 않는다.
 
 ## 1. 구현된 API
 
@@ -77,7 +77,7 @@ Playwright는 초기 화면·상태 API, 보호 화면의 로그인 필요 여�
 - 생성 입력은 `{ code, name }`, 위치는 `warehouse_id`도 필요하다. 품목은 선택적 `min_stock`(기본 0)을 받는다. 활성 상태는 true로 생성한다.
 - PATCH는 `code`, `name`, `active` 중 하나 이상을 받으며 품목에는 `min_stock`도 허용한다. 위치의 소속 창고는 변경할 수 없다. 알려지지 않은 필드는 거절한다.
 - 코드는 앞뒤 공백 제거·대문자 변환 후 1~64자, 이름은 앞뒤 공백 제거 후 1~128자다.
-- 응답은 id/code/name/active, 품목은 min_stock 문자열, 위치는 warehouse_id도 포함한다. 목록은 코드순 최대 1,000개이며 위치 목록에 `?warehouse_id=UUID` 필터를 지원한다.
+- 응답은 id/code/name/active, 품목은 min_stock 문자열, 위치는 warehouse_id도 포함한다. 페이지 검색 계약은 아래 「업무 화면 조회 확장」을 따른다. 검색·페이지 매개변수가 없는 기존 호출은 코드·ID순 최대 1,000개 배열을 유지하며 위치 목록의 `?warehouse_id=UUID` 필터도 유지한다.
 - 회사 내 품목·창고 코드와 회사·창고 내 위치 코드가 고유하다. 초안이 참조하는 기준정보는 비활성화할 수 없다. 활성 위치가 있는 창고도 비활성화할 수 없다. 비활성 창고에 위치를 생성·재활성화할 수 없다.
 
 ## 6. 2단계 전표 계약
@@ -108,7 +108,7 @@ Playwright는 초기 화면·상태 API, 보호 화면의 로그인 필요 여�
 
 업무 변경 요청은 `Content-Type: application/json`과 `BETTER_AUTH_URL`의 origin과 일치하는 `Origin` 헤더가 필요하다. 출처 불일치는 403 `ORIGIN_FORBIDDEN`, 잘못된 JSON/입력은 400 `INVALID_INPUT`, 코드 중복은 409 `CONFLICT`, 사용 중 비활성화는 409 `IN_USE`, 비활성 부모 창고는 409 `INACTIVE_REFERENCE`다. 인증된 회사만 사용하며 전표 본문에 넣은 `tenant_id`는 무시한다. 모든 업무 응답은 no-store다.
 
-전표 목록의 검색·페이지네이션은 10절을 따른다. 기준정보 목록은 최대 1,000개 제한을 유지한다.
+전표 목록의 검색·페이지네이션은 10절을 따른다. 기준정보 목록은 페이지 검색 계약과 기존 최대 1,000개 배열 호출을 함께 지원한다.
 
 
 ## 7. 3단계 입고 확정·재고 조회
@@ -192,11 +192,11 @@ Playwright는 초기 화면·상태 API, 보호 화면의 로그인 필요 여�
 
 | 경로 | 적용 필터 | 검색어 `q` 대상 | 역할 |
 |---|---|---|---|
-| `/api/documents` | warehouse_id, location_id(출발 또는 도착), item_id, kind, status, date_from, date_to, date_field | 전표 ID·메모·명세 품목 코드/이름 | 관리자·작업자 |
+| `/api/documents` | warehouse_id, location_id(출발 또는 도착), item_id, kind, status, date_from, date_to, date_field, originals_only | 전표번호·전표 UUID·메모·거래처·배송주소·명세 품목 코드/이름 | 관리자·작업자 |
 | `/api/documents?view=history` | 위와 동일, status는 POSTED/REVERSED만 | 위와 동일 | 모든 역할 |
 | `/api/stock` | warehouse_id, location_id, item_id | 품목 코드·이름 | 모든 역할 |
-| `/api/stock-ledger` | warehouse_id, location_id, item_id, document_id, kind, status, date_from, date_to | 품목 코드·이름·전표 ID | 모든 역할 |
-| `/api/audit-logs` | document_id, action, date_from, date_to | 전표 ID·동작·처리자 이름 | 관리자 |
+| `/api/stock-ledger` | warehouse_id, location_id, item_id, document_id, kind, status, date_from, date_to | 품목 코드·이름·전표번호·전표 UUID | 모든 역할 |
+| `/api/audit-logs` | document_id, action, date_from, date_to | 전표번호·전표 UUID·동작·처리자 이름 | 관리자 |
 
 `q`는 앞뒤 공백을 제거한 최대 100자 부분 검색이며 `%`, `_`, 역슬래시는 문자 그대로 검색한다. ID 필터는 UUID다. 날짜는 실제 존재하는 `YYYY-MM-DD`이고 시작일이 종료일보다 늦으면 400 INVALID_INPUT이다. 서울 시간의 시작일 00:00 이상, 종료일 다음 날 00:00 미만으로 조회하므로 UI의 종료일 전체가 포함된다. 전표 `date_field`는 created_at(기본)/posted_at/reversed_at이며 원장·감사는 created_at 기준이다. 현재고에는 날짜 필터를 적용하지 않는다. kind는 INBOUND/OUTBOUND/TRANSFER, status는 DRAFT/CANCELLED/POSTED/REVERSED다. 잘못된 형식·범위는 400 INVALID_INPUT이다.
 
@@ -252,3 +252,26 @@ Playwright는 초기 화면·상태 API, 보호 화면의 로그인 필요 여�
 출고 전표 POST/PATCH에 `delivery_destination_id`(UUID)를 지정하면 서버가 해당 회사의 활성 주소록을 읽어 `recipient_name`, `delivery_address`를 결정한다. 함께 보낸 텍스트는 사용하지 않는다. 없는 ID·다른 회사·비활성 배송지는 404 REFERENCE_NOT_FOUND다. 입고·이동에는 null/생략만 허용한다. 전표 응답에는 nullable `delivery_destination_id`가 포함된다. 이전 텍스트 전표도 기존 스냅샷으로 조회·수정·확정할 수 있다.
 
 화면은 출고에서 검색 결과를 선택하며, 관리자는 같은 화면의 ‘새 배송지 등록’ 또는 ‘배송지 관리’에서 등록·수정할 수 있다. 등록 시 Daum 우편번호 검색으로 기본 주소를 선택하고 상세주소만 입력한다. 외부 검색은 사용자 클릭 때 불러오며 로딩 실패 시 재시도를 제공한다. API 키나 유료 지도 상품 설정은 필요하지 않다.
+
+
+## 업무 화면 조회 확장 (2026-10-20)
+
+### 기준정보 검색과 페이지
+
+`GET /api/items`, `/api/warehouses`, `/api/locations`는 관리자·작업자에게 허용한다. `q`, `page`, `page_size`, `active` 중 하나라도 있으면 페이지 응답을 반환한다. `q`는 코드·이름의 문자 그대로 부분 검색(앞뒤 공백 제거, 최대 100자), `page`는 기본 1, `page_size`는 기본 20·최대 100이다. `active=true|false`는 활성/비활성으로 제한하고 생략하면 모두 반환한다. 위치는 선택적 `warehouse_id=UUID`를 추가할 수 있다. 응답은 `{ items|warehouses|locations: [...], pagination: { page, page_size, total, total_pages } }`다. 잘못된 값은 400 `INVALID_INPUT`이다. 기존 POST/PATCH 입력·역할은 변경하지 않는다.
+
+### `GET /api/item-options`
+
+관리자·작업자·조회자 모두 인증된 자기 회사의 품목을 읽을 수 있다. 기준정보 관리 API의 조회자 제한과 별도로, 전표 품목 선택과 읽기 전용 재고 필터에 사용한다. `q`, `page`, `page_size`는 위와 같고 `id=UUID`는 선택한 품목 한 건의 이름 복원에 사용한다. `active_only=true`일 때 활성 품목만 반환하며 생략/false면 비활성 품목도 반환한다. 응답은 `{ items: [{ id, code, name, active, min_stock }], pagination }`다. 조회 권한은 변경 권한을 부여하지 않는다. 신규 전표의 활성 참조 검사는 저장·확정 서비스에서 유지한다.
+
+### 전표번호와 연결 데이터
+
+저장된 전표의 목록·상세·확정 이력에는 `document_number` 문자열을 반환한다(예: `WMS-000001`). DB의 변경 불가 `document_no`에서 생성하며 최소 여섯 자리이고 더 큰 번호를 자르지 않는다. DB 전체 순번이므로 회사별 연속성·결번 없음·작성 시각 순서를 보장하지 않는다. UUID `id`는 API 경로·관계·URL의 기준으로 유지한다. POST/PATCH 입력에는 전표번호를 받지 않는다.
+
+전표 목록에는 `line_count`, `total_quantity`, `warehouse_name`, `source_location_code`, `destination_location_code`를 포함한다. 상세에는 창고·위치 표시 정보, 명세의 품목 코드·이름과 `original_document_number`, `reversal_document_number`, `reversal_document_id`를 포함한다. 확정/확정 취소의 기존 멱등 성공 응답은 종전 형식을 유지할 수 있으므로 최신 표시값은 상세 GET으로 확인한다.
+
+`GET /api/stock-ledger`에는 `document_number`, `actor_name`, `kind`, `status`, `reversal_of_id`, `human_kind`를 추가한다. `human_kind`는 INBOUND/OUTBOUND/TRANSFER 또는 반대 전표의 REVERSAL이다. `document_id`·품목·위치 필터로 특정 재고 변동을 추적한다. `/api/audit-logs`에도 `document_number`를 포함한다.
+
+`GET /api/dashboard`는 기존 집계 외에 `setup: { items, warehouses, locations, destinations }`(활성 등록 건수), `pending`(최근 초안 최대 10개), `recent`의 `document_number`를 제공한다. `pending`은 관리자·작업자에게만 내용을 반환하고 조회자는 빈 배열이다. 출고 대기 집계 숫자는 기존처럼 조회자에게도 제공한다. pending 항목은 `{ id, document_number, kind, recipient_name, warehouse_name, created_at }`다. 화면은 해당 UUID로 전표를 열며 오늘 실적 링크에는 서울 기준 날짜와 확정일/취소일 기준을 전달한다.
+
+전표 목록과 확정 이력의 `originals_only=true|false`는 선택적 원본 전표 필터다. true이면 `reversal_of_id IS NULL`인 전표만 반환하여 자동 생성된 반대 전표를 제외한다. 확정 취소된 원본(REVERSED)은 그대로 포함하며 생략/false이면 반대 전표도 포함한다. 잘못된 값은 400 `INVALID_INPUT`이다. 화면의 **자동 생성된 취소 전표 제외** 체크박스에 대응한다. 대시보드의 오늘 입고·출고·확정 취소 링크는 `originals_only=true`와 서울 기준 오늘 날짜, 입출고는 `date_field=posted_at`, 확정 취소는 `date_field=reversed_at`을 전달해 집계와 같은 원본 전표 범위를 연다.

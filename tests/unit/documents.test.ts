@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const { query } = vi.hoisted(() => ({ query: vi.fn() }));
 vi.mock("../../src/server/db/tenant", () => ({ withTenant: (_tenant: string, callback: (client: unknown) => unknown) => callback({ query }) }));
-import { documentVersion, parseDocument, updateDocument } from "../../src/server/documents";
+import { documentVersion, parseDocument, updateDocument, getDocument, createDocument } from "../../src/server/documents";
 const warehouse = "10000000-0000-4000-8000-000000000001";
 const source = "10000000-0000-4000-8000-000000000002";
 const destination = "10000000-0000-4000-8000-000000000003";
@@ -61,5 +61,29 @@ describe("document transition guards", () => {
       .mockResolvedValueOnce({ rows: [] });
     await expect(updateDocument(warehouse, source, 1)).resolves.toMatchObject({ status: "CANCELLED", version: 2, reversal_document_id: null, lines: [] });
     expect(query.mock.calls.some(([sql]) => /FROM (warehouses|locations|items)/.test(String(sql)))).toBe(false);
+  });
+});
+
+describe("document detail consistency", () => {
+  it("returns item labels and tenant joined warehouse labels after create, save and read", async () => {
+    const saved = { id: warehouse, status: "DRAFT", version: 2, warehouse_name: "Main", destination_location_code: "A" };
+    const line = { id: source, tenant_id: warehouse, document_id: warehouse, item_id: item, quantity: "1", item_code: "SKU", item_name: "Saved item" };
+    query.mockImplementation(async (sql: string) => {
+      if (sql.startsWith("SELECT version, status")) return { rows: [{ version: 1, status: "DRAFT" }] };
+      if (sql.startsWith("INSERT INTO inventory_documents")) return { rows: [{ id: warehouse }] };
+      if (sql.startsWith("SELECT d.*,")) {
+        expect(sql).toContain("(w.tenant_id,w.id)=(d.tenant_id,d.warehouse_id)");
+        return { rows: [saved] };
+      }
+      if (sql.includes("FROM inventory_document_lines dl")) {
+        expect(sql).toContain("(i.tenant_id,i.id)=(dl.tenant_id,dl.item_id)");
+        return { rows: [line] };
+      }
+      return { rows: [], rowCount: 1 };
+    });
+    for (const result of [await createDocument(warehouse, parseDocument(input())), await updateDocument(warehouse, warehouse, 1, parseDocument(input())), await getDocument(warehouse, warehouse)]) {
+      expect(result).toMatchObject({ warehouse_name: "Main", destination_location_code: "A", lines: [line] });
+    }
+    expect(query.mock.calls.filter(([sql]) => sql.includes("FROM inventory_document_lines dl"))).toHaveLength(3);
   });
 });

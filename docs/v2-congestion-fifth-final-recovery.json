@@ -40,7 +40,7 @@
   "no_automatic_resume": true,
   "formal_client_runs": 1,
   "credentials_published": false,
-  "note": "This static manifest remains available while the existing frozen observer updates the dynamic active document every20seconds.",
+  "note": "The run and watchers have finished. This completed metadata and the original failed evidence are preserved.",
   "execution": "interrupted",
   "verdict": "failed",
   "original_report_generated_at": "2026-10-21T04:09:11.115Z",

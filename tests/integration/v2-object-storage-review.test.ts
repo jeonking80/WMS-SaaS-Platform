@@ -3,7 +3,8 @@ import pg from 'pg';
 import {afterAll,expect,it} from 'vitest';
 import {migrate} from '../../scripts/db-migrate.mjs';
 import {emptyState,type WorkflowState} from '../../src/server/v2/workflow/types';
-import {readWorkflowState,writeWorkflowState} from '../../src/server/v2/workflow/object-storage';
+import {readWorkflowState,writeWorkflowState,claimLoadedWorkflowState} from '../../src/server/v2/workflow/object-storage';
+import {ownDetachedWorkflowState} from '../../src/server/v2/workflow/owned-state';
 import {executeWorkflowInTransaction} from '../../src/server/v2/workflow';
 
 const url=process.env.TEST_DATABASE_URL;
@@ -12,6 +13,13 @@ const schema='body_review_'+randomUUID().replaceAll('-','');
 const owner=new pg.Pool({connectionString:url,options:`-c search_path=${schema}`});
 const options={schema,migrationsSchema:schema,createSchema:true,createMigrationsSchema:true,log:()=>{}};
 afterAll(async()=>{try{await owner.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);}finally{await owner.end();}});
+
+it('requires a captured UPDATE-read baseline before ownership or owned persistence',async()=>{
+ const draft=emptyState();expect(()=>claimLoadedWorkflowState(draft)).toThrow('captured UPDATE-read baseline');
+ ownDetachedWorkflowState(draft);let queries=0;
+ const client={query:()=>{queries++;throw Error('SQL must not run');}} as unknown as pg.PoolClient;
+ await expect(writeWorkflowState(client,randomUUID(),randomUUID(),draft,draft)).rejects.toThrow('Owned workflow lost persisted baseline');expect(queries).toBe(0);
+});
 
 it('keeps nonstring legacy IDs writable after backfill and compatibility replacement',async()=>{
  await migrate(url,{...options,count:19});
@@ -77,8 +85,16 @@ it('rolls back a late normalized-write failure with stock, requests and history 
   expect((await owner.query('SELECT kind,object_key,position,body,changed_version FROM v2_workflow_object_state WHERE tenant_id=$1 ORDER BY kind,position',[tenant])).rows).toEqual(originalBodies);
   for(const relation of ['v2_workflow_requests','v2_workflow_performances','v2_workflow_ledger','v2_workflow_receivings'])expect((await owner.query(`SELECT count(*)::int n FROM ${relation} WHERE tenant_id=$1 AND request_id=$2`,[tenant,input.request_id])).rows[0].n).toBe(0);
   expect((await owner.query('SELECT count(*)::int n FROM v2_workflow_stock WHERE tenant_id=$1',[tenant])).rows[0].n).toBe(0);
+  // A failed owned draft is never reused after SQL savepoint rollback. The next
+  // invocation on the same client must reload the complete current DB graph.
+  await client.query('BEGIN');await client.query('SAVEPOINT owned_failure');
+  const lateFailure={...input,payload:{...input.payload,lines:[...input.payload.lines.map(line=>({...line,quantity:1})),{...input.payload.lines[0],quantity:0}]}};
+  await expect(executeWorkflowInTransaction(client,identity,lateFailure,{includeSnapshot:false})).rejects.toMatchObject({code:'INVALID_QUANTITY'});
+  await client.query('ROLLBACK TO SAVEPOINT owned_failure');
+  expect((await client.query('SELECT state FROM v2_workflow_state WHERE tenant_id=$1',[tenant])).rows[0].state).toEqual(original);
+  const compactRetry=await executeWorkflowInTransaction(client,identity,input,{includeSnapshot:false});await client.query('COMMIT');expect(compactRetry.replayed).toBe(false);
   const retried=await transaction(input),replayed=await transaction(input);
-  expect(retried.snapshot.version).toBe(original.version+1);expect(replayed.replayed).toBe(true);expect(replayed.result).toEqual(retried.result);
+  expect(retried.replayed).toBe(true);expect(retried.snapshot.version).toBe(original.version+1);expect(replayed.replayed).toBe(true);expect(replayed.result).toEqual(retried.result);
   expect((await owner.query('SELECT count(*)::int n,sum(delta)::int quantity FROM v2_workflow_ledger WHERE tenant_id=$1 AND request_id=$2',[tenant,input.request_id])).rows[0]).toEqual({n:1,quantity:2});
  }finally{await client.query('ROLLBACK');client.release();}
 });

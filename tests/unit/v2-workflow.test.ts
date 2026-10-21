@@ -1,7 +1,22 @@
 import { randomUUID } from 'node:crypto';
-import { describe, expect, it } from 'vitest';
-import { applyCommand, snapshot, reconcile } from '../../src/server/v2/workflow/engine';
+import { afterAll, describe, expect, it } from 'vitest';
+import { applyCommand as pureApplyCommand, applyOwnedCommand, snapshot, reconcile } from '../../src/server/v2/workflow/engine';
+import {ownDetachedWorkflowState} from '../../src/server/v2/workflow/owned-state';
 import { emptyState, type WorkflowContext, type WorkflowState } from '../../src/server/v2/workflow/types';
+
+
+const successfulCommands=new Set<string>();
+function applyCommand(original:WorkflowState,command:string,payload:Record<string,unknown>,context:WorkflowContext){
+ const before=structuredClone(original),ids:string[]=[];let ordinary:ReturnType<typeof pureApplyCommand>|undefined,ordinaryError:unknown;
+ try{ordinary=pureApplyCommand(original,command,payload,{...context,id:()=>{const id=context.id();ids.push(id);return id;}});}catch(error){ordinaryError=error;}
+ expect(original).toEqual(before);
+ const draft=structuredClone(before),ownership=ownDetachedWorkflowState(draft);let used=0,owned:ReturnType<typeof applyOwnedCommand>|undefined,ownedError:unknown;
+ try{owned=applyOwnedCommand(ownership,command,structuredClone(payload),{...context,id:()=>{expect(used).toBeLessThan(ids.length);return ids[used++];}});}catch(error){ownedError=error;}
+ expect(used).toBe(ids.length);
+ expect(()=>applyOwnedCommand(ownership,command,payload,context)).toThrow('Workflow state ownership unavailable');
+ if(ordinaryError){expect(ownedError).toBeInstanceOf((ordinaryError as Error).constructor);expect((ownedError as Error).message).toBe((ordinaryError as Error).message);throw ordinaryError;}
+ expect(ownedError).toBeUndefined();expect(owned!.state).toBe(draft);expect({state:owned!.state,result:owned!.result}).toEqual(ordinary);expect(owned!.previousStock).toEqual(before.stock);successfulCommands.add(command);return ordinary!;
+}
 
 function world() {
  const item=randomUUID(),receiving=randomUUID(),storage=randomUUID(),staging=randomUUID(),hold=randomUUID(),actor=randomUUID(),other=randomUUID();
@@ -89,4 +104,40 @@ describe('correction approval across inventory-neutral shift reports',()=>{
   const w=world();w.seed(10);const id=request(w);close(w);delete w.state.shifts[0].version;
   expect(()=>w.command('approval.decide',{approval_id:id,approve:true,reason:'Incomplete history'},true)).toThrow('APPROVAL_STALE');
  });
+});
+
+
+it('matches owned and pure complete graphs across the remaining document lifecycle commands',()=>{
+ const w=world();
+ const id=w.command('receipt.create',{lines:[{item_id:w.item,quantity:1}]}).id;
+ w.command('receipt.update',{receipt_id:id,lines:[{id:w.state.receipts[0].lines[0].id,item_id:w.item,quantity:2}],expected_at:'2026-11-01T00:00:00Z'});
+ w.command('receipt.receive',{receipt_id:id,reason:'One excess physical unit',lines:[{line_id:w.state.receipts[0].lines[0].id,quantity:3,location_id:w.receiving,hold_location_id:w.hold}]});
+ const excess=w.state.receipts[0].lots.find(l=>l.overage)!;
+ let approval=w.command('overage.request',{lot_id:excess.id,quantity:1,reason:'Independent excess review'}).id;
+ w.command('approval.decide',{approval_id:approval,approve:true,reason:'Accept original physical excess'},true);
+ w.command('hold.release',{lot_id:excess.id,quantity:1,location_id:w.receiving,reason:'Physical excess release'});
+ for(const lot of w.state.receipts[0].lots){w.command('receipt.inspect',{receipt_id:id,lines:[{lot_id:lot.id,quantity:lot.pending,outcome:'normal'}]});w.command('receipt.putaway',{receipt_id:id,lines:[{lot_id:lot.id,quantity:w.state.receipts[0].lots.find(l=>l.id===lot.id)!.normal,location_id:w.storage}]});}
+ approval=w.command('receipt.close.request',{receipt_id:id,reason:'Close zero remainder explicitly'}).id;w.command('approval.decide',{approval_id:approval,approve:true,reason:'Independent close'},true);
+ const cancelled=w.command('receipt.create',{lines:[{item_id:w.item,quantity:1}]}).id;w.command('receipt.cancel',{receipt_id:cancelled,reason:'Unreceived intent withdrawn'});
+ const second=randomUUID();w.context.locations.push({id:second,active:true,kind:'STORAGE'});w.command('stock.move',{reason:'Explicit physical move',lines:[{item_id:w.item,from_location_id:w.storage,location_id:second,quantity:1}]});w.command('stock.move',{reason:'Explicit physical return',lines:[{item_id:w.item,from_location_id:second,location_id:w.storage,quantity:1}]});
+ const order=w.command('order.create',{lines:[{item_id:w.item,quantity:2}]}).id;w.command('order.reserve',{order_id:order,partial:false});w.command('order.release',{order_id:order,lines:[{reservation_id:w.state.orders[0].reservations[0].id,quantity:1}]});w.command('order.reserve',{order_id:order,partial:false});
+ w.command('order.pick',{order_id:order,lines:w.state.orders[0].reservations.filter(r=>r.quantity>0).map(r=>({reservation_id:r.id,quantity:r.quantity,location_id:w.staging}))});
+ const pack=w.command('package.create',{order_id:order,lines:w.state.orders[0].picks.map(p=>({pick_id:p.id,quantity:p.active}))}).id;
+ const shipment=w.command('shipment.create',{package_ids:[pack],carrier:'Fixture',handover_by:'Independent carrier'}).id;
+ w.command('shipment.delivery',{shipment_id:shipment,revision:1,status:'in_transit'});w.command('shipment.delivery.correct',{shipment_id:shipment,previous_revision:1,revision:2,status:'delivered',reason:'Independent physical delivery confirmation'},true);
+ const ret=w.command('return.request',{shipment_id:shipment,lines:[{shipment_line_id:w.state.shipments[0].lines[0].id,quantity:1}],reason:'Actual customer request'}).id;
+ w.command('return.receive',{return_id:ret,lines:[{line_id:w.state.returns[0].lines[0].id,quantity:1,location_id:w.receiving}]});const lot=w.state.returns[0].lots[0].id;
+ w.command('return.inspect',{return_id:ret,lines:[{lot_id:lot,quantity:1,outcome:'normal'}]});w.command('return.putaway',{return_id:ret,lines:[{lot_id:lot,quantity:1,location_id:w.storage}]});w.command('return.close',{return_id:ret,reason:'No further unreceived return remainder'});
+});
+
+it.each(['approval.decide', 'correction.request', 'count.record', 'count.start', 'count.submit', 'count.unlock', 'hold.release', 'order.cancel', 'order.create', 'order.damage', 'order.pick', 'order.release', 'order.reserve', 'order.return_picked', 'order.shortage', 'order.update', 'overage.request', 'package.create', 'package.unpack', 'receipt.cancel', 'receipt.close.request', 'receipt.create', 'receipt.inspect', 'receipt.putaway', 'receipt.receive', 'receipt.update', 'return.close', 'return.inspect', 'return.putaway', 'return.receive', 'return.request', 'shift.close', 'shipment.create', 'shipment.delivery', 'shipment.delivery.correct', 'stock.hold', 'stock.inspect', 'stock.move', 'stock.putaway', 'task.assign'])('retains missing-input error and public immutability for %s',command=>{const w=world();expect(()=>applyCommand(w.state,command,{},w.context)).toThrow();});
+
+afterAll(()=>expect([...successfulCommands].sort()).toEqual(['approval.decide', 'correction.request', 'count.record', 'count.start', 'count.submit', 'count.unlock', 'hold.release', 'order.cancel', 'order.create', 'order.damage', 'order.pick', 'order.release', 'order.reserve', 'order.return_picked', 'order.shortage', 'order.update', 'overage.request', 'package.create', 'package.unpack', 'receipt.cancel', 'receipt.close.request', 'receipt.create', 'receipt.inspect', 'receipt.putaway', 'receipt.receive', 'receipt.update', 'return.close', 'return.inspect', 'return.putaway', 'return.receive', 'return.request', 'shift.close', 'shipment.create', 'shipment.delivery', 'shipment.delivery.correct', 'stock.hold', 'stock.inspect', 'stock.move', 'stock.putaway', 'task.assign']));
+
+
+it('retains ordinary structured-clone metadata semantics instead of a JSON round trip',()=>{
+ const w=world(),state=emptyState() as WorkflowState&{future?:unknown};
+ state.future={date:new Date('2026-10-21T00:00:00Z'),optional:undefined,negativeZero:-0,integer:1n,map:new Map([['retained',1]])};
+ const result=applyCommand(state,'receipt.create',{lines:[{item_id:w.item,quantity:1}]},w.context);
+ expect((result.state as typeof state).future).toEqual(state.future);expect((result.state as typeof state).future).not.toBe(state.future);
 });

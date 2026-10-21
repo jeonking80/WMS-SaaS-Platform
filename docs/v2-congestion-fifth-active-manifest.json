@@ -40,7 +40,7 @@
   "no_automatic_resume": true,
   "formal_client_runs": 1,
   "credentials_published": false,
-  "note": "This static manifest remains available while the existing frozen observer updates the dynamic active document every20seconds.",
+  "note": "The run and watchers have finished. This completed metadata and the original failed evidence are preserved.",
   "verdict": "failed",
   "final_report": "docs/v2-congestion-fifth-final-recovery.json",
   "shared_slot_released": true

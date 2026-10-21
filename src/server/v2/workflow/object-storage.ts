@@ -1,5 +1,6 @@
 import type {PoolClient} from 'pg';
 import type {WorkflowState} from './types';
+import {ownDetachedWorkflowState,wasWorkflowStateOwned} from './owned-state';
 import {observeTimingBytes,timeAsync,timeSync,timingDiagnosticsActive} from '../../timing-diagnostics';
 
 /** All arrays remain present and ordered. No business object is omitted or archived. */
@@ -34,9 +35,17 @@ export async function readWorkflowState(client:PoolClient,tenant:string,warehous
  return state;
 }
 
+/** Only a fresh locked read with its immutable pre-hydration baseline may be consumed. */
+export function claimLoadedWorkflowState(state:WorkflowState) {
+ if(!persistedBaselines.has(state))throw new Error('Owned workflow requires captured UPDATE-read baseline');
+ return ownDetachedWorkflowState(state);
+}
+
 /** Write only changed bodies, keeping stock/history/request writes in the caller's transaction. */
 export async function writeWorkflowState(client:PoolClient,tenant:string,warehouse:string,before:WorkflowState,after:WorkflowState){
- const previous=persistedBaselines.get(before)??bodyBaseline(before),next=splitWorkflowState(after);
+ const captured=persistedBaselines.get(before);
+ if(wasWorkflowStateOwned(before)&&!captured)throw new Error('Owned workflow lost persisted baseline');
+ const previous=captured??bodyBaseline(before),next=splitWorkflowState(after);
  const key=(r:{kind:string;object_key:string})=>JSON.stringify([r.kind,r.object_key]);
  const old=previous.serialized;
  const live=new Set(next.rows.map(key));

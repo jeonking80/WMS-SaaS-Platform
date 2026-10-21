@@ -3,13 +3,13 @@ import type { PoolClient } from 'pg';
 import type { Identity } from '../../auth/access';
 import { withTenant } from '../../db/tenant';
 import { assertV2MachineKeyInTransaction, requireV2Access } from '../access';
-import { applyCommand, fail, integer, object, reconcile, snapshot, text, uuid } from './engine';
+import { applyCommand, applyOwnedCommand, fail, integer, object, reconcile, snapshot, text, uuid } from './engine';
 import {correctionOriginActors,hydrateApprovalSeparation} from './approval-separation';
 import {approvalActorExcluded,approvalRoleAllowed} from './approval-eligibility';
 import {validateCorrection} from './corrections';
 import { resolveBarcode } from '../masters/service';
-import { emptyState, type Bucket, type WorkflowInput, type WorkflowState } from './types';
-import {readWorkflowState,writeWorkflowState} from './object-storage';
+import { emptyState, type Bucket, type WorkflowInput, type WorkflowState, type Stock } from './types';
+import {readWorkflowState,writeWorkflowState,claimLoadedWorkflowState} from './object-storage';
 import {firstPositions} from './position-index';
 import {refreshStockLocations} from './location-projection';
 import {scanReferences} from './scan-reference-index';
@@ -38,9 +38,9 @@ async function references(client:PoolClient,tenant:string,warehouse:string) {
  return{items:items.rows,locations:locations.rows};
 }
 function persist(client:PoolClient,identity:Identity,input:WorkflowInput,before:WorkflowState,after:WorkflowState,result:Record<string,unknown>,requestHash:string):Promise<WorkflowResponse>;
-function persist(client:PoolClient,identity:Identity,input:WorkflowInput,before:WorkflowState,after:WorkflowState,result:Record<string,unknown>,requestHash:string,includeSnapshot:boolean):Promise<WorkflowResponse|WorkflowCompactResponse>;
-async function persist(client:PoolClient,identity:Identity,input:WorkflowInput,before:WorkflowState,after:WorkflowState,result:Record<string,unknown>,requestHash:string,includeSnapshot=true):Promise<WorkflowResponse|WorkflowCompactResponse> {
- const tenant=identity.tenant.id,previousStock=firstPositions(before.stock);for(const row of after.stock){const previous=previousStock.get(row.item_id)?.get(row.location_id);if(previous&&(['S','R','P','Q','B'] as const).every(b=>previous[b]===row[b]))continue;await timeAsync('workflow.persist_sql',()=>client.query(`INSERT INTO v2_workflow_stock(tenant_id,warehouse_id,item_id,location_id,s,r,p,q,b) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
+function persist(client:PoolClient,identity:Identity,input:WorkflowInput,before:WorkflowState,after:WorkflowState,result:Record<string,unknown>,requestHash:string,includeSnapshot:boolean,stockBefore?:readonly Stock[]):Promise<WorkflowResponse|WorkflowCompactResponse>;
+async function persist(client:PoolClient,identity:Identity,input:WorkflowInput,before:WorkflowState,after:WorkflowState,result:Record<string,unknown>,requestHash:string,includeSnapshot=true,stockBefore:readonly Stock[]=before.stock):Promise<WorkflowResponse|WorkflowCompactResponse> {
+ const tenant=identity.tenant.id,previousStock=firstPositions(stockBefore);for(const row of after.stock){const previous=previousStock.get(row.item_id)?.get(row.location_id);if(previous&&(['S','R','P','Q','B'] as const).every(b=>previous[b]===row[b]))continue;await timeAsync('workflow.persist_sql',()=>client.query(`INSERT INTO v2_workflow_stock(tenant_id,warehouse_id,item_id,location_id,s,r,p,q,b) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
  ON CONFLICT(tenant_id,warehouse_id,item_id,location_id) DO UPDATE SET s=EXCLUDED.s,r=EXCLUDED.r,p=EXCLUDED.p,q=EXCLUDED.q,b=EXCLUDED.b`,[tenant,input.warehouse_id,row.item_id,row.location_id,row.S,row.R,row.P,row.Q,row.B]));}
  const savedResponse={result,version:after.version};
  await timeAsync('workflow.persist_sql',()=>client.query('INSERT INTO v2_workflow_requests(tenant_id,warehouse_id,request_id,request_hash,command,actor_id,response) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb)',[tenant,input.warehouse_id,input.request_id,requestHash,input.command,identity.user.id,JSON.stringify(savedResponse)]));
@@ -133,13 +133,13 @@ export async function executeWorkflowInTransaction(client:PoolClient,identity:Id
  await timeAsync('workflow.scans',()=>normalizeScans(client,before,input,identity));
  const now=(await client.query<{now:string}>('SELECT CURRENT_TIMESTAMP::text AS now')).rows[0].now;
  if(input.command==='shift.close'&&!(await reconcileWorkflowInTransaction(client,identity.tenant.id,input.warehouse_id)).ok)fail('RECONCILIATION_FAILED');
- const applied=timeSync('workflow.engine',()=>applyCommand(before,input.command,input.payload,{actor:{id:identity.user.id,role:identity.role},command:input.command,request_id:input.request_id,now:new Date(now).toISOString(),id:randomUUID,...refs}));
+ const applied=timeSync('workflow.engine',()=>{const ownership=timeSync('workflow.state_clone',()=>claimLoadedWorkflowState(before));return applyOwnedCommand(ownership,input.command,input.payload,{actor:{id:identity.user.id,role:identity.role},command:input.command,request_id:input.request_id,now:new Date(now).toISOString(),id:randomUUID,...refs});});
  const createdKind:Record<string,string>={'receipt.create':'receipt','order.create':'order','return.request':'return','package.create':'package','shipment.create':'shipment','count.start':'count'};
  if(createdKind[input.command])await client.query('INSERT INTO v2_workflow_objects(tenant_id,warehouse_id,id,kind,external_id) VALUES($1,$2,$3,$4,$5)',[identity.tenant.id,input.warehouse_id,applied.result.id,createdKind[input.command],typeof input.payload.external_id==='string'?input.payload.external_id:null]);
  if(['receipt.receive','return.receive'].includes(input.command))await client.query('INSERT INTO v2_workflow_receivings(tenant_id,warehouse_id,receiving_id,request_id,object_id) VALUES($1,$2,$3,$4,$5)',[identity.tenant.id,input.warehouse_id,input.payload.receiving_id??input.request_id,input.request_id,input.payload.receipt_id??input.payload.return_id]);
  const evidence=safeEvidence(input.payload);
  await client.query('INSERT INTO v2_workflow_performances(tenant_id,warehouse_id,request_id,actor_id,command,evidence,reason) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7)',[identity.tenant.id,input.warehouse_id,input.request_id,identity.user.id,input.command,JSON.stringify(evidence),typeof input.payload.reason==='string'?input.payload.reason:'']);
- return persist(client,identity,input,before,applied.state,applied.result,requestHash,options.includeSnapshot!==false);
+ return persist(client,identity,input,before,applied.state,applied.result,requestHash,options.includeSnapshot!==false,applied.previousStock);
 }
 export async function executeWorkflow(identity:Identity,input:WorkflowInput) {const parsed=parseWorkflowInput(input);await requireV2Access(identity,parsed.warehouse_id,workflowPermission(parsed.command));return withTenant(identity.tenant.id,c=>executeWorkflowInTransaction(c,identity,parsed));}
 export async function getWorkflowSnapshot(identity:Identity,warehouseId:string) {uuid(warehouseId);await requireV2Access(identity,warehouseId,'read');return withTenant(identity.tenant.id,async c=>{const state=await readWorkflowState(c,identity.tenant.id,warehouseId,'SHARE');return databaseSnapshot(c,identity.tenant.id,warehouseId,state??emptyState());});}

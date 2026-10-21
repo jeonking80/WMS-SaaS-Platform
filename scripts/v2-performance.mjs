@@ -278,7 +278,7 @@ async function prepareRuntime() {
 async function startServer() {
   await prepareRuntime();phase='start owned isolated API server';
   try{await fetch(`${origin}/api/health`);failure('BENCHMARK_PORT_OCCUPIED');}catch(error){if(error.code==='BENCHMARK_PORT_OCCUPIED')throw error;}
-  const serverEnvironment={...process.env,NODE_ENV:'production',DATABASE_URL:databaseUrl(report.fixture.database,true),BETTER_AUTH_URL:origin,WMS_ENVIRONMENT:'test',WMS_TIMING_DIAGNOSTICS:'0',PORT:String(port),HOSTNAME:'127.0.0.1'};
+  const serverEnvironment={PATH:process.env.PATH,NODE_ENV:'production',DATABASE_URL:databaseUrl(report.fixture.database,true),BETTER_AUTH_SECRET:process.env.BETTER_AUTH_SECRET,BETTER_AUTH_URL:origin,WMS_ENVIRONMENT:'test',WMS_TIMING_DIAGNOSTICS:'0',PORT:String(port),HOSTNAME:'127.0.0.1'};
   server=ownedRuntime?spawn(process.execPath,[join(ownedRuntime,'server.js')],{cwd:ownedRuntime,env:serverEnvironment,stdio:['ignore','ignore','ignore']}):spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port',String(port)],{cwd:process.cwd(),env:serverEnvironment,stdio:['ignore','ignore','ignore']});
   let ready=false;
   for(let index=0;index<120;index++){if(server.exitCode!==null)failure('BENCHMARK_SERVER_EXITED');try{if((await fetch(`${origin}/api/ready`)).ok){ready=true;break;}}catch{}await delay(500);}

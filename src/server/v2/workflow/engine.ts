@@ -1,4 +1,5 @@
 import { DomainError } from '../../api';
+import {takeOwnedWorkflowState,type OwnedWorkflowState} from './owned-state';
 import type { Approval, Bucket, Count, Line, Lot, Order, Pick, Receipt, Return, Stock, WorkflowContext, WorkflowState } from './types';
 import {firstPositions} from './position-index';
 import {refreshStockLocations} from './location-projection';
@@ -46,7 +47,17 @@ function applyAdjustment(s:WorkflowState,ctx:WorkflowContext,entries:Record<stri
 
 /** Produces a new aggregate only; persistence commits this with stock, ledger and request atomically. */
 export function applyCommand(original:WorkflowState,command:string,p:Record<string,unknown>,ctx:WorkflowContext):{state:WorkflowState;result:Record<string,unknown>} {
- const s=timeSync('workflow.state_clone',()=>structuredClone(original));s.holds??=[];s.location_blocks??=[];const result:Record<string,unknown>={};ctx={...ctx,command};
+ const draft=timeSync('workflow.state_clone',()=>structuredClone(original));
+ return applyDraft(draft,command,p,ctx,original);
+}
+/** Internal consuming path; not re-exported by the public workflow facade.
+ * Caller discards the owned graph after any failure and retains storage provenance. */
+export function applyOwnedCommand(ownership:OwnedWorkflowState,command:string,p:Record<string,unknown>,ctx:WorkflowContext) {
+ const {state,previousStock,accounting}=takeOwnedWorkflowState(ownership);
+ return {...applyDraft(state,command,p,ctx,accounting),previousStock};
+}
+function applyDraft(s:WorkflowState,command:string,p:Record<string,unknown>,ctx:WorkflowContext,original:{ledger_count?:number;ledger:{length:number}}):{state:WorkflowState;result:Record<string,unknown>} {
+ s.holds??=[];s.location_blocks??=[];const result:Record<string,unknown>={};ctx={...ctx,command};
  switch(command){
  case 'receipt.create': {
  const ls=rows(p.lines,100).map(x=>makeLine(x,ctx));uniqueIds(ls);if(p.external_id&&s.receipts.some(r=>r.external_id===p.external_id))fail('EXTERNAL_ID_CONFLICT');const r:Receipt={id:ctx.id(),...(p.external_id?{external_id:text(p.external_id)}:{}),version:1,lines:ls,lots:[],closed:false,created_at:ctx.now,...(p.expected_at?{expected_at:text(p.expected_at)}:{}),...(p.supplier_id?{supplier_id:uuid(p.supplier_id),supplier:p.supplier??{}}:{})};s.receipts.push(r);result.id=r.id;break;}

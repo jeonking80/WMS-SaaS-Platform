@@ -1,0 +1,41 @@
+{
+  "verified_at": "2026-10-21T04:54:18.301261+00:00",
+  "build_id": "yWT1tEXPpQvdrfCjU8NtH",
+  "scope": "local schema22 supplier remaining-work protection full regression; G3/G4/G5 remain unqualified",
+  "typecheck": "passed",
+  "unit": {
+    "passed": 359
+  },
+  "simulator": {
+    "passed": 55
+  },
+  "integration": {
+    "passed": 221,
+    "skipped": 0
+  },
+  "production_build": "passed (WMS_STANDALONE=1)",
+  "e2e": {
+    "full_suite_passed": 44,
+    "full_suite_failed": 0
+  },
+  "full_verify": {
+    "exit_code": 0,
+    "command": "WMS_STANDALONE=1 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run verify"
+  },
+  "migration_count": 22,
+  "evidence": [
+    {
+      "path": "/tmp/wms-v2-schema22-full-verify.log",
+      "sha256": "96edf29ff489d3c8ecbcce2b194803bab9084c002a6b0f532e9b28387029f516"
+    }
+  ],
+  "changes": [
+    "Additive0021 protects suppliers with pending inspection, normal awaiting putaway or held lot quantities even after receipt closure",
+    "Completed lot history remains eligible for supplier retirement; service and direct SQL guards preserve tenant scope",
+    "Incremental owner/ACL/stored path/temp shadow and all workflow regression tests passed"
+  ],
+  "performance_claim": "Owned-engine predecessor diagnostic selected600 confirmation elapsed45.74% lower in one ordered pair; no official pass. Five official failures preserved.",
+  "restore_status": "passed synthetic local schema22 restore; provider/PITR/RPO/RTO not executed",
+  "congestion_evidence": "v2-congestion-fifth-final-recovery.json",
+  "restore_evidence": "restore-verification-schema22.json"
+}

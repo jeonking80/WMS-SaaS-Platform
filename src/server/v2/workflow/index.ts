@@ -137,7 +137,7 @@ export async function executeWorkflowInTransaction(client:PoolClient,identity:Id
  const createdKind:Record<string,string>={'receipt.create':'receipt','order.create':'order','return.request':'return','package.create':'package','shipment.create':'shipment','count.start':'count'};
  if(createdKind[input.command])await client.query('INSERT INTO v2_workflow_objects(tenant_id,warehouse_id,id,kind,external_id) VALUES($1,$2,$3,$4,$5)',[identity.tenant.id,input.warehouse_id,applied.result.id,createdKind[input.command],typeof input.payload.external_id==='string'?input.payload.external_id:null]);
  if(['receipt.receive','return.receive'].includes(input.command))await client.query('INSERT INTO v2_workflow_receivings(tenant_id,warehouse_id,receiving_id,request_id,object_id) VALUES($1,$2,$3,$4,$5)',[identity.tenant.id,input.warehouse_id,input.payload.receiving_id??input.request_id,input.request_id,input.payload.receipt_id??input.payload.return_id]);
- const evidence=safeEvidence(input.payload);
+ const evidence=safeEvidence(input.command,input.payload);
  await client.query('INSERT INTO v2_workflow_performances(tenant_id,warehouse_id,request_id,actor_id,command,evidence,reason) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7)',[identity.tenant.id,input.warehouse_id,input.request_id,identity.user.id,input.command,JSON.stringify(evidence),typeof input.payload.reason==='string'?input.payload.reason:'']);
  return persist(client,identity,input,before,applied.state,applied.result,requestHash,options.includeSnapshot!==false,applied.previousStock);
 }
@@ -145,10 +145,10 @@ export async function executeWorkflow(identity:Identity,input:WorkflowInput) {co
 export async function getWorkflowSnapshot(identity:Identity,warehouseId:string) {uuid(warehouseId);await requireV2Access(identity,warehouseId,'read');return withTenant(identity.tenant.id,async c=>{const state=await readWorkflowState(c,identity.tenant.id,warehouseId,'SHARE');return databaseSnapshot(c,identity.tenant.id,warehouseId,state??emptyState());});}
 export async function getWorkflowRequest(identity:Identity,warehouseId:string,requestId:string) {uuid(warehouseId);uuid(requestId);await requireV2Access(identity,warehouseId,'read');return withTenant(identity.tenant.id,async c=>{const state=await readWorkflowState(c,identity.tenant.id,warehouseId,'SHARE');const r=await c.query('SELECT response FROM v2_workflow_requests WHERE tenant_id=$1 AND warehouse_id=$2 AND request_id=$3',[identity.tenant.id,warehouseId,requestId]);if(!r.rowCount)fail('NOT_FOUND',404);return {...r.rows[0].response,replayed:true,snapshot:await databaseSnapshot(c,identity.tenant.id,warehouseId,state??emptyState())};});}
 
-function safeEvidence(payload:Record<string,unknown>) {
+function safeEvidence(command:string,payload:Record<string,unknown>) {
  const keys=['id','line_id','lot_id','reservation_id','pick_id','item_id','location_id','from_location_id','quantity','outcome','scanned_item_id','scanned_location_id','input_mode','conversion'];
  const references=Object.fromEntries(['receipt_id','order_id','return_id','count_id','lot_id','package_id','package_ids','shipment_id','approval_id','object_type','object_id','assignee_id','receiving_id','original_id','original_order_id','original_return_id','expected_version','weight_grams','previous_revision','revision','status'].filter(key=>payload[key]!==undefined).map(key=>[key,payload[key]]));
- return {...references,...(Array.isArray(payload.overage_history_recovery)&&payload.overage_history_recovery.length?{overage_history_recovery:payload.overage_history_recovery}:{}),lines:(Array.isArray(payload.lines)?payload.lines:payload.lot_id?[payload]:[]).map(value=>{const line=object(value);return Object.fromEntries(keys.filter(key=>line[key]!==undefined).map(key=>[key,line[key]]));}),execution_mode:payload.execution_mode==='automated'?'automated':'human',manual_entry_reason:typeof payload.manual_entry_reason==='string'?payload.manual_entry_reason:undefined};
+ return {...references,...(Array.isArray(payload.overage_history_recovery)&&payload.overage_history_recovery.length?{overage_history_recovery:payload.overage_history_recovery}:{}),lines:(command==='hold.release'?[payload]:Array.isArray(payload.lines)?payload.lines:payload.lot_id?[payload]:[]).map(value=>{const line=object(value);return Object.fromEntries(keys.filter(key=>line[key]!==undefined).map(key=>[key,line[key]]));}),execution_mode:payload.execution_mode==='automated'?'automated':'human',manual_entry_reason:typeof payload.manual_entry_reason==='string'?payload.manual_entry_reason:undefined};
 }
 export const physicalWorkflowCommands=['receipt.receive','receipt.inspect','receipt.putaway','order.pick','order.return_picked','order.damage','package.create','return.receive','return.inspect','return.putaway','stock.move','stock.hold','stock.inspect','stock.putaway','hold.release'] as const;
 async function normalizeScans(client:PoolClient,state:WorkflowState,input:WorkflowInput,identity:Identity) {
@@ -156,7 +156,7 @@ async function normalizeScans(client:PoolClient,state:WorkflowState,input:Workfl
  const automated=input.payload.execution_mode==='automated';
  if(automated&&(!('kind' in identity)||identity.kind!=='automation'||!('isTest' in identity.tenant)||identity.tenant.isTest!==true||process.env.WMS_ENVIRONMENT!=='test'))fail('AUTOMATION_FORBIDDEN',403);
 
- const inputLines=Array.isArray(input.payload.lines)?input.payload.lines:input.command==='hold.release'?[input.payload]:[];
+ const inputLines=input.command==='hold.release'?[input.payload]:Array.isArray(input.payload.lines)?input.payload.lines:[];
  const references=scanReferences(state),physicalReferences=physicalScanReferences(state,input.command,input.payload);
  for(const value of inputLines){const line=object(value);if(physical&&!automated&&!['barcode','search'].includes(String(line.input_mode)))fail('INVALID_SCAN_MODE',400);
  if(line.input_mode==='search'){try{input.payload.manual_entry_reason=text(input.payload.manual_entry_reason);}catch{fail('MANUAL_ENTRY_REASON_REQUIRED',400);}}

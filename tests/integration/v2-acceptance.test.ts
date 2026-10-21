@@ -885,3 +885,41 @@ describe('physical scans use the command-owned item reference',()=>{
   await w.command('return.inspect',{return_id:ret.id,lines:[{...inspect,scans:[{barcode:barcodeA,count:1}]}]});await w.invariant();
  });
 });
+
+
+describe('hold release scans and evidence use the top-level command',()=>{
+ async function held(){
+  const w=await world(),a=await w.item(),b=await w.item(),barcodeA=`SINGLE-A-${randomUUID()}`,barcodeB=`SINGLE-B-${randomUUID()}`;
+  await withTenant(tenant,async client=>{for(const [barcode,item]of [[barcodeA,a],[barcodeB,b]])await client.query("INSERT INTO master_barcodes(tenant_id,barcode,item_id,unit,quantity) VALUES($1,$2,$3,'EA',1)",[tenant,barcode,item]);});
+  const ra=await w.receive(a,2),rb=await w.receive(b,2);
+  for(const receipt of [ra,rb])await w.command('receipt.inspect',{receipt_id:receipt.id,lines:[{lot_id:receipt.lots[0].id,quantity:2,outcome:'hold'}]});
+  const decoy={lot_id:rb.lots[0].id,quantity:1,location_id:w.location.receiving,input_mode:'barcode',scanned_location_id:w.location.receiving,scanned_item_id:b,scans:[{barcode:barcodeB,count:1}]};
+  const top={lot_id:ra.lots[0].id,quantity:1,location_id:w.location.receiving,reason:'Release scanned physical quality hold',input_mode:'barcode',scanned_location_id:w.location.receiving,scanned_item_id:a,scans:[{barcode:barcodeA,count:1}]};
+  const performances=()=>withTenant(tenant,async client=>(await client.query('SELECT request_id,evidence FROM v2_workflow_performances WHERE warehouse_id=$1 ORDER BY request_id',[w.warehouse])).rows);
+  return {w,a,b,ra,rb,barcodeA,barcodeB,decoy,top,performances};
+ }
+ it('rejects empty-line and valid-decoy attempts to bypass top-level physical scans with no durable effects',async()=>{
+  const f=await held(),{w,top,decoy,barcodeB}=f;
+  const cases:[string,Record<string,unknown>][]=[
+   ['INVALID_SCAN_MODE',{...top,input_mode:undefined,lines:[]}],
+   ['WRONG_ITEM_SCAN',{...top,scans:[{barcode:barcodeB,count:1}],lines:[]}],
+   ['WRONG_LOCATION_SCAN',{...top,scanned_location_id:w.location.storage,lines:[]}],
+   ['WRONG_ITEM_SCAN',{...top,scans:[{barcode:barcodeB,count:1}],lines:[decoy]}],
+  ];
+  const before={effects:await w.effects(),performances:await f.performances()};
+  for(const [code,payload]of cases){await expect(w.command('hold.release',payload)).rejects.toMatchObject({code});expect({effects:await w.effects(),performances:await f.performances()}).toEqual(before);}
+  await w.invariant();
+ });
+ it('normalizes the top-level quantity, records its conversion despite decoys, and replays exactly once',async()=>{
+  const f=await held(),{w,a,b,ra,rb,top,decoy,barcodeA}=f,requestId=randomUUID();
+  const payload={...top,quantity:undefined,lines:[decoy]};
+  const released=await w.command('hold.release',payload,identity,requestId);
+  expect(released.snapshot.receipts.find(row=>row.id===ra.id)!.lots[0]).toMatchObject({pending:1,hold:1});
+  expect(released.snapshot.receipts.find(row=>row.id===rb.id)!.lots[0]).toMatchObject({pending:0,hold:2});
+  const evidence=(await f.performances()).find(row=>row.request_id===requestId)!.evidence;
+  expect(evidence.lines).toEqual([expect.objectContaining({lot_id:top.lot_id,quantity:1,input_mode:'barcode',scanned_item_id:a,scanned_location_id:w.location.receiving,conversion:[{barcode:barcodeA,input_unit:'EA',conversion_quantity:1,input_quantity:1,base_quantity:1,item_id:a}]})]);
+  expect(evidence.lines.some((line:{scanned_item_id:string})=>line.scanned_item_id===b)).toBe(false);
+  const before={effects:await w.effects(),performances:await f.performances()};
+  expect((await w.command('hold.release',payload,identity,requestId)).replayed).toBe(true);expect({effects:await w.effects(),performances:await f.performances()}).toEqual(before);await w.invariant();
+ });
+});

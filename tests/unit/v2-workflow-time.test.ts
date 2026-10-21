@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { businessInputTime, businessInputTimestamp } from '../../src/app/dashboard/v2/workflow-time';
+import { businessDayAt, businessInputTime, businessInputTimestamp } from '../../src/app/dashboard/v2/workflow-time';
 
 describe('Korea business datetime entry', () => {
   it('shows and submits Korea time even in a UTC browser equivalent', () => {
@@ -22,5 +22,14 @@ describe('Korea business datetime entry', () => {
   it('leaves absent and invalid saved timestamps empty', () => {
     expect(businessInputTime()).toBe('');
     expect(businessInputTime('invalid')).toBe('');
+  });
+});
+
+describe('Korea business day quick fill', () => {
+  it('uses the Korea calendar day even when UTC is still the previous day', () => {
+    expect(businessDayAt(0, 18, new Date('2026-10-20T16:30:00Z'))).toBe('2026-10-21T18:00');
+    expect(businessDayAt(1, 9, new Date('2026-10-20T16:30:00Z'))).toBe('2026-10-22T09:00');
+    expect(businessDayAt(1, 9, new Date('2026-12-31T05:00:00Z'))).toBe('2027-01-01T09:00');
+    expect(businessInputTimestamp(businessDayAt(0, 18, new Date('2026-10-21T00:00:00Z')))).toBe('2026-10-21T09:00:00.000Z');
   });
 });

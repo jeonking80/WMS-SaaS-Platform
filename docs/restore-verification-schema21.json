@@ -1,0 +1,195 @@
+{
+  "result": "PASS",
+  "verified_at": "2026-10-21T03:18:02.418Z",
+  "verification_scope": "synthetic_local_same_cluster",
+  "provider_recovery": "NOT_EXECUTED",
+  "master_guard": {
+    "source": {
+      "signature": "public.master_workflow_in_use_scoped(uuid,text,uuid)",
+      "definition_sha256": "5ac9aa471cee0a34d91a33c57b607ae0b2f3c252fc4bc2077da4849b8d372874",
+      "owner": "postgres",
+      "configuration": [
+        "search_path=\"$user\", public, pg_temp, pg_temp"
+      ],
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ]
+    },
+    "restored": {
+      "signature": "public.master_workflow_in_use_scoped(uuid,text,uuid)",
+      "definition_sha256": "5ac9aa471cee0a34d91a33c57b607ae0b2f3c252fc4bc2077da4849b8d372874",
+      "owner": "postgres",
+      "configuration": [
+        "search_path=\"$user\", public, pg_temp, pg_temp"
+      ],
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ]
+    },
+    "metadata_identical": true,
+    "probe": {
+      "application_role": true,
+      "rolled_back": true,
+      "baseline_absent_count_line_protected": true
+    }
+  },
+  "migrations": 21,
+  "tables_checked": 42,
+  "v2_tables_checked": 24,
+  "compatibility_views_checked": 1,
+  "normalized_state": {
+    "storage_format": 2,
+    "header_rows": 1,
+    "body_rows": 8,
+    "logical_state_identical": true
+  },
+  "sequence_states": {
+    "inventory_documents_document_no_seq": {
+      "last_value": "3",
+      "is_called": true
+    },
+    "pgmigrations_id_seq": {
+      "last_value": "21",
+      "is_called": true
+    },
+    "v2_integration_events_sequence_seq": {
+      "last_value": "3",
+      "is_called": true
+    }
+  },
+  "next_restored_document_no": "4",
+  "next_restored_event_sequence": "4",
+  "archive_bytes": 220341,
+  "archive_sha256": "abd27768420a76056f2f9949415a4bf196f24095dd77b764478b978b40637d1f",
+  "completed_at": "2026-10-21T03:18:01.836Z",
+  "restore_verified_at": "2026-10-21T03:18:02.418Z",
+  "fixture": {
+    "synthetic_only": true,
+    "tenants": 2,
+    "users": 1,
+    "documents": 2,
+    "idle_lock_minutes": 7,
+    "legacy_balance": 70,
+    "v2_stock": {
+      "S": 50,
+      "R": 10,
+      "P": 5,
+      "Q": 12,
+      "B": 3,
+      "H": 70
+    },
+    "workflow_ledger_entries": 6,
+    "workflow_requests": 1,
+    "request_metrics": 2,
+    "pending_approvals": 1,
+    "integration_events": {
+      "applied": 1,
+      "retry_wait": 1
+    },
+    "rotated_keys": 2,
+    "opening_imports": {
+      "originals": 2,
+      "approved": 1,
+      "rejected": 1,
+      "original_csv_hash_verified": true
+    }
+  },
+  "row_counts": {
+    "tenants": 2,
+    "user": 1,
+    "session": 1,
+    "account": 1,
+    "verification": 1,
+    "rateLimit": 1,
+    "memberships": 1,
+    "items": 2,
+    "warehouses": 2,
+    "locations": 2,
+    "inventory_documents": 2,
+    "inventory_document_lines": 2,
+    "stock_balances": 1,
+    "stock_ledger": 2,
+    "idempotency_requests": 2,
+    "audit_logs": 2,
+    "delivery_destinations": 1,
+    "pgmigrations": 21,
+    "v2_workflow_state_header": 1,
+    "v2_workflow_object_state": 8,
+    "v2_workflow_stock": 1,
+    "v2_workflow_objects": 2,
+    "v2_workflow_requests": 1,
+    "v2_workflow_performances": 1,
+    "v2_workflow_receivings": 1,
+    "v2_workflow_ledger": 6,
+    "v2_warehouse_grants": 1,
+    "v2_identity_links": 1,
+    "v2_machine_keys": 2,
+    "v2_machine_warehouses": 2,
+    "v2_identity_audit": 1,
+    "business_partners": 1,
+    "master_barcodes": 3,
+    "master_csv_previews": 1,
+    "master_csv_applies": 1,
+    "master_csv_applied_rows": 1,
+    "v2_integration_limits": 1,
+    "v2_integration_entities": 1,
+    "v2_integration_events": 2,
+    "v2_cutovers": 1,
+    "api_request_metrics": 2,
+    "v2_opening_imports": 4
+  },
+  "source_sha256": "a0f4460ec0d8f4c872e154de952745993543745cb085d21fe8a0ff110b34d382",
+  "restored_identical": true,
+  "source_unchanged": true,
+  "forced_rls_tables": 34,
+  "reconciliation_mismatches": 0,
+  "v2_reconciliation": {
+    "ledger_mismatches": 0,
+    "state_mismatches": 0
+  },
+  "application_role": "authenticated wms_app; nonowner/nonsuperuser/no BYPASSRLS",
+  "tenants": {
+    "0d1de150-bb37-46d2-bc0e-157887857ee9": {
+      "tenant_id": "0d1de150-bb37-46d2-bc0e-157887857ee9",
+      "completed_at": "2026-10-21T03:18:01.836Z",
+      "archive_sha256": "abd27768420a76056f2f9949415a4bf196f24095dd77b764478b978b40637d1f",
+      "restore_verified_at": "2026-10-21T03:18:02.418Z"
+    },
+    "bcedae7e-7c3c-4c4f-9ddd-ceb3d46a586a": {
+      "tenant_id": "bcedae7e-7c3c-4c4f-9ddd-ceb3d46a586a",
+      "completed_at": "2026-10-21T03:18:01.836Z",
+      "archive_sha256": "abd27768420a76056f2f9949415a4bf196f24095dd77b764478b978b40637d1f",
+      "restore_verified_at": "2026-10-21T03:18:02.418Z"
+    }
+  },
+  "checks": [
+    "schema21 master guard definition, stored search path, owner and effective ACL preserved; application-role rolled-back discovered count-line probe passed",
+    "all physical public tables fingerprinted; every v2 table has synthetic rows; invoker compatibility view and reconstructed logical state fingerprinted",
+    "normalized header metadata, ordered object bodies and compatibility write triggers preserved",
+    "all sequence states preserved including document and event gaps",
+    "legacy and v2 stock/ledger and aggregate state reconcile independently",
+    "workflow request response, pending approval and retry event preserved",
+    "restored credentials, membership, idle policy, explicit warehouse grant, rotated key and consumed link preserved",
+    "all FORCE RLS tables hide rows without context and hide source-tenant rows in foreign context",
+    "tenant composite FK rejects foreign warehouse grant",
+    "append-only permissions and immutable triggers survive restore",
+    "source unchanged; existing/source targets and archive overwrite refused",
+    "archive checksum mismatch refused before target creation",
+    "shared authentication rate-limit state preserved"
+  ],
+  "limitations": [
+    "Same local PostgreSQL cluster; existing cluster roles and passwords were reused.",
+    "Synthetic SQL fixtures prove preservation, not new workflow execution.",
+    "No remote-provider restore, PITR, offsite archive recovery, HTTP login, RPO or RTO verification was executed."
+  ]
+}

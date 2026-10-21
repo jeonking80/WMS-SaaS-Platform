@@ -1,4 +1,5 @@
 import { randomBytes,randomUUID } from 'node:crypto';
+import {readFile} from 'node:fs/promises';
 import pg from 'pg';
 import { beforeAll,afterAll,describe,it,expect,vi } from 'vitest';
 import { migrate } from '../../scripts/db-migrate.mjs';
@@ -13,6 +14,7 @@ import {previewCsv,applyCsv} from '../../src/server/v2/masters/imports';
 import {masterHttp} from '../../src/server/v2/masters/http';
 import {previewBusinessCsv,applyBusinessCsv} from '../../src/server/v2/masters/business-imports';
 import {emptyState} from '../../src/server/v2/workflow/types';
+import {executeWorkflow} from '../../src/server/v2/workflow';
 import {collectMonitor,collectDatabaseLocks} from '../../scripts/v2-monitor-lib.mjs';
 import {transactionApplicationName} from '../../scripts/v2-lock-scope.mjs';
 import {monitorOperations} from '../../src/server/v2/operations/monitor';
@@ -126,6 +128,51 @@ describe('V2 masters PostgreSQL isolation and operations',()=>{
   expect((await tx(c=>applyCsv(c,tenant,warehouse,'items',p.preview_id,[2],'apply-two'))).applied).toBe(0);
   await expect(tx(c=>previewCsv(c,tenant,warehouse,'items','code,name\nx,y','preview-one'))).rejects.toMatchObject({code:'REQUEST_KEY_CONFLICT'});
   expect((await tx(c=>c.query('SELECT id FROM items WHERE code=$1',[code.toUpperCase()]))).rows).toHaveLength(1);
+ });
+ it.each(['completed','unlocked'] as const)('protects newly discovered count items until the count is %s',async ending=>{
+  // Model an incremental upgrade whose connection did not run migration0018.
+  const migration=await readFile(new URL('../../db/migrations/1792368000020_v2-count-master-usage.sql',import.meta.url),'utf8');
+  const upgrade=await owner.connect();try{
+   await upgrade.query('BEGIN');await upgrade.query(`SET LOCAL search_path TO "${schema}"`);
+   const before=(await upgrade.query(`SELECT proowner,proacl::text FROM pg_proc WHERE oid='master_workflow_in_use_scoped(uuid,text,uuid)'::regprocedure`)).rows[0];
+   await upgrade.query(migration.split('-- Down Migration')[0]);
+   const after=(await upgrade.query(`SELECT proowner,proacl::text,proconfig FROM pg_proc WHERE oid='master_workflow_in_use_scoped(uuid,text,uuid)'::regprocedure`)).rows[0];
+   expect({proowner:after.proowner,proacl:after.proacl}).toEqual(before);expect(after.proconfig.some((setting:string)=>setting.startsWith('search_path=')&&setting.includes(schema)&&setting.endsWith(', pg_temp'))).toBe(true);await upgrade.query('COMMIT');
+  }catch(error){await upgrade.query('ROLLBACK');throw error;}finally{upgrade.release();}
+  const discovered=await item(),countWarehouse=randomUUID(),countLocation=randomUUID(),reviewer=randomUUID();
+  await tx(async c=>{
+   await c.query("INSERT INTO warehouses(id,tenant_id,code,name) VALUES($1::uuid,$2,$1::text,'Discovered count')",[countWarehouse,tenant]);
+   await c.query("INSERT INTO locations(id,tenant_id,warehouse_id,code,name,kind) VALUES($1::uuid,$2,$3,$1::text,'Empty count location','STORAGE')",[countLocation,tenant,countWarehouse]);
+   await c.query(`INSERT INTO "user"(id,name,email) VALUES($1,'Independent reviewer',$2)`,[reviewer,reviewer+'@example.test']);
+   await c.query("INSERT INTO memberships(user_id,tenant_id,role) VALUES($1,$2,'admin')",[reviewer,tenant]);
+   for(const user of [actor,reviewer])await c.query('INSERT INTO v2_warehouse_grants(tenant_id,user_id,warehouse_id) VALUES($1,$2,$3)',[tenant,user,countWarehouse]);
+  });
+  const independent:Identity={...identity,user:{id:reviewer,name:'Independent reviewer',email:reviewer+'@example.test'}};
+  const command=(command:string,payload:Record<string,unknown>,who=identity)=>executeWorkflow(who,{warehouse_id:countWarehouse,request_id:randomUUID(),command,payload});
+  const started=await command('count.start',{location_id:countLocation}),countId=started.result.id;
+  expect(started.snapshot.counts[0].baseline).toEqual([]);
+  await command('count.record',{count_id:countId,lines:[{item_id:discovered.id,bucket:'S',quantity:1}],recount:true,reason:'New physical item absent from ledger'});
+  async function blocked(){
+   await expect(tx(c=>updateMaster(c,warehouse,'items',discovered.id,{active:false}))).rejects.toMatchObject({code:'MASTER_IN_USE'});
+   await expect(tx(c=>c.query('UPDATE items SET active=false WHERE id=$1',[discovered.id]))).rejects.toMatchObject({code:'23503'});
+   await tx(async c=>{
+    await c.query('CREATE TEMP TABLE v2_workflow_state(state jsonb) ON COMMIT DROP');
+    expect((await c.query("SELECT master_workflow_in_use($1,'items',$2) used",[tenant,discovered.id])).rows[0].used).toBe(true);
+   });
+   await expect(withTenant(foreign,c=>c.query("SELECT master_workflow_in_use($1,'items',$2)",[tenant,discovered.id]))).rejects.toMatchObject({code:'42501'});
+  }
+  await blocked();
+  let submitted=await command('count.submit',{count_id:countId,reason:'Independent count review'});await blocked();
+  if(ending==='completed'){
+   await command('approval.decide',{approval_id:submitted.result.id,approve:false,reason:'Recheck the newly discovered item'},independent);
+   await command('count.record',{count_id:countId,lines:[{item_id:discovered.id,bucket:'S',quantity:0}],recount:true,reason:'Physical recheck confirms no stock'});
+   submitted=await command('count.submit',{count_id:countId,reason:'Zero stock independently rechecked'});
+   const completed=await command('approval.decide',{approval_id:submitted.result.id,approve:true,reason:'Independent completion'},independent);expect(completed.snapshot.counts[0].status).toBe('completed');
+  }else{
+   await command('count.unlock',{count_id:countId,reason:'Cancel count and restart later'});
+   const rejected=await command('approval.decide',{approval_id:submitted.result.id,approve:false,reason:'Discard unlocked old count'},independent);expect(rejected.snapshot.counts[0].status).toBe('unlocked');
+  }
+  expect((await tx(c=>updateMaster(c,warehouse,'items',discovered.id,{active:false}))).active).toBe(false);
  });
  it('applies nothing when selected rows become invalid after preview',async()=>{
   const a=randomUUID(),b=randomUUID();const p=await tx(c=>previewCsv(c,tenant,warehouse,'items',`code,name\n${a},A\n${b},B`,'preview-conflict'));await item(b.toUpperCase());

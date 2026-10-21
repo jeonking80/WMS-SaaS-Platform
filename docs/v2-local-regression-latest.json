@@ -1,17 +1,16 @@
 {
-  "verified_at": "2026-10-21T02:42:36.060539+00:00",
-  "build_id": "ygoExTu2jqOW7riRXrCxw",
-  "scope": "local application regression plus post-full external supervisor checks; cluster runtime/image/performance qualification still pending; G3/G4/G5 not passed",
+  "verified_at": "2026-10-21T03:18:15.150432+00:00",
+  "build_id": "GgP2Fvn28yPhyBpYVJzWi",
+  "scope": "local schema21 full regression; no public deployment or G3/G4/G5 completion",
   "typecheck": "passed",
   "unit": {
-    "passed": 315,
-    "full_verify_before_supervisor_followup": 309
+    "passed": 315
   },
   "simulator": {
     "passed": 55
   },
   "integration": {
-    "passed": 208,
+    "passed": 210,
     "skipped": 0
   },
   "production_build": "passed (WMS_STANDALONE=1)",
@@ -21,43 +20,36 @@
   },
   "full_verify": {
     "exit_code": 0,
-    "command": "WMS_STANDALONE=1 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run verify",
-    "timing": "before external supervisor exit-accounting follow-up; compiled application source unchanged afterward"
+    "command": "WMS_STANDALONE=1 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run verify"
   },
-  "post_full_followup": {
-    "production_paths": [
-      "deploy/cluster-supervisor.mjs"
-    ],
-    "reason": "unexpected worker exit during planned drain must not report graceful success",
-    "focused_cluster_tests_passed": 39,
-    "entire_unit_suite_passed": 315,
-    "typecheck": "passed",
-    "app_bundle_change": false,
-    "note": "Supervisor is an external Docker COPY launcher module, not an application import or NFT dependency. New immutable runtime revision must include its updated file hash. Real Next and image qualification remain pending."
-  },
-  "migration_count": 20,
+  "migration_count": 21,
   "evidence": [
     {
-      "path": "/tmp/wms-v2-cluster-index-full-verify.log",
-      "sha256": "0379d106033e66ff541665af6da78495b74f5324351511fa0958696e6f3f1739"
+      "path": "/tmp/wms-v2-schema21-full-verify-r2.log",
+      "sha256": "da0cb17ee3624e6199116eee78d3576c5a21a516403826015615bad38c3a7108"
     },
     {
-      "path": "/tmp/wms-v2-cluster-shutdown-focused.log",
-      "sha256": "d17c1a4a0fc78d100a781f27b133539eb592ab84bb284f8b047c3423f6f3b421"
+      "path": "/tmp/wms-v2-schema21-full-verify.log",
+      "sha256": "1c3fb0a8ee9b82d0d383e4c4b759a5e039c73cd83e04e03c32b4121ef859dfa0"
     },
     {
-      "path": "/tmp/wms-v2-cluster-final-unit.log",
-      "sha256": "20cfe9bebd79aa0a0d9266d88558db178495d78ff4053d0160b0abecc172205e"
+      "path": "/tmp/v2-count-master-usage-security-targeted.log",
+      "sha256": "75cdb3187a8e8000b54b6f9b404f65e582d5396d3136130b53c41685d4f5b41e"
     }
   ],
+  "preserved_initial_failure": {
+    "exit_code": 1,
+    "integration_passed": 208,
+    "integration_failed": 2,
+    "cause": "Two existing test migration counts still expected20 total/11 remaining; corrected to21 total/12 after9initial. Business assertions preserved. Full verification rerun passed."
+  },
   "changes": [
-    "request-local first-match location/block/count and scan-reference indexes; full state/auth/reconciliation preserved",
-    "optional one/two Node worker launcher with configured pool sum five",
-    "managed API/auth drain tracking, fresh-generation readiness and bounded shutdown/restarts",
-    "explicit outcome accounting for drain acknowledgement and installed Next graceful exit143",
-    "Korean hold-assignment recovery guidance and safe error-code logging"
+    "Additive0020 protects newly discovered items in active count lines from service/directSQL deactivation",
+    "Preserve explicit pg_temp-last stored function path and owner/ACL during incremental migration",
+    "Focused18PG tests cover counting/submitted protection, completed/unlocked release, temporary shadow relations and foreign tenant rejection"
   ],
-  "performance_claim": "none; all four official congestion runs remain failed",
-  "restore_evidence": "restore-verification-schema20.json",
-  "congestion_evidence": "v2-congestion-fourth-final-recovery.json"
+  "performance_claim": "This build has no official performance pass; previous source42331d6 bounded native comparison is separate. Four official congestion failures preserved.",
+  "restore_status": "passed synthetic local schema21 restore; provider/PITR/RPO/RTO not executed",
+  "congestion_evidence": "v2-congestion-fourth-final-recovery.json",
+  "restore_evidence": "restore-verification-schema21.json"
 }

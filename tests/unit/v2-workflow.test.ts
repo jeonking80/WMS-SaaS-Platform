@@ -65,3 +65,28 @@ describe('v2 workflow conservation and exception transitions',()=>{
  });
 
 });
+
+
+describe('correction approval across inventory-neutral shift reports',()=>{
+ function close(w:ReturnType<typeof world>){
+  const pending=[...w.state.approvals.filter(a=>a.status==='pending').map(a=>({object_type:'approval',object_id:a.id})),...w.state.orders.filter(o=>o.lines.some(l=>l.quantity>l.shipped+l.cancelled)).map(o=>({object_type:'order',object_id:o.id})),...w.state.holds.filter(l=>l.hold+l.pending+l.normal>0).map(l=>({object_type:'hold',object_id:l.id})),...w.state.counts.filter(c=>c.status==='counting').map(c=>({object_type:'count',object_id:c.id}))];
+  return w.command('shift.close',{handover:pending.map(row=>({...row,assignee_id:randomUUID(),reason:'Preserve unfinished work'})),unconfirmed_request_ids:[]},true);
+ }
+ function request(w:ReturnType<typeof world>){return w.command('correction.request',{original_id:randomUUID(),lines:[{item_id:w.item,location_id:w.storage,bucket:'S',quantity:-2}],reason:'Recorded two excess pieces'}).id;}
+ it('keeps the frozen target version and permits two consecutive shifts before independent review',()=>{
+  const w=world();w.seed(10);const id=request(w),target=w.state.approvals[0].target_version,stock=structuredClone(w.state.stock);close(w);close(w);
+  expect(w.state.approvals[0].target_version).toBe(target);expect(w.state.stock).toEqual(stock);
+  w.command('approval.decide',{approval_id:id,approve:true,reason:'Independent review after handover'},true);expect(w.stock()).toMatchObject({S:8,H:8});
+ });
+ it.each(['physical','assignment','force-unlock'])('does not revive a correction across an intervening %s version',kind=>{
+  const w=world();w.seed(10);const id=request(w);close(w);
+  if(kind==='physical')w.command('stock.hold',{lines:[{item_id:w.item,from_location_id:w.storage,location_id:w.hold,quantity:1}],reason:'New physical effect'});
+  if(kind==='assignment')w.command('task.assign',{object_type:'receipt',object_id:w.state.receipts[0].id,assignee_id:randomUUID(),reason:'Separate command'} ,true);
+  if(kind==='force-unlock'){const count=w.command('count.start',{location_id:w.storage}).id;w.command('count.unlock',{count_id:count,reason:'Force restart'},true);}
+  close(w);const before=structuredClone(w.state);expect(()=>w.command('approval.decide',{approval_id:id,approve:true,reason:'Old review'},true)).toThrow('APPROVAL_STALE');expect(w.state).toEqual(before);
+ });
+ it('fails closed when a required historical shift version is absent',()=>{
+  const w=world();w.seed(10);const id=request(w);close(w);delete w.state.shifts[0].version;
+  expect(()=>w.command('approval.decide',{approval_id:id,approve:true,reason:'Incomplete history'},true)).toThrow('APPROVAL_STALE');
+ });
+});

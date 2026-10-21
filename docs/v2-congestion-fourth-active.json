@@ -1,0 +1,95 @@
+{
+  "historical_prior_runs_unchanged": true,
+  "run_id": "30d05ed0-8864-4282-a335-4d2746de1697",
+  "profile": "congestion",
+  "status": "interrupted",
+  "qualification_pending_final_report": false,
+  "observed_at": "2026-10-21T02:11:48.953740+00:00",
+  "runs": [
+    {
+      "id": "30d05ed0-8864-4282-a335-4d2746de1697:0",
+      "status": "paused",
+      "seed_start_ms": 1792546558316,
+      "measured_start_ms": 1792546581292,
+      "measured_elapsed_ms": 2127586,
+      "control_retry": null,
+      "peak_cohort": {
+        "received": 1069,
+        "source": 3,
+        "excluded": 0,
+        "frozen_at_ms": 1792547485238
+      }
+    },
+    {
+      "id": "30d05ed0-8864-4282-a335-4d2746de1697:1",
+      "status": "paused",
+      "seed_start_ms": 1792546558477,
+      "measured_start_ms": 1792546581292,
+      "measured_elapsed_ms": 2127586,
+      "control_retry": {
+        "status": "retry_wait",
+        "attempts": 1,
+        "next_at": 1792548683004.1255,
+        "total_failures": 1,
+        "last_failure_at_ms": 1792548681294,
+        "last_failure": {
+          "status": 503,
+          "code": "NETWORK_UNAVAILABLE"
+        }
+      },
+      "peak_cohort": {
+        "received": 1051,
+        "source": 3,
+        "excluded": 0,
+        "frozen_at_ms": 1792547483122
+      }
+    }
+  ],
+  "statuses": [
+    [
+      "command",
+      "done",
+      11006
+    ],
+    [
+      "command",
+      "superseded",
+      181
+    ],
+    [
+      "command",
+      "unsent",
+      961
+    ],
+    [
+      "event",
+      "done",
+      4285
+    ],
+    [
+      "event",
+      "expected_business_rejected",
+      120
+    ],
+    [
+      "event",
+      "unconfirmed",
+      1195
+    ]
+  ],
+  "measured_source": {
+    "planned": 5400,
+    "accepted": 5400,
+    "applied": 4085,
+    "expected_rejected": 120,
+    "in_flight": 1195
+  },
+  "technical_or_429_attempts": 1,
+  "http429_attempts": 0,
+  "final_report_present": true,
+  "verdict": "failed",
+  "superseded_by": "docs/v2-congestion-fourth-final-recovery.json",
+  "runtime_stopped": true,
+  "shared_slot_released": true,
+  "running_snapshot_is_historical": true
+}

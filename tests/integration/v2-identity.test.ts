@@ -211,7 +211,7 @@ it("exposes only active scoped automation assignees in a test company and test s
   const expired=await createKey(admin,{name:"Expired excluded",sourceSystem:"candidate-expired",kind:"automation",environment:"test",scopes:["read","write"],warehouseIds:[warehouseA]});
   await withTenant(tenantA,c=>c.query("UPDATE v2_machine_keys SET expires_at=CURRENT_TIMESTAMP-interval '1 minute' WHERE id=$1",[expired.keyId]));
   let context=await identityContext(viewer);
-  expect(context.automationAccounts.find(a=>a.userId===`machine:${worker.keyId}`)).toEqual({userId:`machine:${worker.keyId}`,name:"Candidate worker",role:"worker",status:"active",warehouseIds:[warehouseA]});
+  expect(context.automationAccounts.find(a=>a.userId===`machine:${worker.keyId}`)).toEqual({userId:`machine:${worker.keyId}`,name:"Candidate worker",role:"worker",scopes:["read","write"],status:"active",warehouseIds:[warehouseA]});
   for(const key of [outside,supplier,approver,expired])expect(context.automationAccounts.some(a=>a.userId===`machine:${key.keyId}`)).toBe(false);
   process.env.WMS_ENVIRONMENT="production";expect((await identityContext(viewer)).automationAccounts).toEqual([]);process.env.WMS_ENVIRONMENT="test";
   await owner.query(`UPDATE "${schema}".tenants SET is_test=false WHERE id=$1`,[tenantA]);expect((await identityContext(viewer)).automationAccounts).toEqual([]);await owner.query(`UPDATE "${schema}".tenants SET is_test=true WHERE id=$1`,[tenantA]);

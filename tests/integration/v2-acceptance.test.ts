@@ -662,6 +662,99 @@ describe('WMS v2 acceptance against PostgreSQL with enforced tenant RLS', () => 
     await w.invariant();
   });
 
+  it('AC-20 keeps generic held, inspection and putaway work assigned through splits and atomic mixed-owner batches', async () => {
+    const w = await world(); const item = await w.item(); await w.seed(item, 5);
+    const nextId = randomUUID(); const nextWorker: Identity = { user: { id: nextId, name: 'Next quality worker', email: `${nextId}@example.test` }, tenant: identity.tenant, role: 'worker' };
+    await withTenant(tenant, async client => {
+      await client.query('INSERT INTO "user"(id,name,email) VALUES($1,$2,$3)', [nextId,nextWorker.user.name,nextWorker.user.email]);
+      await client.query("INSERT INTO memberships(tenant_id,user_id,role) VALUES($1,$2,'worker')", [tenant,nextId]);
+      await client.query('INSERT INTO v2_warehouse_grants(tenant_id,user_id,warehouse_id) VALUES($1,$2,$3)', [tenant,nextId,w.warehouse]);
+    });
+    const first = await w.command('stock.hold', { lines: [{ item_id: item, from_location_id: w.location.storage, location_id: w.location.hold, quantity: 4 }], reason: 'Quality check first group' });
+    const firstId = (first.result.lot_ids as string[])[0];
+    const second = await w.command('stock.hold', { lines: [{ item_id: item, from_location_id: w.location.storage, location_id: w.location.hold, quantity: 1 }], reason: 'Separate quality owner' });
+    const secondId = (second.result.lot_ids as string[])[0];
+    const assign = (id: string, assignee = nextId) => w.command('task.assign', { object_type: 'hold', object_id: id, assignee_id: assignee, reason: 'Quality continuation', unconfirmed_request_ids: [] }, manager);
+    const receiptLot = second.snapshot.receipts[0].lots[0].id;
+    await expect(assign(randomUUID())).rejects.toMatchObject({ code: 'HOLD_TASK_UNAVAILABLE' });
+    await expect(assign(receiptLot)).rejects.toMatchObject({ code: 'HOLD_TASK_UNAVAILABLE' });
+    await expect(w.command('shift.close', { handover: [], unconfirmed_request_ids: [] }, manager)).rejects.toMatchObject({ code: 'HANDOVER_REQUIRED' });
+    await assign(firstId); await assign(secondId, actor);
+    const handover = [{ object_type: 'hold', object_id: firstId, assignee_id: nextId, reason: 'Next worker checks four units' }, { object_type: 'hold', object_id: secondId, assignee_id: actor, reason: 'Original worker checks one unit' }];
+    await w.command('shift.close', { handover, unconfirmed_request_ids: [] }, manager);
+    await assertQuantities(w, item, { S: 0, B: 5, Q: 0, H: 5, A: 0 });
+    const release = { lot_id: firstId, quantity: 1, location_id: w.location.receiving, reason: 'One cleared for inspection' };
+    await expect(w.command('hold.release', release)).rejects.toMatchObject({ code: 'TASK_ASSIGNEE_MISMATCH' });
+    const count = await w.command('count.start', { location_id: w.location.receiving });
+    const lockedEffects = await w.effects();
+    await expect(w.command('hold.release', release, nextWorker)).rejects.toMatchObject({ code: 'LOCATION_LOCKED' });
+    expect(await w.effects()).toEqual(lockedEffects);
+    await w.command('count.unlock', { count_id: count.result.id, reason: 'Resume quality movement' }, manager);
+    const released = await w.command('hold.release', release, nextWorker);
+    const child = released.snapshot.holds.find(lot => lot.id !== firstId && lot.id !== secondId && lot.pending === 1)!;
+    expect(child).toBeDefined();
+    expect(released.snapshot.tasks.findLast(task => task.object_type === 'hold' && task.object_id === child.id)).toMatchObject({ assignee_id: nextId });
+    await w.command('hold.release', { lot_id: secondId, quantity: 1, location_id: w.location.receiving, reason: 'Second owner clears quality' });
+    const inspect = (id: string) => ({ lot_id: id, quantity: 1, outcome: 'normal' });
+    const mixedEffects = await w.effects();
+    await expect(w.command('stock.inspect', { lines: [inspect(child.id),inspect(secondId)] }, nextWorker)).rejects.toMatchObject({ code: 'TASK_ASSIGNEE_MISMATCH' });
+    expect(await w.effects()).toEqual(mixedEffects);
+    await expect(w.command('stock.inspect', { lines: [inspect(child.id)] })).rejects.toMatchObject({ code: 'TASK_ASSIGNEE_MISMATCH' });
+    await w.command('stock.inspect', { lines: [inspect(child.id)] }, nextWorker);
+    await expect(w.command('stock.putaway', { lines: [{ lot_id: child.id, quantity: 1, location_id: w.location.storage }] })).rejects.toMatchObject({ code: 'TASK_ASSIGNEE_MISMATCH' });
+    await w.command('stock.putaway', { lines: [{ lot_id: child.id, quantity: 1, location_id: w.location.storage }] }, nextWorker);
+    await w.command('stock.inspect', { lines: [inspect(secondId)] });
+    await w.command('stock.putaway', { lines: [{ lot_id: secondId, quantity: 1, location_id: w.location.storage }] });
+    await w.command('hold.release', { lot_id: firstId, quantity: 3, location_id: w.location.receiving, reason: 'Remaining quality cleared' }, nextWorker);
+    await w.command('stock.inspect', { lines: [{ lot_id: firstId, quantity: 3, outcome: 'normal' }] }, nextWorker);
+    await expect(w.command('shift.close', { handover: [], unconfirmed_request_ids: [] }, manager)).rejects.toMatchObject({ code: 'HANDOVER_REQUIRED' });
+    await w.command('stock.putaway', { lines: [{ lot_id: firstId, quantity: 3, location_id: w.location.storage }] }, nextWorker);
+    await expect(assign(firstId)).rejects.toMatchObject({ code: 'HOLD_TASK_UNAVAILABLE' });
+    await expect(w.command('shift.close', { handover: [{ object_type: 'hold', object_id: firstId, assignee_id: nextId, reason: 'Already completed' }], unconfirmed_request_ids: [] }, manager)).rejects.toMatchObject({ code: 'HOLD_TASK_UNAVAILABLE' });
+    await w.command('shift.close', { handover: [], unconfirmed_request_ids: [] }, manager);
+    await assertQuantities(w, item, { S: 5, B: 0, Q: 0, H: 5, A: 5 });
+    await w.invariant();
+  });
+
+  it('AC-23 preserves damaged-pick order ownership until an explicit quality-lot handover supersedes it', async () => {
+    const w = await world(); const item = await w.item(); await w.seed(item, 4);
+    const nextId = randomUUID(); const nextWorker: Identity = { user: { id: nextId, name: 'Damage successor', email: `${nextId}@example.test` }, tenant: identity.tenant, role: 'worker' };
+    await withTenant(tenant, async client => {
+      await client.query('INSERT INTO "user"(id,name,email) VALUES($1,$2,$3)', [nextId,nextWorker.user.name,nextWorker.user.email]);
+      await client.query("INSERT INTO memberships(tenant_id,user_id,role) VALUES($1,$2,'worker')", [tenant,nextId]);
+      await client.query('INSERT INTO v2_warehouse_grants(tenant_id,user_id,warehouse_id) VALUES($1,$2,$3)', [tenant,nextId,w.warehouse]);
+    });
+    const order = await w.pick(item, 3);
+    await w.command('task.assign', { object_type: 'order', object_id: order.id, assignee_id: actor, reason: 'Original order owner' }, manager);
+    const damaged = await w.command('order.damage', { order_id: order.id, lines: [{ pick_id: order.picks[0].id, quantity: 2, location_id: w.location.hold }], reason: 'Damaged physical units' }, manager);
+    const lotId = (damaged.result.lot_ids as string[])[0];
+    expect(damaged.snapshot.holds.find(lot => lot.id === lotId)).toMatchObject({ origin_order_id: order.id, hold: 2 });
+    await expect(w.command('order.cancel', { order_id: order.id, lines: [{ line_id: order.lines[0].id, quantity: 3 }], reason: 'Wrong order owner' }, nextWorker)).rejects.toMatchObject({ code: 'TASK_ASSIGNEE_MISMATCH' });
+    await w.command('order.cancel', { order_id: order.id, lines: [{ line_id: order.lines[0].id, quantity: 3 }], reason: 'Cancel remaining order' });
+    await w.command('order.return_picked', { order_id: order.id, lines: [{ pick_id: order.picks[0].id, quantity: 1, location_id: w.location.storage, outcome: 'normal' }], reason: 'Return undamaged pick' });
+    const release = { lot_id: lotId, quantity: 1, location_id: w.location.receiving, reason: 'Quality cleared' };
+    await expect(w.command('hold.release', release, nextWorker)).rejects.toMatchObject({ code: 'TASK_ASSIGNEE_MISMATCH' });
+    await expect(w.command('shift.close', { handover: [], unconfirmed_request_ids: [] }, manager)).rejects.toMatchObject({ code: 'HANDOVER_REQUIRED' });
+    // Splitting while ownership is inherited must give the child the same real owner.
+    const split = await w.command('hold.release', release);
+    const child = split.snapshot.holds.find(lot => lot.id !== lotId && lot.pending === 1)!;
+    expect(split.snapshot.tasks.findLast(task => task.object_type === 'hold' && task.object_id === child.id)).toMatchObject({ assignee_id: actor });
+    await w.command('task.assign', { object_type: 'hold', object_id: child.id, assignee_id: nextId, reason: 'Quality successor', unconfirmed_request_ids: [] });
+    await w.command('task.assign', { object_type: 'order', object_id: order.id, assignee_id: approver, reason: 'Order history review' }, manager);
+    await expect(w.command('stock.inspect', { lines: [{ lot_id: child.id, quantity: 1, outcome: 'normal' }] })).rejects.toMatchObject({ code: 'TASK_ASSIGNEE_MISMATCH' });
+    await w.command('stock.inspect', { lines: [{ lot_id: child.id, quantity: 1, outcome: 'normal' }] }, nextWorker);
+    await w.command('stock.putaway', { lines: [{ lot_id: child.id, quantity: 1, location_id: w.location.storage }] }, nextWorker);
+    // Direct child ownership no longer depends on the reassigned original order.
+    await expect(w.command('hold.release', release, nextWorker)).rejects.toMatchObject({ code: 'TASK_ASSIGNEE_MISMATCH' });
+    await w.command('task.assign', { object_type: 'hold', object_id: lotId, assignee_id: nextId, reason: 'Remaining damaged unit' }, manager);
+    await w.command('hold.release', release, nextWorker);
+    await w.command('stock.inspect', { lines: [{ lot_id: lotId, quantity: 1, outcome: 'normal' }] }, nextWorker);
+    await w.command('stock.putaway', { lines: [{ lot_id: lotId, quantity: 1, location_id: w.location.storage }] }, nextWorker);
+    await w.command('shift.close', { handover: [], unconfirmed_request_ids: [] }, manager);
+    await assertQuantities(w, item, { S: 4, P: 0, B: 0, Q: 0, H: 4, A: 4 });
+    await w.invariant();
+  });
+
   it('AC-23 isolates damaged picks atomically and permits replacement without cancelling the original order', async () => {
     const w = await world(); const item = await w.item(); await w.seed(item, 12); const order = await w.pick(item, 10); const originalPick = order.picks[0];
     await assertQuantities(w, item, { S: 2, R: 0, P: 10, H: 12 });
@@ -682,4 +775,25 @@ describe('WMS v2 acceptance against PostgreSQL with enforced tenant RLS', () => 
     await assertQuantities(w, item, { S: 0, P: 0, B: 2, H: 2 });
     expect((await w.snapshot()).orders[0].lines[0]).toMatchObject({ quantity: 10, cancelled: 0, shipped: 10 });
   });
+});
+
+
+describe('correction handover preserves the frozen approval target',()=>{
+ async function correction(){
+  const w=await world(),item=await w.item();const receipt=await w.receive(item,10);
+  const source=await withTenant(tenant,async client=>(await client.query<{id:string}>("SELECT id FROM v2_workflow_ledger WHERE warehouse_id=$1 AND item_id=$2 AND command='receipt.receive' AND bucket='Q' AND delta=10",[w.warehouse,item])).rows[0].id);
+  const result=await w.command('correction.request',{original_id:source,lines:[{item_id:item,location_id:w.location.receiving,bucket:'Q',quantity:-2}],reason:'Original receipt overstated by two'});
+  const approval=result.snapshot.approvals.find(a=>a.id===result.result.id)!;
+  const close=()=>w.command('shift.close',{handover:[{object_type:'receipt',object_id:receipt.id,assignee_id:actor,reason:'Preserve pending physical receipt'},{object_type:'approval',object_id:approval.id,assignee_id:approver,reason:'Independent correction review next shift'}],unconfirmed_request_ids:[]},manager);
+  return {w,item,approval,close};
+ }
+ it('approves once after two real handovers without changing the target version or stock at handover',async()=>{
+  const {w,item,approval,close}=await correction();const stock=(await w.snapshot()).stock;await close();const shifted=await close();expect(shifted.snapshot.stock).toEqual(stock);expect(shifted.snapshot.approvals[0].target_version).toBe(approval.target_version);
+  const requestId=randomUUID(),decision={approval_id:approval.id,approve:true,reason:'Independent source and quantity review after shift'};
+  await w.command('approval.decide',decision,manager,requestId);expect((await w.command('approval.decide',decision,manager,requestId)).replayed).toBe(true);await assertQuantities(w,item,{S:0,Q:8,H:8,A:0});await w.invariant();
+ });
+ it('does not revive an old correction after count force unlock and a later valid handover',async()=>{
+  const {w,approval,close}=await correction();const count=await w.command('count.start',{location_id:w.location.storage});await w.command('count.unlock',{count_id:count.result.id,reason:'Restart independently'},manager);await close();const before=await w.effects();
+  await expect(w.command('approval.decide',{approval_id:approval.id,approve:true,reason:'Old correction must remain stale'},manager)).rejects.toMatchObject({code:'APPROVAL_STALE'});expect(await w.effects()).toEqual(before);await w.invariant();
+ });
 });

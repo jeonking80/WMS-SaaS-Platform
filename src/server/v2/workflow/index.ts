@@ -2,14 +2,16 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { PoolClient } from 'pg';
 import type { Identity } from '../../auth/access';
 import { withTenant } from '../../db/tenant';
-import { requireV2Access } from '../access';
+import { assertV2MachineKeyInTransaction, requireV2Access } from '../access';
 import { applyCommand, fail, integer, object, reconcile, snapshot, text, uuid } from './engine';
 import {correctionOriginActors,hydrateApprovalSeparation} from './approval-separation';
+import {approvalActorExcluded,approvalRoleAllowed} from './approval-eligibility';
 import {validateCorrection} from './corrections';
 import { resolveBarcode } from '../masters/service';
 import { emptyState, type Bucket, type WorkflowInput, type WorkflowState } from './types';
 import {readWorkflowState,writeWorkflowState} from './object-storage';
 import {firstPositions} from './position-index';
+import {genericHoldOwnership} from './hold-ownership';
 import {hydrateLegacyOverageQuality} from './overage-quality';
 import {nameHistoricalActors,nameSnapshotActors} from './actor-names';
 import {beginTiming,observeTimingCount,timeAsync,timeSync,timingDiagnosticsActive} from '../../timing-diagnostics';
@@ -83,14 +85,28 @@ export async function executeWorkflowInTransaction(client:PoolClient,identity:Id
  if(destination){const found=await client.query('SELECT id,partner_id,recipient_name,name,postal_code,address_line1,address_line2,contact_name,phone FROM delivery_destinations WHERE tenant_id=$1 AND id=$2 AND active FOR SHARE',[identity.tenant.id,uuid(destination)]);if(!found.rowCount)fail('DESTINATION_UNAVAILABLE');if(found.rows[0].partner_id!==delivery.partner_id)fail('DESTINATION_PARTNER_MISMATCH');payload.delivery={...found.rows[0],delivery_destination_id:found.rows[0].id};}
  }
  if(input.command==='task.assign'||input.command==='shift.close'){
+ const approvalAssignees=new Set<string>(),hydrated=new Set<string>();
+ if(input.command==='shift.close'&&Array.isArray(payload.handover))for(const raw of payload.handover){
+  const handover=object(raw),approval=before.approvals.find(row=>row.id===handover.object_id);
+  // An extra differently typed entry must not override the effective owner of
+  // an approval after a valid entry satisfied the required-handover check.
+  if(handover.object_type!=='approval'&&!approval)continue;
+  if(handover.object_type!=='approval'||!approval||approval.status!=='pending')fail('HANDOVER_REQUIRED');
+  if(!hydrated.has(approval.id)){await hydrateApprovalSeparation(client,identity.tenant.id,input.warehouse_id,before,approval);hydrated.add(approval.id);}
+  const assignee=text(handover.assignee_id);
+  if(approvalActorExcluded(before,approval,assignee))fail('ASSIGNEE_UNAVAILABLE');
+  approvalAssignees.add(assignee);
+ }
  const assignees=input.command==='task.assign'?[payload.assignee_id]:(Array.isArray(payload.handover)?payload.handover.map(x=>object(x).assignee_id):[]);
  for(const rawAssignee of new Set(assignees)){
  const assignee=text(rawAssignee);
  if(assignee.startsWith('machine:')){
   if(process.env.WMS_ENVIRONMENT!=='test')fail('AUTOMATION_FORBIDDEN',403);const keyId=uuid(assignee.slice(8));
   const active=await client.query(`SELECT 1 FROM v2_machine_keys k JOIN v2_machine_warehouses g ON g.tenant_id=k.tenant_id AND g.key_id=k.id JOIN tenants t ON t.id=k.tenant_id WHERE k.tenant_id=$1 AND k.id=$2 AND g.warehouse_id=$3 AND t.active AND t.is_test AND k.kind='automation' AND k.environment='test' AND k.revoked_at IS NULL AND k.expires_at>CURRENT_TIMESTAMP AND k.role IN ('worker','supervisor') AND k.scopes @> ARRAY['read','write']::text[] FOR SHARE OF k,g`,[identity.tenant.id,keyId,input.warehouse_id]);if(!active.rowCount)fail('ASSIGNEE_UNAVAILABLE');
+  if(approvalAssignees.has(assignee))await assertV2MachineKeyInTransaction(client,identity.tenant.id,keyId,'approve',input.warehouse_id);
  }else{
-  const active=await client.query(`SELECT 1 FROM memberships m JOIN v2_warehouse_grants g ON g.tenant_id=m.tenant_id AND g.user_id=m.user_id WHERE m.tenant_id=$1 AND m.user_id=$2 AND m.status='active' AND m.role IN ('worker','admin','supervisor') AND g.warehouse_id=$3 FOR SHARE OF m,g`,[identity.tenant.id,assignee,input.warehouse_id]);if(!active.rowCount)fail('ASSIGNEE_UNAVAILABLE');
+  const active=await client.query(`SELECT m.role FROM memberships m JOIN v2_warehouse_grants g ON g.tenant_id=m.tenant_id AND g.user_id=m.user_id WHERE m.tenant_id=$1 AND m.user_id=$2 AND m.status='active' AND m.role IN ('worker','admin','supervisor') AND g.warehouse_id=$3 FOR SHARE OF m,g`,[identity.tenant.id,assignee,input.warehouse_id]);if(!active.rowCount)fail('ASSIGNEE_UNAVAILABLE');
+  if(approvalAssignees.has(assignee)&&!approvalRoleAllowed(active.rows[0].role))fail('ASSIGNEE_UNAVAILABLE');
  }
  }
  }
@@ -106,6 +122,7 @@ export async function executeWorkflowInTransaction(client:PoolClient,identity:Id
  if(input.payload.shipment_id)for(const line of before.shipments.find(sh=>sh.id===input.payload.shipment_id)?.lines??[])targets.add(line.order_id);
  if(input.payload.lot_id){for(const parent of [...before.receipts,...before.returns])if(parent.lots.some(l=>l.id===input.payload.lot_id))targets.add(parent.id);}
  for(const target of targets){const task=[...before.tasks].reverse().find(t=>t.object_id===target);if(task&&task.assignee_id!==identity.user.id)fail('TASK_ASSIGNEE_MISMATCH',403);}
+ if(['hold.release','stock.inspect','stock.putaway'].includes(input.command)){const ids=input.command==='hold.release'?[input.payload.lot_id]:Array.isArray(input.payload.lines)?input.payload.lines.map(line=>object(line).lot_id):[];for(const id of new Set(ids)){const lot=(before.holds??[]).find(lot=>lot.id===id);if(!lot){if(input.command!=='hold.release')fail('NOT_FOUND',404);continue;}const ownership=genericHoldOwnership(before,lot);if(ownership.requiresAssignment)fail('HOLD_ASSIGNMENT_REQUIRED',403);if(ownership.task&&ownership.task.assignee_id!==identity.user.id)fail('TASK_ASSIGNEE_MISMATCH',403);}}
  }
  input.payload.overage_history_recovery=await timeAsync('workflow.legacy_hydrate',()=>hydrateLegacyOverageQuality(client,identity.tenant.id,input.warehouse_id,before));
  if(input.command==='correction.request'){await validateCorrection(client,identity.tenant.id,input.warehouse_id,before,input.payload);input.payload.source_actor_ids=await correctionOriginActors(client,identity.tenant.id,input.warehouse_id,String(input.payload.original_id));}

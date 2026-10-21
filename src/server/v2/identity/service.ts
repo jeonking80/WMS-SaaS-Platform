@@ -71,7 +71,7 @@ export async function identityContext(identity: Identity) {
       ARRAY(SELECT warehouse_id::text FROM v2_warehouse_grants g WHERE g.tenant_id=m.tenant_id AND g.user_id=m.user_id AND g.warehouse_id=ANY($2::uuid[]) ORDER BY warehouse_id) AS "warehouseIds"
       FROM memberships m JOIN "user" u ON u.id=m.user_id WHERE m.tenant_id=$1 AND m.status='active'
       AND EXISTS(SELECT 1 FROM v2_warehouse_grants g WHERE g.tenant_id=m.tenant_id AND g.user_id=m.user_id AND g.warehouse_id=ANY($2::uuid[])) ORDER BY u.name`,[identity.tenant.id,ids])).rows;
-    const automationAccounts=tenant.is_test && v2Environment()==="test" ? (await client.query(`SELECT 'machine:'||k.id::text AS "userId",k.name,k.role,'active'::text AS status,
+    const automationAccounts=tenant.is_test && v2Environment()==="test" ? (await client.query(`SELECT 'machine:'||k.id::text AS "userId",k.name,k.role,k.scopes,'active'::text AS status,
       ARRAY(SELECT warehouse_id::text FROM v2_machine_warehouses g WHERE g.tenant_id=k.tenant_id AND g.key_id=k.id AND g.warehouse_id=ANY($2::uuid[]) ORDER BY warehouse_id) AS "warehouseIds"
       FROM v2_machine_keys k WHERE k.tenant_id=$1 AND k.kind='automation' AND k.environment='test'
       AND k.revoked_at IS NULL AND k.expires_at>CURRENT_TIMESTAMP AND k.scopes @> ARRAY['read','write']::text[]

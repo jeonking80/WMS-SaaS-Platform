@@ -78,3 +78,13 @@ test("같은 브라우저에서 A 로그아웃 후 B 로그인 시 회사 컨텍
   expect(identityB.tenant.id).not.toBe(identityA.tenant.id);
   expect(identityB.user.email).toBe("admin.b@example.test");
 });
+
+test("메뉴 이동 중 세션이 끝나면 권한 없음 대신 로그인 화면으로 보낸다", async ({ page }) => {
+  await login(page, "admin.a@example.test");
+  // Simulate an idle-lock expiry: the server session disappears while the shared layout stays mounted.
+  const signOut = await page.request.post("/api/auth/sign-out", { headers: { origin: new URL(page.url()).origin }, data: {} });
+  expect(signOut.status()).toBe(200);
+  await page.getByRole("link", { name: /기존 전표/ }).click();
+  await expect(page).toHaveURL(/\/login$/);
+  await expect(page.getByRole("alert").filter({ hasText: "접근 권한이 없습니다." })).toHaveCount(0);
+});

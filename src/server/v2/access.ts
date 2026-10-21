@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import type { PoolClient } from "pg";
 import { AccessError, requireIdentity, type Identity, type Role } from "../auth/access";
 import { withTenant } from "../db/tenant";
 import { recordAuthorizedWarehouse, recordRequestIdentity } from "../request-log";
@@ -44,11 +45,21 @@ export async function requireV2Access(identity: Identity, warehouseId: string | 
 }
 
 async function inspectMachine(tenantId: string, keyId: string, hash: string | null, permission: string, warehouseId: string | null): Promise<V2MachineIdentity> {
-  return withTenant(tenantId, async client => {
+  return withTenant(tenantId, client => inspectMachineInTransaction(client,tenantId,keyId,hash,permission,warehouseId));
+}
+
+async function inspectMachineInTransaction(client:PoolClient,tenantId:string,keyId:string,hash:string|null,permission:string,warehouseId:string|null):Promise<V2MachineIdentity> {
+    // Never change an existing transaction's tenant to make a key visible. A process
+    // credential may differ from the queued source key, but both belong to this tenant.
+    const context=(await client.query<{tenant_id:string|null;environment:string|null}>("SELECT NULLIF(current_setting('app.tenant_id',true),'') AS tenant_id,NULLIF(current_setting('app.environment',true),'') AS environment")).rows[0];
+    if(context?.tenant_id?.toLowerCase()!==tenantId.toLowerCase())throw new AccessError(403,"TENANT_CONTEXT_MISMATCH");
+    if(context.environment!==null&&context.environment!==v2Environment())throw new AccessError(403,"ENVIRONMENT_FORBIDDEN");
+    // As before, this is a fresh READ COMMITTED authorization read without row locks.
+    // Statement time keeps expiry fresh even when the caller's transaction began earlier.
     const result = await client.query(`SELECT k.id,k.name,k.source_system,k.environment,k.kind,k.role,k.scopes,t.name AS tenant_name,t.is_test,
       ARRAY(SELECT warehouse_id::text FROM v2_machine_warehouses g WHERE g.tenant_id=k.tenant_id AND g.key_id=k.id ORDER BY warehouse_id) AS warehouse_ids
       FROM v2_machine_keys k JOIN tenants t ON t.id=k.tenant_id
-      WHERE k.id=$1 AND k.tenant_id=$2 AND k.revoked_at IS NULL AND k.expires_at>CURRENT_TIMESTAMP
+      WHERE k.id=$1 AND k.tenant_id=$2 AND k.revoked_at IS NULL AND k.expires_at>statement_timestamp()
       AND t.active AND ($3::text IS NULL OR k.token_hash=$3)`, [keyId, tenantId, hash]);
     const key = result.rows[0];
     if (!key) throw new AccessError(401, "INVALID_MACHINE_KEY");
@@ -61,7 +72,6 @@ async function inspectMachine(tenantId: string, keyId: string, hash: string | nu
     if (!key.warehouse_ids.length || (warehouseId !== null && (!uuid.test(warehouseId) || !key.warehouse_ids.includes(warehouseId)))) throw new AccessError(403, "WAREHOUSE_FORBIDDEN");
     return { user: { id: `machine:${key.id}`, name: key.name, email: "" }, tenant: { id: tenantId, name: key.tenant_name, isTest: key.is_test }, role: key.role,
       keyId: key.id, sourceSystem: key.source_system, environment: key.environment, kind: key.kind, scopes: key.scopes, warehouseIds: key.warehouse_ids };
-  });
 }
 
 /** Secret is verified on every request against a tenant-isolated SHA-256 digest. */
@@ -86,6 +96,12 @@ export async function v2WarehouseIds(identity: Identity): Promise<string[]> {
 export async function assertV2MachineKey(tenantId: string, keyId: string, permission: string, warehouseId: string | null = null): Promise<V2MachineIdentity> {
   if (!uuid.test(tenantId) || !uuid.test(keyId)) throw new AccessError(401, "INVALID_MACHINE_KEY");
   return inspectMachine(tenantId,keyId,null,permission,warehouseId);
+}
+/** Re-check a queued source key on the caller's already tenant-scoped transaction;
+ * this performs every live key/tenant/environment/scope/warehouse check without acquiring a pool client. */
+export async function assertV2MachineKeyInTransaction(client:PoolClient,tenantId:string,keyId:string,permission:string,warehouseId:string|null=null):Promise<V2MachineIdentity> {
+  if(!uuid.test(tenantId)||!uuid.test(keyId))throw new AccessError(401,"INVALID_MACHINE_KEY");
+  return inspectMachineInTransaction(client,tenantId,keyId,null,permission,warehouseId);
 }
 export async function requireV2Identity(headers: Headers, permission = "read", warehouseId: string | null = null): Promise<Identity> {
   const identity = headers.has("authorization") ? await authenticateV2Machine(headers,permission,warehouseId) : await requireIdentity(headers);

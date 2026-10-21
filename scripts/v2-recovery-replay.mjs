@@ -55,10 +55,10 @@ async function grantApplication(client,database){
   await client.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC,wms_app; GRANT USAGE ON SCHEMA public TO wms_app');
   const groups=[
     ['SELECT',['tenants','memberships']],
-    ['SELECT,INSERT,UPDATE,DELETE',['user','session','account','verification','items','warehouses','locations','inventory_documents','inventory_document_lines']],
-    ['SELECT,INSERT,UPDATE',['delivery_destinations','stock_balances','v2_workflow_state','v2_workflow_stock','v2_workflow_objects','v2_identity_links','v2_machine_keys','business_partners','master_barcodes','master_csv_previews','v2_integration_limits','v2_integration_entities','v2_integration_events']],
+    ['SELECT,INSERT,UPDATE,DELETE',['user','session','account','verification','rateLimit','items','warehouses','locations','inventory_documents','inventory_document_lines']],
+    ['SELECT,INSERT,UPDATE',['delivery_destinations','stock_balances','v2_workflow_state','v2_workflow_state_header','v2_workflow_stock','v2_workflow_objects','v2_identity_links','v2_machine_keys','business_partners','master_barcodes','master_csv_previews','v2_integration_limits','v2_integration_entities','v2_integration_events']],
     ['SELECT,INSERT',['stock_ledger','idempotency_requests','audit_logs','v2_workflow_requests','v2_workflow_performances','v2_workflow_receivings','v2_workflow_ledger','v2_identity_audit','master_csv_applies','master_csv_applied_rows','v2_cutovers','api_request_metrics','v2_opening_imports']],
-    ['SELECT,INSERT,UPDATE,DELETE',['v2_warehouse_grants','v2_machine_warehouses']],
+    ['SELECT,INSERT,UPDATE,DELETE',['v2_warehouse_grants','v2_machine_warehouses','v2_workflow_object_state']],
   ];
   for(const[permissions,tables]of groups)for(const table of tables)await client.query(`GRANT ${permissions} ON ${pg.escapeIdentifier(table)} TO wms_app`);
   await client.query('GRANT UPDATE(idle_lock_minutes) ON tenants TO wms_app');
@@ -164,12 +164,13 @@ try{
   await stopServer();
   const saved=await checkpoint(sourceAdmin,tenant,warehouse,lostRequest.request_id,pending.event_id);assert.equal(saved.event.status,'accepted');assert.equal(saved.state.orders.find(row=>row.id===orderId).reservations.reduce((sum,row)=>sum+row.quantity,0),40);
   assert.equal(saved.state.tasks.find(row=>row.object_id===orderId).assignee_id,workerInvite.userId);
-  const before=await fingerprint(sourceAdmin);assert.equal(before.counts.pgmigrations,18);assert.equal(Object.keys(before.counts).length,40);
+  const limiterBefore=(await sourceAdmin.query('SELECT id,key,count,"lastRequest"::text FROM "rateLimit" ORDER BY id')).rows;assert(limiterBefore.length>0,'Actual authentication must leave durable limiter state.');
+  const before=await fingerprint(sourceAdmin);assert.equal(before.counts.pgmigrations,19);assert.equal(Object.keys(before.counts).length,41);
   assert.deepEqual(await reconcileV2Restore(sourceAdmin),{ledger_mismatches:0,state_mismatches:0});
   progress('archive.dump_restore');
   const archiveFile=join(directory,'http-recovery.dump'),archive=await backup({...ctx,database:source},archiveFile);
   await restore({...ctx,database:source},archiveFile,target,{expectedSha256:archive.archive_sha256,onCreated:name=>owned.push(name)});
-  targetAdmin=await connectAdmin(target);assert.deepEqual(await fingerprint(targetAdmin),before);
+  targetAdmin=await connectAdmin(target);assert.deepEqual(await fingerprint(targetAdmin),before);assert.deepEqual((await targetAdmin.query('SELECT id,key,count,"lastRequest"::text FROM "rateLimit" ORDER BY id')).rows,limiterBefore);
   progress('restored.same_cookie_same_request');await startServer(target,appUrl);
   const restoredMe=await http('/api/me');assert.equal(restoredMe.user.id,me.user.id);assert.equal(restoredMe.tenant.id,tenant);
   assert.deepEqual(await legacyEvidence(targetAdmin,tenant,legacyWarehouse.id),originalLegacyEvidence);
@@ -200,7 +201,7 @@ try{
   assert.deepEqual(effects,{workflow_requests:1,receiving_effects:1,received_quantity:30,external_events:1,external_workflow_effects:1,external_objects:1});
   const reconciliation=await reconcileV2Restore(targetAdmin);assert.deepEqual(reconciliation,{ledger_mismatches:0,state_mismatches:0});assert.deepEqual(await fingerprint(sourceAdmin),before);
   const verifiedAt=new Date().toISOString();
-  const report={result:'PASS',scenario:'T12',verified_at:verifiedAt,verification_scope:'actual_http_synthetic_local_same_cluster',build_id:buildId,migrations:18,tables_checked:Object.keys(before.counts).length,
+  const report={result:'PASS',scenario:'T12',verified_at:verifiedAt,verification_scope:'actual_http_synthetic_local_same_cluster',build_id:buildId,migrations:19,tables_checked:Object.keys(before.counts).length,
     fault:'client_discarded_committed_response_body',unconfirmed_remaining:0,source_unchanged:true,restored_identical_before_resume:true,same_session_cookie_restored:true,resumed_from_durable_journal:true,
     workflow:{comparison:'persisted committed result and version; replay marker is expected to change',command:lostRequest.command,request_id:lostRequest.request_id,original_response_sha256:hash(saved.stored),recovered_response_sha256:hash(recoveredResponse),identical:true,replays:2,effects:effects.receiving_effects,received_quantity:30,bucket:'Q'},
     external:{event_id:pending.event_id,receipt_id:saved.event.id,sequence:saved.event.sequence,accepted_before_dump:true,replayed_same_receipt:true,applied_after_restore:true,processing_attempts:1,event_rows:effects.external_events,workflow_effects:effects.external_workflow_effects,objects:effects.external_objects},

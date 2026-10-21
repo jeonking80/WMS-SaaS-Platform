@@ -6,7 +6,7 @@ import pg from 'pg';
 import { hashPassword, verifyPassword } from 'better-auth/crypto';
 import { migrate } from './db-migrate.mjs';
 import { context, backup, restore, safeFailure } from './backup-lib.mjs';
-import { v2Tables, seedV2RestoreFixture, reconcileV2Restore } from './restore-v2-fixture.mjs';
+import { v2Tables, v2Views, seedV2RestoreFixture, reconcileV2Restore } from './restore-v2-fixture.mjs';
 
 const token = randomUUID().replaceAll('-', '').slice(0, 16);
 const source = `wms_restore_source_${token}`;
@@ -14,13 +14,16 @@ const target = `wms_restore_drill_${token}`;
 const file = `backups/drill-${token}.dump`;
 const owned = [];
 let ctx, sourceClient, targetClient, app;
-const tables = ['tenants','user','session','account','verification','memberships','items','warehouses','locations','inventory_documents','inventory_document_lines','stock_balances','stock_ledger','idempotency_requests','audit_logs','delivery_destinations','pgmigrations',...v2Tables];
-const nonRlsTables = new Set(['tenants','user','session','account','verification','memberships','pgmigrations']);
+const tables = ['tenants','user','session','account','verification','rateLimit','memberships','items','warehouses','locations','inventory_documents','inventory_document_lines','stock_balances','stock_ledger','idempotency_requests','audit_logs','delivery_destinations','pgmigrations',...v2Tables];
+const nonRlsTables = new Set(['tenants','user','session','account','verification','rateLimit','memberships','pgmigrations']);
 const rlsTables = tables.filter(table => !nonRlsTables.has(table)).sort();
 const migrationFiles = (await readdir(new URL('../db/migrations/', import.meta.url))).filter(file => /^\d+_.+\.sql$/.test(file));
 async function fingerprint(client) {
   const actualTables = (await client.query("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename")).rows.map(row => row.tablename);
   assert.deepEqual(actualTables, [...tables].sort(), 'Every public application table must be fingerprinted.');
+  const views = (await client.query("SELECT relname,reloptions FROM pg_class WHERE relnamespace='public'::regnamespace AND relkind='v' ORDER BY relname")).rows;
+  assert.deepEqual(views.map(row=>row.relname),v2Views);
+  for(const view of views)assert(view.reloptions?.includes('security_invoker=true'),'Compatibility view must retain invoker security.');
   const counts = {}, hash = createHash('sha256');
   for (const table of tables) {
     const result = await client.query(`SELECT row_to_json(t)::text AS value FROM ${pg.escapeIdentifier(table)} t ORDER BY row_to_json(t)::text`);
@@ -31,8 +34,20 @@ async function fingerprint(client) {
   for (const { sequencename } of (await client.query("SELECT sequencename FROM pg_sequences WHERE schemaname='public' ORDER BY sequencename")).rows) {
     sequences[sequencename] = (await client.query(`SELECT last_value::text,is_called FROM public.${pg.escapeIdentifier(sequencename)}`)).rows[0];
   }
-  hash.update(JSON.stringify(sequences));
-  return { counts, sequences, sha256: hash.digest('hex') };
+  const logicalState=(await client.query('SELECT tenant_id,warehouse_id,version,state,updated_at FROM v2_workflow_state ORDER BY tenant_id,warehouse_id')).rows;
+  hash.update(JSON.stringify([sequences,logicalState,views]));
+  return { counts, sequences, logical_state_rows:logicalState.length, sha256: hash.digest('hex') };
+}
+async function verifyNormalizedState(client, {tenant,warehouse,state}) {
+  const scope=[tenant,warehouse];
+  const logical=(await client.query('SELECT version,state FROM v2_workflow_state WHERE tenant_id=$1 AND warehouse_id=$2',scope)).rows;
+  assert.deepEqual(logical,[{version:1,state}],'Reconstructed state must preserve every object, primitive, empty array and metadata field.');
+  const metadata=Object.fromEntries(Object.entries(state).map(([key,value])=>[key,Array.isArray(value)?[]:value]));
+  assert.deepEqual((await client.query('SELECT version,state,storage_format FROM v2_workflow_state_header WHERE tenant_id=$1 AND warehouse_id=$2',scope)).rows,[{version:1,state:metadata,storage_format:2}]);
+  const bodies=(await client.query('SELECT kind,position,body,changed_version FROM v2_workflow_object_state WHERE tenant_id=$1 AND warehouse_id=$2 ORDER BY kind COLLATE "C",position',scope)).rows;
+  const expected=Object.entries(state).filter(([,value])=>Array.isArray(value)).sort(([a],[b])=>a<b?-1:a>b?1:0).flatMap(([kind,values])=>values.map((body,position)=>({kind,position,body,changed_version:1})));
+  assert.deepEqual(bodies,expected,'Normalized body rows must preserve array ordering and changed versions.');
+  return {storage_format:2,header_rows:logical.length,body_rows:bodies.length,logical_state_identical:true};
 }
 async function connect(url, database) {
   const binding = new URL(url); binding.pathname = `/${database}`;
@@ -50,13 +65,13 @@ try {
   await migrate(sourceUrl.href, { log: () => {} });
   sourceClient = await connect(ctx.url, source);
   await sourceClient.query('REVOKE CREATE ON SCHEMA public FROM PUBLIC; GRANT USAGE ON SCHEMA public TO wms_app');
-  await sourceClient.query('GRANT SELECT,INSERT,UPDATE,DELETE ON public."user",session,account,verification TO wms_app');
+  await sourceClient.query('GRANT SELECT,INSERT,UPDATE,DELETE ON public."user",session,account,verification,"rateLimit" TO wms_app');
   await sourceClient.query('GRANT SELECT,INSERT,UPDATE,DELETE ON items,warehouses,locations,inventory_documents,inventory_document_lines TO wms_app');
   await sourceClient.query('GRANT SELECT,INSERT,UPDATE ON stock_balances TO wms_app; GRANT SELECT,INSERT ON stock_ledger,audit_logs,idempotency_requests TO wms_app; GRANT SELECT ON tenants,memberships TO wms_app');
   await sourceClient.query('GRANT SELECT,INSERT,UPDATE ON delivery_destinations TO wms_app');
-  const mutable = ['v2_workflow_state','v2_workflow_stock','v2_workflow_objects','v2_identity_links','v2_machine_keys','business_partners','master_barcodes','master_csv_previews','v2_integration_limits','v2_integration_entities','v2_integration_events'];
+  const mutable = ['v2_workflow_state','v2_workflow_state_header','v2_workflow_stock','v2_workflow_objects','v2_identity_links','v2_machine_keys','business_partners','master_barcodes','master_csv_previews','v2_integration_limits','v2_integration_entities','v2_integration_events'];
   const appendOnly = ['v2_workflow_requests','v2_workflow_performances','v2_workflow_receivings','v2_workflow_ledger','v2_identity_audit','master_csv_applies','master_csv_applied_rows','v2_cutovers','api_request_metrics','v2_opening_imports'];
-  for (const [names, permissions] of [[mutable,'SELECT,INSERT,UPDATE'],[appendOnly,'SELECT,INSERT'],[['v2_warehouse_grants','v2_machine_warehouses'],'SELECT,INSERT,UPDATE,DELETE']]) {
+  for (const [names, permissions] of [[mutable,'SELECT,INSERT,UPDATE'],[appendOnly,'SELECT,INSERT'],[['v2_warehouse_grants','v2_machine_warehouses','v2_workflow_object_state'],'SELECT,INSERT,UPDATE,DELETE']]) {
     for (const name of names) await sourceClient.query(`GRANT ${permissions} ON ${pg.escapeIdentifier(name)} TO wms_app`);
   }
   await sourceClient.query('GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA public TO wms_app');
@@ -87,12 +102,16 @@ try {
   await sourceClient.query("SELECT nextval(pg_get_serial_sequence('inventory_documents','document_no'))");
   const v2 = await seedV2RestoreFixture(sourceClient,{tenant,foreign,warehouse,location,item,destination,user});
   assert.deepEqual(await reconcileV2Restore(sourceClient),{ledger_mismatches:0,state_mismatches:0});
+  const limiterFixture={id:randomUUID(),key:createHash('sha256').update('synthetic-restore-limiter').digest('hex'),count:2,lastRequest:Date.now()};
+  await sourceClient.query('INSERT INTO "rateLimit"(id,key,count,"lastRequest") VALUES($1,$2,$3,$4)',Object.values(limiterFixture));
+  const normalizedFixture={tenant,warehouse,state:v2.state};
+  const normalizedState=await verifyNormalizedState(sourceClient,normalizedFixture);
   const before = await fingerprint(sourceClient);
-  assert.equal(migrationFiles.length,18,'Restore drill requires all v2 migrations.');
+  assert.equal(migrationFiles.length,20,'Restore drill requires all v2 migrations.');
   assert.equal(before.counts.pgmigrations,migrationFiles.length);
   for(const table of v2Tables)assert(before.counts[table]>0,'Every v2 table must have synthetic data.');
   assert.equal(before.counts.delivery_destinations,1);
-  for (const table of ['user','account','session','verification','memberships']) assert.equal(before.counts[table],1);
+  for (const table of ['user','account','session','verification','rateLimit','memberships']) assert.equal(before.counts[table],1);
   for (const table of ['audit_logs','idempotency_requests']) assert.equal(before.counts[table],2);
   const sourceCtx = { ...ctx, database: source };
   const archive = await backup(sourceCtx,file);
@@ -106,6 +125,8 @@ try {
   await assert.rejects(backup(sourceCtx,file), { code: 'EEXIST' });
   targetClient = await connect(ctx.url,target);
   assert.deepEqual(await fingerprint(targetClient),before);
+  assert.deepEqual(await verifyNormalizedState(targetClient,normalizedFixture),normalizedState);
+  assert.deepEqual((await targetClient.query('SELECT id,key,count,"lastRequest"::float8 AS "lastRequest" FROM "rateLimit"')).rows,[limiterFixture]);
   const security = await targetClient.query("SELECT relname FROM pg_class WHERE relnamespace='public'::regnamespace AND relrowsecurity AND relforcerowsecurity ORDER BY relname");
   assert.deepEqual(security.rows.map(row => row.relname),rlsTables);
   const v2Reconciliation=await reconcileV2Restore(targetClient);
@@ -122,7 +143,7 @@ try {
   assert.deepEqual(role,{name:'wms_app',rolsuper:false,rolbypassrls:false,owns_tables:false});
   assert.equal((await app.query('SELECT * FROM delivery_destinations')).rowCount,0);
   assert.equal((await app.query('SELECT * FROM stock_balances')).rowCount,0);
-  for(const table of rlsTables)assert.equal((await app.query(`SELECT * FROM ${pg.escapeIdentifier(table)}`)).rowCount,0,'Missing tenant context must expose no protected rows.');
+  for(const table of [...rlsTables,...v2Views])assert.equal((await app.query(`SELECT * FROM ${pg.escapeIdentifier(table)}`)).rowCount,0,'Missing tenant context must expose no protected rows.');
   await app.query("SELECT set_config('app.tenant_id',$1,false)",[tenant]);
   assert.equal((await app.query('SELECT * FROM delivery_destinations')).rowCount,1);
   const restoredOutbound = (await app.query("SELECT d.document_no::text,d.recipient_name,d.delivery_address,d.delivery_destination_id,a.address_line2 FROM inventory_documents d JOIN delivery_destinations a ON a.id=d.delivery_destination_id WHERE d.kind='OUTBOUND'")).rows[0];
@@ -130,6 +151,19 @@ try {
   assert.equal((await app.query('SELECT quantity FROM stock_balances')).rows[0].quantity,'70');
   for(const table of v2Tables)assert((await app.query(`SELECT * FROM ${pg.escapeIdentifier(table)}`)).rowCount>0,'Restored application role must read each synthetic v2 table under its tenant.');
   await app.query("SELECT set_config('app.user_id',$1,false),set_config('app.environment','test',false)",[user]);
+  assert.deepEqual(await verifyNormalizedState(app,normalizedFixture),normalizedState);
+  for(const relation of ['v2_workflow_state','v2_workflow_state_header','v2_workflow_object_state']) {
+    for(const privilege of ['SELECT','INSERT','UPDATE','DELETE'])assert.equal((await app.query('SELECT has_table_privilege(current_user,$1,$2) allowed',[relation,privilege])).rows[0].allowed,true,'Restored normalized-storage grants must support compatibility writes.');
+  }
+  // A rolled-back compatibility write proves triggers and body grants survive the archive.
+  await app.query('BEGIN');
+  try {
+    const changed={...v2.state,version:2,tasks:[...v2.state.tasks,{id:randomUUID(),reason:'Restore trigger probe'}]};
+    await app.query('UPDATE v2_workflow_state SET version=2,state=$3::jsonb WHERE tenant_id=$1 AND warehouse_id=$2',[tenant,warehouse,JSON.stringify(changed)]);
+    assert.deepEqual((await app.query('SELECT version,state FROM v2_workflow_state WHERE tenant_id=$1 AND warehouse_id=$2',[tenant,warehouse])).rows,[{version:2,state:changed}]);
+    assert.equal((await app.query('SELECT count(*)::int count FROM v2_workflow_object_state WHERE changed_version=2')).rows[0].count,normalizedState.body_rows+1);
+  } finally { await app.query('ROLLBACK'); }
+  assert.deepEqual(await fingerprint(targetClient),before);
   assert.deepEqual((await app.query('SELECT s::text,r::text,p::text,q::text,b::text FROM v2_workflow_stock')).rows,[{s:'50',r:'10',p:'5',q:'12',b:'3'}]);
   assert.deepEqual((await app.query('SELECT response FROM v2_workflow_requests WHERE request_id=$1',[v2.request])).rows[0].response,v2.response);
   assert.deepEqual((await app.query('SELECT status,revision,attempts FROM v2_integration_events ORDER BY sequence')).rows,[{status:'applied',revision:1,attempts:1},{status:'retry_wait',revision:2,attempts:1}]);
@@ -158,7 +192,9 @@ try {
   assert.equal((await app.query('UPDATE stock_balances SET quantity=0 RETURNING *')).rowCount,0);
   assert.equal((await app.query('SELECT * FROM audit_logs')).rowCount,0);
   assert.equal((await app.query('SELECT * FROM idempotency_requests')).rowCount,0);
-  for(const table of rlsTables)assert.equal((await app.query(`SELECT * FROM ${pg.escapeIdentifier(table)} WHERE tenant_id=$1`,[tenant])).rowCount,0,'Foreign context must expose none of the source tenant rows.');
+  for(const table of [...rlsTables,...v2Views])assert.equal((await app.query(`SELECT * FROM ${pg.escapeIdentifier(table)} WHERE tenant_id=$1`,[tenant])).rowCount,0,'Foreign context must expose none of the source tenant rows.');
+  assert.equal((await app.query('UPDATE v2_workflow_object_state SET body=body WHERE tenant_id=$1 RETURNING *',[tenant])).rowCount,0);
+  await assert.rejects(app.query("INSERT INTO v2_workflow_object_state(tenant_id,warehouse_id,kind,object_key,position,body,changed_version) VALUES($1,$2,'tasks','foreign-probe',999,'{}',1)",[tenant,warehouse]),{code:'42501'});
   await assert.rejects(app.query("INSERT INTO items(tenant_id,code,name) VALUES($1,'CROSS-TENANT','Forbidden')",[tenant]), {code:'42501'});
   assert.deepEqual(await fingerprint(sourceClient),before);
   const maxNumber = BigInt((await targetClient.query('SELECT MAX(document_no)::text AS value FROM inventory_documents')).rows[0].value);
@@ -173,7 +209,7 @@ try {
   const verifiedAt=new Date().toISOString();
   const evidence={tenant_id:tenant,completed_at:archive.completed_at,archive_sha256:archive.archive_sha256,restore_verified_at:verifiedAt};
   const report={result:'PASS',verified_at:verifiedAt,verification_scope:'synthetic_local_same_cluster',provider_recovery:'NOT_EXECUTED',
-    migrations:migrationFiles.length,tables_checked:tables.length,v2_tables_checked:v2Tables.length,
+    migrations:migrationFiles.length,tables_checked:tables.length,v2_tables_checked:v2Tables.length,compatibility_views_checked:v2Views.length,normalized_state:normalizedState,
     sequence_states:before.sequences,next_restored_document_no:nextDocument.document_no,next_restored_event_sequence:nextEvent,
     archive_bytes:archive.bytes,archive_sha256:archive.archive_sha256,completed_at:archive.completed_at,restore_verified_at:verifiedAt,
     fixture:{synthetic_only:true,tenants:2,users:1,documents:2,idle_lock_minutes:7,legacy_balance:70,v2_stock:{S:50,R:10,P:5,Q:12,B:3,H:70},workflow_ledger_entries:6,workflow_requests:1,request_metrics:2,pending_approvals:1,integration_events:{applied:1,retry_wait:1},rotated_keys:2,opening_imports:{originals:2,approved:1,rejected:1,original_csv_hash_verified:true}},
@@ -181,13 +217,13 @@ try {
     forced_rls_tables:security.rowCount,reconciliation_mismatches:0,v2_reconciliation:v2Reconciliation,
     application_role:'authenticated wms_app; nonowner/nonsuperuser/no BYPASSRLS',
     tenants:{[tenant]:evidence,[foreign]:{...evidence,tenant_id:foreign}},
-    checks:['all public tables fingerprinted; every v2 table has synthetic rows','all sequence states preserved including document and event gaps',
+    checks:['all physical public tables fingerprinted; every v2 table has synthetic rows; invoker compatibility view and reconstructed logical state fingerprinted','normalized header metadata, ordered object bodies and compatibility write triggers preserved','all sequence states preserved including document and event gaps',
       'legacy and v2 stock/ledger and aggregate state reconcile independently','workflow request response, pending approval and retry event preserved',
       'restored credentials, membership, idle policy, explicit warehouse grant, rotated key and consumed link preserved',
       'all FORCE RLS tables hide rows without context and hide source-tenant rows in foreign context','tenant composite FK rejects foreign warehouse grant',
-      'append-only permissions and immutable triggers survive restore','source unchanged; existing/source targets and archive overwrite refused','archive checksum mismatch refused before target creation'],
+      'append-only permissions and immutable triggers survive restore','source unchanged; existing/source targets and archive overwrite refused','archive checksum mismatch refused before target creation','shared authentication rate-limit state preserved'],
     limitations:['Same local PostgreSQL cluster; existing cluster roles and passwords were reused.','Synthetic SQL fixtures prove preservation, not new workflow execution.','No remote-provider restore, PITR, offsite archive recovery, HTTP login, RPO or RTO verification was executed.']};
-  await writeFile(new URL('../docs/restore-verification-latest.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
+  await writeFile(new URL('../docs/restore-verification-schema20.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
   console.log(JSON.stringify(report,null,2));
 } catch(error) { const line=error.stack?.match(/verify-restore\.mjs:(\d+):\d+/)?.[1]; if(line)console.error(`Restore verification check failed at script line ${line}.`); if (/^v2-fixture-statement-\d+$/.test(error.restoreStage ?? '')) console.error(`Synthetic restore fixture failed at ${error.restoreStage}.`); safeFailure('Restore verification',error); }
 finally {

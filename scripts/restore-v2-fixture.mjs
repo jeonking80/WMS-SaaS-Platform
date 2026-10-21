@@ -1,7 +1,9 @@
 /** Synthetic restore data only: SQL fixtures exercise preservation, not workflow execution. */
 import { createHash, randomUUID } from 'node:crypto';
 const hash = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
-export const v2Tables = ['v2_workflow_state','v2_workflow_stock','v2_workflow_objects','v2_workflow_requests','v2_workflow_performances','v2_workflow_receivings','v2_workflow_ledger','v2_warehouse_grants','v2_identity_links','v2_machine_keys','v2_machine_warehouses','v2_identity_audit','business_partners','master_barcodes','master_csv_previews','master_csv_applies','master_csv_applied_rows','v2_integration_limits','v2_integration_entities','v2_integration_events','v2_cutovers','api_request_metrics','v2_opening_imports'];
+// Physical tables only; the compatibility view is validated separately.
+export const v2Views = ['v2_workflow_state'];
+export const v2Tables = ['v2_workflow_state_header','v2_workflow_object_state','v2_workflow_stock','v2_workflow_objects','v2_workflow_requests','v2_workflow_performances','v2_workflow_receivings','v2_workflow_ledger','v2_warehouse_grants','v2_identity_links','v2_machine_keys','v2_machine_warehouses','v2_identity_audit','business_partners','master_barcodes','master_csv_previews','master_csv_applies','master_csv_applied_rows','v2_integration_limits','v2_integration_entities','v2_integration_events','v2_cutovers','api_request_metrics','v2_opening_imports'];
 export async function seedV2RestoreFixture(client, {tenant, foreign, warehouse, location, item, destination, user}) {
   let statementNumber=0;
   const query=async(sql,values)=>{statementNumber++;try{return await client.query(sql,values);}catch(error){error.restoreStage=`v2-fixture-statement-${statementNumber}`;throw error;}};
@@ -30,7 +32,7 @@ export async function seedV2RestoreFixture(client, {tenant, foreign, warehouse, 
   await query("INSERT INTO master_csv_applied_rows VALUES($1,$2,1,$3::jsonb)",[tenant,preview,JSON.stringify({id:item})]);
   const request=randomUUID(),receipt=randomUUID(),order=randomUUID(),line=randomUUID(),receiving=randomUUID(),now=new Date().toISOString();
   const stock={item_id:item,location_id:location,S:50,R:10,P:5,Q:12,B:3};
-  const state={version:1,stock:[stock],ledger:[],ledger_base:[stock],receipts:[{id:receipt,version:1,lines:[{id:line,item_id:item,quantity:20,received:15,cancelled:0,shipped:0}],lots:[],closed:false,created_at:now}],orders:[{id:order,version:1,lines:[{id:randomUUID(),item_id:item,quantity:15,received:0,cancelled:0,shipped:0}],reservations:[{id:randomUUID(),line_id:line,item_id:item,location_id:location,quantity:10,picked:0,reserved_at:now}],picks:[],delivery:{destination_id:destination},created_at:now}],packages:[],shipments:[],returns:[],approvals:[{id:randomUUID(),type:'receipt.close',requester_id:user,target_id:receipt,target_version:1,quantity:5,data:{},reason:'Synthetic pending approval',status:'pending'}],counts:[],tasks:[{id:randomUUID(),object_type:'receipt',object_id:receipt,assignee_id:user,reason:'Synthetic handover',assigned_at:now}],shifts:[],receiving_ids:[receiving],holds:[],location_blocks:[]};
+  const state={version:1,stock:[stock],ledger:[],ledger_base:[stock],receipts:[{id:receipt,version:1,lines:[{id:line,item_id:item,quantity:20,received:15,cancelled:0,shipped:0}],lots:[],closed:false,created_at:now}],orders:[{id:order,version:1,lines:[{id:randomUUID(),item_id:item,quantity:15,received:0,cancelled:0,shipped:0}],reservations:[{id:randomUUID(),line_id:line,item_id:item,location_id:location,quantity:10,picked:0,reserved_at:now}],picks:[],delivery:{destination_id:destination},created_at:now}],packages:[],shipments:[],returns:[],approvals:[{id:randomUUID(),type:'receipt.close',requester_id:user,target_id:receipt,target_version:1,quantity:5,data:{},reason:'Synthetic pending approval',status:'pending'}],counts:[],tasks:[{id:randomUUID(),object_type:'receipt',object_id:receipt,assignee_id:user,reason:'Synthetic handover',assigned_at:now},{id:randomUUID(),object_type:'order',object_id:order,assignee_id:user,reason:'Synthetic ordered second task',assigned_at:now}],shifts:[],receiving_ids:[receiving],holds:[],location_blocks:[]};
   await query('INSERT INTO v2_workflow_state(tenant_id,warehouse_id,version,state) VALUES($1,$2,1,$3::jsonb)',[tenant,warehouse,JSON.stringify(state)]);
   await query('INSERT INTO v2_workflow_stock(tenant_id,warehouse_id,item_id,location_id,s,r,p,q,b) VALUES($1,$2,$3,$4,50,10,5,12,3)',[tenant,warehouse,item,location]);
   for(const[id,kind]of [[receipt,'receipt'],[order,'order']])await query('INSERT INTO v2_workflow_objects(tenant_id,warehouse_id,id,kind,external_id) VALUES($1,$2,$3,$4,$5)',[tenant,warehouse,id,kind,`restore-${kind}`]);
@@ -60,7 +62,7 @@ export async function seedV2RestoreFixture(client, {tenant, foreign, warehouse, 
       openingImports.push({id,request_id:requestId,phase,parent_id:parentId,payload,actor_id:user});
     }
   }
-  return {request,response,receipt,order,key,previousKey,events,foreignWarehouse,foreignItem,stock,openingImports};
+  return {request,response,receipt,order,key,previousKey,events,foreignWarehouse,foreignItem,stock,state,openingImports};
 }
 export async function reconcileV2Restore(client) {
   const ledger=await client.query(`WITH l AS (SELECT tenant_id,warehouse_id,item_id,location_id,

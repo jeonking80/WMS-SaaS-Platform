@@ -41,7 +41,7 @@ beforeAll(async()=>{
   await migrate(migratorUrl,{schema,migrationsSchema:schema,createSchema:false,createMigrationsSchema:false,log:()=>{}});
   await admin.query(`GRANT USAGE ON SCHEMA "${schema}" TO "${appRole}"`);
   await admin.query(`GRANT SELECT ON "${schema}".tenants,"${schema}".memberships,"${schema}".warehouses,"${schema}".v2_warehouse_grants TO "${appRole}"`);
-  await admin.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON "${schema}"."user","${schema}"."session","${schema}".account,"${schema}".verification TO "${appRole}"`);
+  await admin.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON "${schema}"."user","${schema}"."session","${schema}".account,"${schema}".verification,"${schema}"."rateLimit" TO "${appRole}"`);
   await admin.query(`GRANT SELECT,UPDATE ON "${schema}".v2_identity_links TO "${appRole}"`);
   await admin.query(`GRANT SELECT,INSERT ON "${schema}".v2_identity_audit TO "${appRole}"`);
   await admin.query(`GRANT UPDATE(status,updated_at) ON "${schema}".memberships TO "${appRole}"`);

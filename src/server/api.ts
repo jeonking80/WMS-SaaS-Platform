@@ -1,5 +1,6 @@
 import { recordRequestResult } from "./request-log";
 import { AccessError } from "./auth/access";
+import {timeAsync,timeSync} from './timing-diagnostics';
 
 export class DomainError extends Error {
   constructor(public readonly status: number, public readonly code: string) {
@@ -8,7 +9,7 @@ export class DomainError extends Error {
 }
 
 export function json(body: unknown, status = 200): Response {
-  return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
+  return timeSync('http.json_response',()=>Response.json(body, { status, headers: { "Cache-Control": "no-store" } }));
 }
 
 export function requireMutationOrigin(request: Request): void {
@@ -24,7 +25,7 @@ export async function readBody(request: Request): Promise<Record<string, unknown
     throw new DomainError(400, "INVALID_INPUT");
   }
   let value: unknown;
-  try { value = await request.json(); }
+  try { value = await timeAsync('http.body_parse',()=>request.json()); }
   catch { throw new DomainError(400, "INVALID_INPUT"); }
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new DomainError(400, "INVALID_INPUT");

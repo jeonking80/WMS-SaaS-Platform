@@ -1,0 +1,51 @@
+{
+  "recorded_at": "2026-10-20T15:20:25.220825+00:00",
+  "build_id": "_ceZRl8gR2Kae5HHrI6GQ",
+  "scope": "local regression; not full proposal completion or public deployment",
+  "github_actions_used": false,
+  "verify_command_exit": 0,
+  "checks": {
+    "typescript": "passed",
+    "unit": {
+      "passed": 196
+    },
+    "integration": {
+      "passed": 168
+    },
+    "build": "passed",
+    "e2e": {
+      "suite_passed": 41,
+      "suite_failed": 0,
+      "single_all_green_suite": true
+    },
+    "simulator_unit": {
+      "passed_in_verify": 52,
+      "latest_passed": 55,
+      "latest_failed": 0,
+      "followup_scope": "After full-chain simulator phase, three additional shift wrapper verdict guards were added and the entire simulator suite was rerun. WMS source/build was unchanged."
+    }
+  },
+  "evidence": [
+    {
+      "path": "/tmp/wms-v2-verify-congestion-fixes.log",
+      "sha256": "0745daecf155f363cf5491417862b9781cf32f1fca7618413bd4f7f408d62809"
+    },
+    {
+      "path": "/tmp/wms-v2-verify-congestion-fixes-final.log",
+      "sha256": "d6d8a5d3039c0eda19a0a8df62a035ea77e7ee9bffcc44c44e94ddad19b9fe78"
+    },
+    {
+      "path": "/tmp/wms-v2-simulator-final-verdict.log",
+      "sha256": "d48f948f619ecbd8fb0a157eda4661e3893c0fc98b36b5f3f3218123ecef15a6"
+    }
+  ],
+  "prior_failed_attempt": "Initial verify stopped at simulator 51/52: HTTP status overwrote lifecycle status. Fixed code, retained original test expectations, then complete verify passed.",
+  "pending": [
+    "Actual proxy fault smoke on this build",
+    "25-minute congestion retry (prior run failed/interrupted)",
+    "8-hour shift",
+    "G4 real users/devices/provider",
+    "G5 five business days"
+  ],
+  "whole_proposal_complete": false
+}

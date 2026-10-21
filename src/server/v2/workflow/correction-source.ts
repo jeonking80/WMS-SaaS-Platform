@@ -1,8 +1,9 @@
+import {readWorkflowState} from './object-storage';
 import type {Identity} from '../../auth/access';
 import {DomainError} from '../../api';
 import {withTenant} from '../../db/tenant';
 import {requireV2Access} from '../access';
-import {emptyState,type WorkflowState} from './types';
+import {emptyState} from './types';
 import {uuid} from './engine';
 import {validateCorrection} from './corrections';
 import {legacyCorrectionSource} from './legacy-corrections';
@@ -33,7 +34,7 @@ export async function inspectWorkflowCorrectionSource(identity:Identity,warehous
  uuid(warehouseId);await requireV2Access(identity,warehouseId,'read');
  return withTenant(identity.tenant.id,async client=>{
  if(!originalId)return legacySources(client,identity.tenant.id,warehouseId,query);
- const state=(await client.query<{state:WorkflowState}>('SELECT state FROM v2_workflow_state WHERE tenant_id=$1 AND warehouse_id=$2 FOR SHARE',[identity.tenant.id,warehouseId])).rows[0]?.state??emptyState();
+ const state=(await readWorkflowState(client,identity.tenant.id,warehouseId,'SHARE'))??emptyState();
  uuid(originalId);let source:{id:string;kind:string;document_no?:unknown;command?:string};let lines:{item_id:string;location_id:string;bucket:string;quantity:number}[];
  const row=(await client.query('SELECT id,request_id,item_id,location_id,bucket,delta::float8 AS quantity,command FROM v2_workflow_ledger WHERE tenant_id=$1 AND warehouse_id=$2 AND id=$3',[identity.tenant.id,warehouseId,originalId])).rows[0];
  let globalLimits:Map<string,number>|undefined;

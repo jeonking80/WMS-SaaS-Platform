@@ -22,4 +22,11 @@ describe("database readiness response", () => {
     expect(response.headers.get("cache-control")).toBe("no-store");
     expect(await response.json()).toEqual({ status: "unavailable", database: "unavailable" });
   });
+
+  it("rejects a reachable database when the required storage schema is unavailable", async () => {
+    query.mockResolvedValueOnce({ rows: [] }).mockRejectedValueOnce(new Error("missing storage schema"));
+    const response = await GET();
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ status: "unavailable", database: "unavailable" });
+  });
 });

@@ -1,0 +1,13 @@
+{
+  "measured_at": "2026-10-20T15:24:30.816Z",
+  "cpu_max_raw": "400000 100000",
+  "cpu_quota_cores": 4,
+  "memory_max_raw": "34359738368",
+  "memory_limit_bytes": 34359738368,
+  "node_available_parallelism": 4,
+  "topology": "Simulator client, WMS API server and PostgreSQL share this local execution host.",
+  "scope": "Evidence applies from this timestamp to the next run. Historical values for the previous run were not measured.",
+  "capacity_claim": "No dedicated production capacity or field-device certification is claimed.",
+  "getconf_online_processors": 5,
+  "getconf_measured_at": "2026-10-20T15:24:38.954Z"
+}

@@ -3,11 +3,16 @@ import type { PoolClient } from 'pg';
 import type { Identity } from '../../auth/access';
 import { withTenant } from '../../db/tenant';
 import { requireV2Access } from '../access';
-import { applyCommand, fail, integer, object, snapshot, text, uuid } from './engine';
+import { applyCommand, fail, integer, object, reconcile, snapshot, text, uuid } from './engine';
 import {correctionOriginActors,hydrateApprovalSeparation} from './approval-separation';
 import {validateCorrection} from './corrections';
 import { resolveBarcode } from '../masters/service';
 import { emptyState, type Bucket, type WorkflowInput, type WorkflowState } from './types';
+import {readWorkflowState,writeWorkflowState} from './object-storage';
+import {firstPositions} from './position-index';
+import {hydrateLegacyOverageQuality} from './overage-quality';
+import {nameHistoricalActors,nameSnapshotActors} from './actor-names';
+import {beginTiming,observeTimingCount,timeAsync,timeSync,timingDiagnosticsActive} from '../../timing-diagnostics';
 export * from './types';
 export { applyCommand, emptyState, snapshot };
 
@@ -16,35 +21,48 @@ export function workflowPermission(command:string) {return ['approval.decide','o
 function canonical(value:unknown):string {if(value===null||typeof value!=='object')return JSON.stringify(value);if(Array.isArray(value))return '['+value.map(canonical).join(',')+']';return '{'+Object.keys(value).sort().map(k=>JSON.stringify(k)+':'+canonical((value as Record<string,unknown>)[k])).join(',')+'}';}
 function hash(value:unknown) {return createHash('sha256').update(canonical(value)).digest('hex');}
 async function lockState(client:PoolClient,tenantId:string,warehouseId:string):Promise<WorkflowState> {
- const warehouse=await client.query('SELECT id FROM warehouses WHERE tenant_id=$1 AND id=$2 AND active=true FOR SHARE',[tenantId,warehouseId]);if(!warehouse.rowCount)fail('WAREHOUSE_UNAVAILABLE',404);
- await client.query('INSERT INTO v2_workflow_state(tenant_id,warehouse_id,state) VALUES($1,$2,$3::jsonb) ON CONFLICT DO NOTHING',[tenantId,warehouseId,JSON.stringify(emptyState())]);
- const r=await client.query<{state:WorkflowState}>('SELECT state FROM v2_workflow_state WHERE tenant_id=$1 AND warehouse_id=$2 FOR UPDATE',[tenantId,warehouseId]);const state=r.rows[0].state;if(!(await aggregateMatchesStock(client,tenantId,warehouseId,state)))fail('RECONCILIATION_FAILED');state.ledger=[];state.ledger_base=structuredClone(state.stock);return state;
+ const warehouse=await timeAsync('workflow.warehouse_lock',()=>client.query('SELECT id FROM warehouses WHERE tenant_id=$1 AND id=$2 AND active=true FOR SHARE',[tenantId,warehouseId]));if(!warehouse.rowCount)fail('WAREHOUSE_UNAVAILABLE',404);
+ await timeAsync('workflow.state_initialize',()=>client.query('INSERT INTO v2_workflow_state_header(tenant_id,warehouse_id,state) VALUES($1,$2,$3::jsonb) ON CONFLICT DO NOTHING',[tenantId,warehouseId,JSON.stringify(emptyState())]));
+ // Await includes the unchanged pg JSON parser; no text cast or parser override.
+ const state=(await readWorkflowState(client,tenantId,warehouseId,'UPDATE'))!;observeStateCounts(state);if(!(await aggregateMatchesStock(client,tenantId,warehouseId,state)))fail('RECONCILIATION_FAILED');state.ledger=[];state.ledger_base=timeSync('workflow.state_clone',()=>structuredClone(state.stock));return state;
 }
+function observeStateCounts(state:WorkflowState){if(!timingDiagnosticsActive())return;observeTimingCount('state.stock_rows',state.stock.length);observeTimingCount('state.orders',state.orders.length);observeTimingCount('state.receipts',state.receipts.length);observeTimingCount('state.returns',state.returns.length);observeTimingCount('state.tasks',state.tasks.length);observeTimingCount('state.packages',state.packages.length);observeTimingCount('state.shipments',state.shipments.length);}
 async function references(client:PoolClient,tenant:string,warehouse:string) {
  const items=await client.query('SELECT id,active FROM items WHERE tenant_id=$1 ORDER BY id FOR SHARE',[tenant]);
  // to_jsonb keeps this service compatible while the additive masters migration is rolling out.
  const locations=await client.query("SELECT id,active,COALESCE(to_jsonb(l)->>'kind','STORAGE') AS kind,code,COALESCE((to_jsonb(l)->>'priority')::integer,100) AS priority,COALESCE((to_jsonb(l)->>'reservation_blocked')::boolean,false) AS reservation_blocked FROM locations l WHERE tenant_id=$1 AND warehouse_id=$2 ORDER BY id FOR SHARE",[tenant,warehouse]);
  return{items:items.rows,locations:locations.rows};
 }
-async function persist(client:PoolClient,identity:Identity,input:WorkflowInput,before:WorkflowState,after:WorkflowState,result:Record<string,unknown>,requestHash:string) {
- const tenant=identity.tenant.id;for(const row of after.stock){const previous=before.stock.find(x=>x.item_id===row.item_id&&x.location_id===row.location_id);if(previous&&(['S','R','P','Q','B'] as const).every(b=>previous[b]===row[b]))continue;await client.query(`INSERT INTO v2_workflow_stock(tenant_id,warehouse_id,item_id,location_id,s,r,p,q,b) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
- ON CONFLICT(tenant_id,warehouse_id,item_id,location_id) DO UPDATE SET s=EXCLUDED.s,r=EXCLUDED.r,p=EXCLUDED.p,q=EXCLUDED.q,b=EXCLUDED.b`,[tenant,input.warehouse_id,row.item_id,row.location_id,row.S,row.R,row.P,row.Q,row.B]);}
+function persist(client:PoolClient,identity:Identity,input:WorkflowInput,before:WorkflowState,after:WorkflowState,result:Record<string,unknown>,requestHash:string):Promise<WorkflowResponse>;
+function persist(client:PoolClient,identity:Identity,input:WorkflowInput,before:WorkflowState,after:WorkflowState,result:Record<string,unknown>,requestHash:string,includeSnapshot:boolean):Promise<WorkflowResponse|WorkflowCompactResponse>;
+async function persist(client:PoolClient,identity:Identity,input:WorkflowInput,before:WorkflowState,after:WorkflowState,result:Record<string,unknown>,requestHash:string,includeSnapshot=true):Promise<WorkflowResponse|WorkflowCompactResponse> {
+ const tenant=identity.tenant.id,previousStock=firstPositions(before.stock);for(const row of after.stock){const previous=previousStock.get(row.item_id)?.get(row.location_id);if(previous&&(['S','R','P','Q','B'] as const).every(b=>previous[b]===row[b]))continue;await timeAsync('workflow.persist_sql',()=>client.query(`INSERT INTO v2_workflow_stock(tenant_id,warehouse_id,item_id,location_id,s,r,p,q,b) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9)
+ ON CONFLICT(tenant_id,warehouse_id,item_id,location_id) DO UPDATE SET s=EXCLUDED.s,r=EXCLUDED.r,p=EXCLUDED.p,q=EXCLUDED.q,b=EXCLUDED.b`,[tenant,input.warehouse_id,row.item_id,row.location_id,row.S,row.R,row.P,row.Q,row.B]));}
  const savedResponse={result,version:after.version};
- await client.query('INSERT INTO v2_workflow_requests(tenant_id,warehouse_id,request_id,request_hash,command,actor_id,response) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb)',[tenant,input.warehouse_id,input.request_id,requestHash,input.command,identity.user.id,JSON.stringify(savedResponse)]);
- for(const row of after.ledger){await client.query(`INSERT INTO v2_workflow_ledger(id,tenant_id,warehouse_id,item_id,location_id,request_id,actor_id,command,bucket,delta,reason,original_id,created_at)
- VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,[row.id,tenant,input.warehouse_id,row.item_id,row.location_id,input.request_id,identity.user.id,input.command,row.bucket,row.delta,row.reason,row.original_id??null,row.created_at]);}
- const persisted={...after,ledger:[],ledger_base:structuredClone(after.stock)};
- await client.query('UPDATE v2_workflow_state SET version=$3,state=$4::jsonb,updated_at=CURRENT_TIMESTAMP WHERE tenant_id=$1 AND warehouse_id=$2',[tenant,input.warehouse_id,after.version,JSON.stringify(persisted)]);return {result,snapshot:await databaseSnapshot(client,identity.tenant.id,input.warehouse_id,after,false),replayed:false};
+ await timeAsync('workflow.persist_sql',()=>client.query('INSERT INTO v2_workflow_requests(tenant_id,warehouse_id,request_id,request_hash,command,actor_id,response) VALUES($1,$2,$3,$4,$5,$6,$7::jsonb)',[tenant,input.warehouse_id,input.request_id,requestHash,input.command,identity.user.id,JSON.stringify(savedResponse)]));
+ for(const row of after.ledger){await timeAsync('workflow.persist_sql',()=>client.query(`INSERT INTO v2_workflow_ledger(id,tenant_id,warehouse_id,item_id,location_id,request_id,actor_id,command,bucket,delta,reason,original_id,created_at)
+ VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)`,[row.id,tenant,input.warehouse_id,row.item_id,row.location_id,input.request_id,identity.user.id,input.command,row.bucket,row.delta,row.reason,row.original_id??null,row.created_at]));}
+ const persisted={...after,ledger:[],ledger_base:timeSync('workflow.state_clone',()=>structuredClone(after.stock))};
+ await writeWorkflowState(client,tenant,input.warehouse_id,before,persisted);
+ if(!includeSnapshot){await databaseSnapshot(client,tenant,input.warehouse_id,after,false,false);return{result,version:after.version,replayed:false};}
+ return {result,snapshot:await databaseSnapshot(client,tenant,input.warehouse_id,after,false),replayed:false};
 }
 /** The caller must authenticate, authorize its restricted command scope and enter withTenant first. */
 export type WorkflowResponse={result:Record<string,unknown>;snapshot:ReturnType<typeof snapshot>;replayed:boolean};
-export async function executeWorkflowInTransaction(client:PoolClient,identity:Identity,value:WorkflowInput):Promise<WorkflowResponse> {
+/** Internal response representation only; excluded from the business request/hash. */
+export type WorkflowCompactResponse={result:Record<string,unknown>;version:number;replayed:boolean};
+export function executeWorkflowInTransaction(client:PoolClient,identity:Identity,value:WorkflowInput,options:{includeSnapshot:false}):Promise<WorkflowCompactResponse>;
+export function executeWorkflowInTransaction(client:PoolClient,identity:Identity,value:WorkflowInput,options?:{includeSnapshot?:true}):Promise<WorkflowResponse>;
+export async function executeWorkflowInTransaction(client:PoolClient,identity:Identity,value:WorkflowInput,options:{includeSnapshot?:boolean}={}):Promise<WorkflowResponse|WorkflowCompactResponse> {
  const input=parseWorkflowInput(value);if(identity.role==='viewer')fail('ROLE_FORBIDDEN',403);
- await client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[identity.tenant.id+':'+input.request_id]);
+ await timeAsync('workflow.request_lock',()=>client.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',[identity.tenant.id+':'+input.request_id]));
  const before=await lockState(client,identity.tenant.id,input.warehouse_id);
- const requestHash=hash(input);const saved=await client.query('SELECT request_hash,response FROM v2_workflow_requests WHERE tenant_id=$1 AND request_id=$2',[identity.tenant.id,input.request_id]);
- if(saved.rowCount){if(saved.rows[0].request_hash!==requestHash)fail('IDEMPOTENCY_CONFLICT');return{result:saved.rows[0].response.result,snapshot:await databaseSnapshot(client,identity.tenant.id,input.warehouse_id,before),replayed:true};}
- const refs=await references(client,identity.tenant.id,input.warehouse_id);
+ const requestHash=timeSync('workflow.request_hash',()=>hash(input));const saved=await client.query('SELECT request_hash,response FROM v2_workflow_requests WHERE tenant_id=$1 AND request_id=$2',[identity.tenant.id,input.request_id]);
+ if(saved.rowCount){if(saved.rows[0].request_hash!==requestHash)fail('IDEMPOTENCY_CONFLICT');
+  if(options.includeSnapshot===false){await databaseSnapshot(client,identity.tenant.id,input.warehouse_id,before,true,false);return{result:saved.rows[0].response.result,version:saved.rows[0].response.version,replayed:true};}
+  return{result:saved.rows[0].response.result,snapshot:await databaseSnapshot(client,identity.tenant.id,input.warehouse_id,before),replayed:true};
+ }
+ const refs=await timeAsync('workflow.references',()=>references(client,identity.tenant.id,input.warehouse_id));
  if(!('keyId' in identity)){
  const current=await client.query(`SELECT role FROM memberships WHERE tenant_id=$1 AND user_id=$2 AND status='active' FOR SHARE`,[identity.tenant.id,identity.user.id]);
  if(!current.rowCount)fail('MEMBERSHIP_REQUIRED',403);identity={...identity,role:current.rows[0].role};
@@ -89,28 +107,29 @@ export async function executeWorkflowInTransaction(client:PoolClient,identity:Id
  if(input.payload.lot_id){for(const parent of [...before.receipts,...before.returns])if(parent.lots.some(l=>l.id===input.payload.lot_id))targets.add(parent.id);}
  for(const target of targets){const task=[...before.tasks].reverse().find(t=>t.object_id===target);if(task&&task.assignee_id!==identity.user.id)fail('TASK_ASSIGNEE_MISMATCH',403);}
  }
+ input.payload.overage_history_recovery=await timeAsync('workflow.legacy_hydrate',()=>hydrateLegacyOverageQuality(client,identity.tenant.id,input.warehouse_id,before));
  if(input.command==='correction.request'){await validateCorrection(client,identity.tenant.id,input.warehouse_id,before,input.payload);input.payload.source_actor_ids=await correctionOriginActors(client,identity.tenant.id,input.warehouse_id,String(input.payload.original_id));}
  if(input.command==='approval.decide'){const a=before.approvals.find(a=>a.id===input.payload.approval_id);if(a)await hydrateApprovalSeparation(client,identity.tenant.id,input.warehouse_id,before,a);}
  if(input.command==='approval.decide'&&input.payload.approve===true){const approval=before.approvals.find(a=>a.id===input.payload.approval_id);if(approval?.type==='correction')await validateCorrection(client,identity.tenant.id,input.warehouse_id,before,{...approval.data,original_id:approval.target_id},approval.id);}
- await normalizeScans(client,before,input,identity);
+ await timeAsync('workflow.scans',()=>normalizeScans(client,before,input,identity));
  const now=(await client.query<{now:string}>('SELECT CURRENT_TIMESTAMP::text AS now')).rows[0].now;
  if(input.command==='shift.close'&&!(await reconcileWorkflowInTransaction(client,identity.tenant.id,input.warehouse_id)).ok)fail('RECONCILIATION_FAILED');
- const applied=applyCommand(before,input.command,input.payload,{actor:{id:identity.user.id,role:identity.role},command:input.command,request_id:input.request_id,now:new Date(now).toISOString(),id:randomUUID,...refs});
+ const applied=timeSync('workflow.engine',()=>applyCommand(before,input.command,input.payload,{actor:{id:identity.user.id,role:identity.role},command:input.command,request_id:input.request_id,now:new Date(now).toISOString(),id:randomUUID,...refs}));
  const createdKind:Record<string,string>={'receipt.create':'receipt','order.create':'order','return.request':'return','package.create':'package','shipment.create':'shipment','count.start':'count'};
  if(createdKind[input.command])await client.query('INSERT INTO v2_workflow_objects(tenant_id,warehouse_id,id,kind,external_id) VALUES($1,$2,$3,$4,$5)',[identity.tenant.id,input.warehouse_id,applied.result.id,createdKind[input.command],typeof input.payload.external_id==='string'?input.payload.external_id:null]);
  if(['receipt.receive','return.receive'].includes(input.command))await client.query('INSERT INTO v2_workflow_receivings(tenant_id,warehouse_id,receiving_id,request_id,object_id) VALUES($1,$2,$3,$4,$5)',[identity.tenant.id,input.warehouse_id,input.payload.receiving_id??input.request_id,input.request_id,input.payload.receipt_id??input.payload.return_id]);
  const evidence=safeEvidence(input.payload);
  await client.query('INSERT INTO v2_workflow_performances(tenant_id,warehouse_id,request_id,actor_id,command,evidence,reason) VALUES($1,$2,$3,$4,$5,$6::jsonb,$7)',[identity.tenant.id,input.warehouse_id,input.request_id,identity.user.id,input.command,JSON.stringify(evidence),typeof input.payload.reason==='string'?input.payload.reason:'']);
- return persist(client,identity,input,before,applied.state,applied.result,requestHash);
+ return persist(client,identity,input,before,applied.state,applied.result,requestHash,options.includeSnapshot!==false);
 }
 export async function executeWorkflow(identity:Identity,input:WorkflowInput) {const parsed=parseWorkflowInput(input);await requireV2Access(identity,parsed.warehouse_id,workflowPermission(parsed.command));return withTenant(identity.tenant.id,c=>executeWorkflowInTransaction(c,identity,parsed));}
-export async function getWorkflowSnapshot(identity:Identity,warehouseId:string) {uuid(warehouseId);await requireV2Access(identity,warehouseId,'read');return withTenant(identity.tenant.id,async c=>{const r=await c.query<{state:WorkflowState}>('SELECT state FROM v2_workflow_state WHERE tenant_id=$1 AND warehouse_id=$2 FOR SHARE',[identity.tenant.id,warehouseId]);return databaseSnapshot(c,identity.tenant.id,warehouseId,r.rows[0]?.state??emptyState());});}
-export async function getWorkflowRequest(identity:Identity,warehouseId:string,requestId:string) {uuid(warehouseId);uuid(requestId);await requireV2Access(identity,warehouseId,'read');return withTenant(identity.tenant.id,async c=>{const st=await c.query<{state:WorkflowState}>('SELECT state FROM v2_workflow_state WHERE tenant_id=$1 AND warehouse_id=$2 FOR SHARE',[identity.tenant.id,warehouseId]);const r=await c.query('SELECT response FROM v2_workflow_requests WHERE tenant_id=$1 AND warehouse_id=$2 AND request_id=$3',[identity.tenant.id,warehouseId,requestId]);if(!r.rowCount)fail('NOT_FOUND',404);return {...r.rows[0].response,replayed:true,snapshot:await databaseSnapshot(c,identity.tenant.id,warehouseId,st.rows[0]?.state??emptyState())};});}
+export async function getWorkflowSnapshot(identity:Identity,warehouseId:string) {uuid(warehouseId);await requireV2Access(identity,warehouseId,'read');return withTenant(identity.tenant.id,async c=>{const state=await readWorkflowState(c,identity.tenant.id,warehouseId,'SHARE');return databaseSnapshot(c,identity.tenant.id,warehouseId,state??emptyState());});}
+export async function getWorkflowRequest(identity:Identity,warehouseId:string,requestId:string) {uuid(warehouseId);uuid(requestId);await requireV2Access(identity,warehouseId,'read');return withTenant(identity.tenant.id,async c=>{const state=await readWorkflowState(c,identity.tenant.id,warehouseId,'SHARE');const r=await c.query('SELECT response FROM v2_workflow_requests WHERE tenant_id=$1 AND warehouse_id=$2 AND request_id=$3',[identity.tenant.id,warehouseId,requestId]);if(!r.rowCount)fail('NOT_FOUND',404);return {...r.rows[0].response,replayed:true,snapshot:await databaseSnapshot(c,identity.tenant.id,warehouseId,state??emptyState())};});}
 
 function safeEvidence(payload:Record<string,unknown>) {
  const keys=['id','line_id','lot_id','reservation_id','pick_id','item_id','location_id','from_location_id','quantity','outcome','scanned_item_id','scanned_location_id','input_mode','conversion'];
  const references=Object.fromEntries(['receipt_id','order_id','return_id','count_id','lot_id','package_id','package_ids','shipment_id','approval_id','object_type','object_id','assignee_id','receiving_id','original_id','original_order_id','original_return_id','expected_version','weight_grams','previous_revision','revision','status'].filter(key=>payload[key]!==undefined).map(key=>[key,payload[key]]));
- return {...references,lines:(Array.isArray(payload.lines)?payload.lines:payload.lot_id?[payload]:[]).map(value=>{const line=object(value);return Object.fromEntries(keys.filter(key=>line[key]!==undefined).map(key=>[key,line[key]]));}),execution_mode:payload.execution_mode==='automated'?'automated':'human',manual_entry_reason:typeof payload.manual_entry_reason==='string'?payload.manual_entry_reason:undefined};
+ return {...references,...(Array.isArray(payload.overage_history_recovery)&&payload.overage_history_recovery.length?{overage_history_recovery:payload.overage_history_recovery}:{}),lines:(Array.isArray(payload.lines)?payload.lines:payload.lot_id?[payload]:[]).map(value=>{const line=object(value);return Object.fromEntries(keys.filter(key=>line[key]!==undefined).map(key=>[key,line[key]]));}),execution_mode:payload.execution_mode==='automated'?'automated':'human',manual_entry_reason:typeof payload.manual_entry_reason==='string'?payload.manual_entry_reason:undefined};
 }
 export const physicalWorkflowCommands=['receipt.receive','receipt.inspect','receipt.putaway','order.pick','order.return_picked','order.damage','package.create','return.receive','return.inspect','return.putaway','stock.move','stock.hold','stock.inspect','stock.putaway','hold.release'] as const;
 async function normalizeScans(client:PoolClient,state:WorkflowState,input:WorkflowInput,identity:Identity) {
@@ -138,23 +157,38 @@ async function normalizeScans(client:PoolClient,state:WorkflowState,input:Workfl
 }
 
 async function aggregateMatchesStock(client:PoolClient,tenantId:string,warehouseId:string,state:WorkflowState) {
- const rows=(await client.query('SELECT item_id,location_id,s,r,p,q,b FROM v2_workflow_stock WHERE tenant_id=$1 AND warehouse_id=$2',[tenantId,warehouseId])).rows;
+ const end=beginTiming('workflow.aggregate_match');try{
+ const rows=(await timeAsync('workflow.stock_read',()=>client.query('SELECT item_id,location_id,s,r,p,q,b FROM v2_workflow_stock WHERE tenant_id=$1 AND warehouse_id=$2',[tenantId,warehouseId]))).rows;
  if(rows.length!==state.stock.length)return false;
- return state.stock.every(st=>{const row=rows.find(x=>x.item_id===st.item_id&&x.location_id===st.location_id);return row&&(['S','R','P','Q','B'] as const).every(b=>Number(row[b.toLowerCase()])===st[b]);});
+ const stock=firstPositions(rows);
+ return state.stock.every(st=>{const row=stock.get(st.item_id)?.get(st.location_id);return row&&(['S','R','P','Q','B'] as const).every(b=>Number(row[b.toLowerCase()])===st[b]);});
+ }catch(error){end(true);throw error;}finally{end();}
 }
 
 /** Independent persisted balance-to-ledger check at a stable warehouse lock boundary. */
 export async function reconcileWorkflowInTransaction(client:PoolClient,tenantId:string,warehouseId:string) {
+ const end=beginTiming('workflow.persisted_reconcile');try{
  const r=await client.query(`WITH l AS (SELECT item_id,location_id,COALESCE(sum(delta) FILTER(WHERE bucket='S'),0) s,COALESCE(sum(delta) FILTER(WHERE bucket='R'),0) r,COALESCE(sum(delta) FILTER(WHERE bucket='P'),0) p,COALESCE(sum(delta) FILTER(WHERE bucket='Q'),0) q,COALESCE(sum(delta) FILTER(WHERE bucket='B'),0) b FROM v2_workflow_ledger WHERE tenant_id=$1 AND warehouse_id=$2 GROUP BY item_id,location_id) SELECT count(*)::int AS differences FROM (SELECT * FROM v2_workflow_stock WHERE tenant_id=$1 AND warehouse_id=$2) s FULL JOIN l USING(item_id,location_id) WHERE COALESCE(s.s,0)<>COALESCE(l.s,0) OR COALESCE(s.r,0)<>COALESCE(l.r,0) OR COALESCE(s.p,0)<>COALESCE(l.p,0) OR COALESCE(s.q,0)<>COALESCE(l.q,0) OR COALESCE(s.b,0)<>COALESCE(l.b,0)`,[tenantId,warehouseId]);return {ok:r.rows[0].differences===0,differences:r.rows[0].differences};
+ }catch(error){end(true);throw error;}finally{end();}
 }
-async function databaseSnapshot(client:PoolClient,tenantId:string,warehouseId:string,state:WorkflowState,independent=true) {
- const s=structuredClone(state);const locs=await client.query("SELECT id,active,COALESCE(to_jsonb(l)->>'kind','STORAGE') AS kind,COALESCE((to_jsonb(l)->>'reservation_blocked')::boolean,false) AS reservation_blocked FROM locations l WHERE tenant_id=$1 AND warehouse_id=$2",[tenantId,warehouseId]);
+async function databaseSnapshot(client:PoolClient,tenantId:string,warehouseId:string,state:WorkflowState,independent?:boolean):Promise<ReturnType<typeof snapshot>>;
+async function databaseSnapshot(client:PoolClient,tenantId:string,warehouseId:string,state:WorkflowState,independent:boolean,includeSnapshot:false):Promise<undefined>;
+async function databaseSnapshot(client:PoolClient,tenantId:string,warehouseId:string,state:WorkflowState,independent=true,includeSnapshot=true) {
+ const end=beginTiming('workflow.snapshot');try{
+ // Compact internal callers still execute every query and reconciliation below.
+ // Only response-only deep cloning, blind-count projection and A/H views are omitted.
+ observeStateCounts(state);const s=timeSync('workflow.snapshot_clone',()=>includeSnapshot?structuredClone(state):{...state,stock:state.stock.map(row=>({...row}))});
+ await timeAsync('workflow.legacy_hydrate',()=>hydrateLegacyOverageQuality(client,tenantId,warehouseId,s));
+ const locs=await timeAsync('workflow.snapshot_sql',()=>client.query("SELECT id,active,COALESCE(to_jsonb(l)->>'kind','STORAGE') AS kind,COALESCE((to_jsonb(l)->>'reservation_blocked')::boolean,false) AS reservation_blocked FROM locations l WHERE tenant_id=$1 AND warehouse_id=$2",[tenantId,warehouseId]));
  for(const st of s.stock){const ref=locs.rows.find(x=>x.id===st.location_id);st.reservation_blocked=ref?.reservation_blocked===true||ref?.active===false||(s.location_blocks??[]).some(b=>b.location_id===st.location_id);st.location_kind=ref?.kind;}
- const history=await client.query("SELECT id,item_id,location_id,bucket,delta::float8 AS delta,request_id,actor_id,command,reason,original_id,created_at FROM v2_workflow_ledger WHERE tenant_id=$1 AND warehouse_id=$2 ORDER BY created_at DESC,id DESC LIMIT 100",[tenantId,warehouseId]);
- s.ledger=history.rows.reverse();s.ledger_base=structuredClone(s.stock);for(const row of s.ledger){const baseline=s.ledger_base.find(x=>x.item_id===row.item_id&&x.location_id===row.location_id);if(baseline)baseline[row.bucket]-=row.delta;}
- const view=snapshot(s);delete view.ledger_base;if(!(await aggregateMatchesStock(client,tenantId,warehouseId,state))){view.reconciliation.ok=false;view.reconciliation.issues.push('AGGREGATE_STOCK_MISMATCH');}
- if(independent){const db=await reconcileWorkflowInTransaction(client,tenantId,warehouseId);if(!db.ok){view.reconciliation.ok=false;view.reconciliation.issues.push('PERSISTED_LEDGER_MISMATCH');}}
+ const history=await timeAsync('workflow.snapshot_sql',()=>client.query("SELECT id,item_id,location_id,bucket,delta::float8 AS delta,request_id,actor_id,command,reason,original_id,created_at FROM v2_workflow_ledger WHERE tenant_id=$1 AND warehouse_id=$2 ORDER BY created_at DESC,id DESC LIMIT 100",[tenantId,warehouseId]));
+ s.ledger=history.rows.reverse();s.ledger_base=timeSync('workflow.snapshot_clone',()=>structuredClone(s.stock));for(const row of s.ledger){const baseline=s.ledger_base.find(x=>x.item_id===row.item_id&&x.location_id===row.location_id);if(baseline)baseline[row.bucket]-=row.delta;}
+ const view=includeSnapshot?snapshot(s):undefined;const validation=view?.reconciliation??timeSync('workflow.snapshot_reconcile',()=>reconcile(s));if(view)delete view.ledger_base;
+ if(!(await aggregateMatchesStock(client,tenantId,warehouseId,state))){validation.ok=false;validation.issues.push('AGGREGATE_STOCK_MISMATCH');}
+ if(independent){const db=await reconcileWorkflowInTransaction(client,tenantId,warehouseId);if(!db.ok){validation.ok=false;validation.issues.push('PERSISTED_LEDGER_MISMATCH');}}
+ if(view)await timeAsync('workflow.actor_names',()=>nameSnapshotActors(client,tenantId,view));
  return view;
+ }catch(error){end(true);throw error;}finally{end();}
 }
 
 /** Internal opening only: caller verifies legacy mapping or separately approved external source, and owns the transaction. */
@@ -180,7 +214,7 @@ export async function listWorkflowLedger(identity:Identity,q:WorkflowLedgerQuery
  WHERE l.tenant_id=$1 AND l.warehouse_id=$2 AND (r.response->>'version')::integer<=$3
  AND ($4::uuid IS NULL OR l.item_id=$4) AND ($5::timestamptz IS NULL OR l.created_at>=$5) AND ($6::timestamptz IS NULL OR l.created_at<=$6)
  AND ($10::uuid IS NULL OR l.location_id=$10) AND ($7::timestamptz IS NULL OR (l.created_at,l.id)>($7::timestamptz,$8::uuid)) ORDER BY l.created_at,l.id LIMIT $9`,[identity.tenant.id,warehouseId,boundary,itemId,from,to,at,id,limit+1,locationId])).rows;
- const has_more=rows.length>limit;if(has_more)rows.pop();const last=rows.at(-1);const cursor=has_more&&last?Buffer.from(JSON.stringify({filters,boundary,at:last.created_at,id:last.id})).toString('base64url'):null;
+ const has_more=rows.length>limit;if(has_more)rows.pop();await nameHistoricalActors(client,identity.tenant.id,rows);const last=rows.at(-1);const cursor=has_more&&last?Buffer.from(JSON.stringify({filters,boundary,at:last.created_at,id:last.id})).toString('base64url'):null;
  return{rows,cursor,has_more,boundary,warehouse_id:warehouseId,item_id:itemId,location_id:locationId,from,to};
  });
 }

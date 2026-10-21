@@ -1,0 +1,26 @@
+{
+  "recorded_at": "2026-10-20T23:31:34.874667+00:00",
+  "command": "npm run verify",
+  "exit_code": 1,
+  "scope": "local development DB migration19, source with pending fixes; not public deployment",
+  "stages": {
+    "typecheck": "passed",
+    "unit": {
+      "passed": 203
+    },
+    "simulator": {
+      "passed": 55
+    },
+    "integration": {
+      "passed": 169,
+      "failed": 7,
+      "skipped": 6,
+      "failed_suites": 8
+    },
+    "build": "not reached",
+    "e2e": "not reached"
+  },
+  "log_path": "/tmp/wms-v2-resume-verify.log",
+  "log_sha256": "2ab22550df4087cd9eb7402cd23746f54d63419fd38c051f0ef62bd4ecaa961d",
+  "status": "failed; correction and rerun required"
+}

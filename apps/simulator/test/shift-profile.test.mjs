@@ -5,7 +5,7 @@ import { mkdtemp,rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { openStore } from '../store.mjs';
 import { profilePlan } from '../profile-plan.mjs';
-import { SHIFT_DURATION_MS,validateShiftConfiguration,evaluateShiftJournal,reconcileShiftBoundary,shiftPolicy,shiftWorkAllowed,shiftWorkerIndex,performShiftMilestones,baselineDeltas } from '../shift-profile.mjs';
+import { SHIFT_DURATION_MS,validateShiftConfiguration,evaluateShiftJournal,reconcileShiftBoundary,reconcileShiftRuntime,shiftPolicy,shiftWorkAllowed,shiftWorkerIndex,performShiftMilestones,baselineDeltas } from '../shift-profile.mjs';
 
 function configuration(full=true) {
   const environment={DATABASE_URL:'must-not-be-used'},targets=[];
@@ -30,7 +30,7 @@ function journal(mode='smoke') {
     stage('shipment.create',{package_ids:[pack]});
   }
   const duration=mode==='full'?SHIFT_DURATION_MS:15000,start=1700000000000;
-  return {mode,target,run:{context:{measured_start:start,shift:{initial_assignment_completed_at:start+1,long_reservation_observed_at:start+duration/4,handover_completed_at:start+duration/2,reservation_age_at_warning_ms:duration/4,initial_assignee:'worker-old',final_assignee:'worker-new'}},config:{duration_ms:duration}},operations,runtimeReport:{verdict:'passed',quality_targets:{qualification:mode==='full',met:true},delivered_unique_events:orders+receipts,incomplete:[],differences:[]},observedAt:start+duration};
+  return {mode,target,run:{context:{measured_start:start,shift:{initial_assignment_completed_at:start+1,long_reservation_observed_at:start+duration/4,handover_completed_at:start+duration/2,reservation_age_at_warning_ms:duration/4,initial_assignee:'worker-old',final_assignee:'worker-new'}},config:{duration_ms:duration}},operations,runtimeReport:{verdict:'passed',quality_targets:{qualification:mode==='full',met:true},profile_quality:{qualification:mode==='full',met:true},delivered_unique_events:orders+receipts,incomplete:[],differences:[]},observedAt:start+duration};
 }
 
 test('full profile requires exactly two companies, 100 distinct SKUs, 20 locations and ten distinct worker identities',()=>{
@@ -98,3 +98,37 @@ test('baseline comes from local generator positions and cannot be replaced with 
 });
 
 test('full functional and T11 completion remains distinguishable when a performance threshold fails',()=>{const input=journal('full');input.runtimeReport.integrity_passed=true;input.runtimeReport.verdict='failed';input.runtimeReport.quality_targets={qualification:true,met:false};const result=evaluateShiftJournal(input);assert.equal(result.functional_passed,true);assert.equal(result.eight_hour_requirement_passed,false);assert(result.failures.includes('PERFORMANCE_TARGETS_NOT_MET'));});
+
+test('unverified raw final read and unstarted measurement preserve failed shift evidence without more HTTP calls',async()=>{
+ let calls=0;const api=async()=>{calls++;throw Error('NO_EXTRA_HTTP_ALLOWED');};
+ for(const raw of [{boundary:null,final_reconciliation:{status:'unverified'}},{boundary:5,measurement:{status:'not_started'}},{boundary:5,final_reconciliation:{status:'unverified'}},{boundary:undefined}]){
+  const result=await reconcileShiftRuntime({target:{},operations:[],api,runtimeReport:raw,verify:api});
+  assert.equal(result.passed,false);assert.equal(result.status,'unverified');assert.equal(result.reason,'FINAL_RECONCILIATION_UNVERIFIED');
+ }
+ assert.equal(calls,0);
+ const input=journal();input.run.context.measured_start=undefined;input.runtimeReport={verdict:'failed',integrity_passed:false,boundary:null,measurement:{status:'not_started'},final_reconciliation:{status:'unverified'},delivered_unique_events:0};
+ const judged=evaluateShiftJournal(input);assert.equal(judged.verdict,'failed');assert.equal(judged.eight_hour_requirement_passed,false);assert.equal(judged.measured_start,null);assert(judged.failures.includes('DURATION_NOT_COMPLETED'));
+});
+
+test('a second independent final read failure remains unverified rather than preventing the shift summary',async()=>{
+ const result=await reconcileShiftRuntime({target:{warehouse_id:randomUUID(),catalog:[]},operations:[],runtimeReport:{boundary:5,final_reconciliation:{status:'completed'}},api:async()=>{throw Object.assign(new Error('private database information'),{code:'SHIFT_HTTP_FAILED'});}});
+ assert.equal(result.passed,false);assert.equal(result.status,'unverified');assert.equal(result.code,'SHIFT_HTTP_FAILED');assert(!JSON.stringify(result).includes('private database information'));
+});
+
+test('full shift never overrides a failed scheduled-window quality report with legacy passing metrics',()=>{
+ const input=journal('full');input.runtimeReport.integrity_passed=true;input.runtimeReport.verdict='failed';input.runtimeReport.profile_quality={qualification:true,met:false};
+ const result=evaluateShiftJournal(input);assert.equal(result.functional_passed,true);assert.equal(result.performance_targets.met,true);assert.equal(result.scheduled_window_targets.met,false);assert.equal(result.eight_hour_requirement_passed,false);assert.equal(result.verdict,'failed');assert(result.failures.includes('SCHEDULED_WINDOW_TARGETS_NOT_MET'));
+});
+
+test('full shift requires qualified scheduled-window evidence while smoke remains a functional check',()=>{
+ for(const evidence of [undefined,{qualification:false,met:true}]){
+  const full=journal('full');full.runtimeReport.profile_quality=evidence;assert.equal(evaluateShiftJournal(full).eight_hour_requirement_passed,false);
+ }
+ const smoke=journal();smoke.runtimeReport.integrity_passed=true;smoke.runtimeReport.verdict='failed';smoke.runtimeReport.profile_quality={qualification:false,met:false};
+ const result=evaluateShiftJournal(smoke);assert.equal(result.verdict,'smoke_passed');assert.equal(result.functional_passed,true);assert.equal(result.eight_hour_requirement_passed,false);
+});
+
+test('full shift requires the raw runtime verdict even when both quality reports and integrity pass',()=>{
+ const input=journal('full');input.runtimeReport.integrity_passed=true;input.runtimeReport.verdict='failed';
+ const result=evaluateShiftJournal(input);assert.equal(result.functional_passed,true);assert.equal(result.performance_targets.met,true);assert.equal(result.scheduled_window_targets.met,true);assert.equal(result.runtime_verdict,'failed');assert.equal(result.eight_hour_requirement_passed,false);assert.equal(result.verdict,'failed');assert(result.failures.includes('RUNTIME_FINAL_VERDICT_FAILED'));
+});

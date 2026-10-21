@@ -11,6 +11,7 @@ vi.mock('../../src/server/auth/access', async importOriginal => ({ ...await impo
 import { withTenant } from '../../src/server/db/tenant';
 import { createDocument, updateDocument, type DocumentInput } from '../../src/server/documents';
 import { getDocument } from '../../src/server/documents';
+import { postDocument } from '../../src/server/posting';
 import { destinationCollection, destinationDetail } from '../../src/server/delivery-destinations';
 
 const databaseUrl = process.env.TEST_DATABASE_URL;
@@ -132,10 +133,17 @@ describe('delivery address book PostgreSQL integration', () => {
     const input: DocumentInput = { kind: 'OUTBOUND', warehouse_id: warehouse, source_location_id: location, destination_location_id: null, note: '', delivery_destination_id: destination.id, recipient_name: 'Spoof', delivery_address: 'Spoof', lines: [{ item_id: item, quantity: 1 }] };
     const doc = await createDocument(tenant, input);
     expect(doc).toMatchObject({ delivery_destination_id: destination.id, recipient_name: 'Recipient', delivery_address: 'Seoul 101' });
-    await patch(destination.id, { recipient_name: 'Changed', address_line1: 'Busan', active: false });
+    // An unfinished draft legitimately blocks retirement. Complete its physical work
+    // before making the destination historical and proving snapshot retention.
+    expect((await patch(destination.id, { active: false })).status).toBe(409);
+    const inbound = await createDocument(tenant, { kind: 'INBOUND', warehouse_id: warehouse, source_location_id: null, destination_location_id: location, note: '', lines: [{ item_id: item, quantity: 1 }] });
+    await postDocument(identity, inbound.id, 1, randomUUID());
+    await postDocument(identity, doc.id, 1, randomUUID());
+    const editable = await createDocument(tenant, { ...input, delivery_destination_id: null, recipient_name: 'Direct', delivery_address: 'Text' });
+    expect((await patch(destination.id, { recipient_name: 'Changed', address_line1: 'Busan', active: false })).status).toBe(200);
     expect(await getDocument(tenant, doc.id)).toMatchObject({ recipient_name: 'Recipient', delivery_address: 'Seoul 101' });
     await expect(createDocument(tenant, input)).rejects.toMatchObject({ code: 'REFERENCE_NOT_FOUND' });
-    await expect(updateDocument(tenant, doc.id, 1, input)).rejects.toMatchObject({ code: 'REFERENCE_NOT_FOUND' });
+    await expect(updateDocument(tenant, editable.id, 1, input)).rejects.toMatchObject({ code: 'REFERENCE_NOT_FOUND' });
     await withTenant(foreignTenant, client => client.query("INSERT INTO delivery_destinations (id,tenant_id,recipient_name,name,address_line1) VALUES ($1,$2,'Foreign','Office','Elsewhere')", [item, foreignTenant]));
     await expect(createDocument(tenant, { ...input, delivery_destination_id: item })).rejects.toMatchObject({ code: 'REFERENCE_NOT_FOUND' });
     await expect(withTenant(tenant, client => client.query('UPDATE inventory_documents SET delivery_destination_id=$2 WHERE id=$1', [doc.id, item]))).rejects.toMatchObject({ code: '23503' });

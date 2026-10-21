@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 import {persistApiMetric} from "./v2/workflow/metrics";
+import {observeTimingCount,timeAsync,timeSync,withTimingDiagnostics} from './timing-diagnostics';
 
 type RequestLog = {
   requestId: string;
@@ -73,7 +74,7 @@ export function withRequestLog<Args extends unknown[]>(
 ): (...args: Args) => Promise<Response> {
   return (...args) => requests.run({
     requestId: randomUUID(), operation, tenantId: null, userId: null, documentId: null,
-  }, async () => {
+  }, () => withTimingDiagnostics(operation,async () => {
     const log = requests.getStore()!;
     const started=performance.now();
     let response: Response;
@@ -83,12 +84,12 @@ export function withRequestLog<Args extends unknown[]>(
         const id = (await context?.params)?.id;
         recordRequestDocument(id);
       }
-      response = await handler(...args);
+      response = await timeAsync('request.handler',()=>Promise.resolve(handler(...args)));
     } catch {
       log.resultCode = "SERVICE_UNAVAILABLE";
-      response = Response.json({ error: "SERVICE_UNAVAILABLE" }, {
+      response = timeSync('http.json_response',()=>Response.json({ error: "SERVICE_UNAVAILABLE" }, {
         status: 503, headers: { "Cache-Control": "no-store" },
-      });
+      }));
     }
     const headers = new Headers(response.headers);
     headers.set("x-request-id", log.requestId);
@@ -99,10 +100,12 @@ export function withRequestLog<Args extends unknown[]>(
       event: "api_request", ...log, status: response.status,
       resultCode: log.resultCode ?? (response.ok ? "OK" : `HTTP_${response.status}`),
     }));
+    observeTimingCount('http.status',response.status);observeTimingCount('http.error_responses',response.ok?0:1);
     if(log.tenantId&&log.warehouseId&&log.userId){
       const candidate=args[0] as {method?:unknown}|undefined;const method=typeof candidate?.method==='string'&&['GET','POST','PUT','PATCH','DELETE','HEAD','OPTIONS'].includes(candidate.method)?candidate.method:'GET';
-      await persistApiMetric({tenantId:log.tenantId,warehouseId:log.warehouseId,requestId:log.requestId,actorId:log.userId,operation,command:log.command,method,status:response.status,errorCode:log.resultCode??(response.ok?'OK':`HTTP_${response.status}`),durationMs:Math.min(2147483647,Math.max(0,Math.round(performance.now()-started)))});
+      const metric={tenantId:log.tenantId,warehouseId:log.warehouseId,requestId:log.requestId,actorId:log.userId,operation,command:log.command,method,status:response.status,errorCode:log.resultCode??(response.ok?'OK':`HTTP_${response.status}`),durationMs:Math.min(2147483647,Math.max(0,Math.round(performance.now()-started)))};
+      await timeAsync('request.telemetry',()=>persistApiMetric(metric));
     }
     return correlated;
-  });
+  }));
 }

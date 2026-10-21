@@ -2,10 +2,11 @@ import type { PoolClient } from 'pg';
 import type { Identity } from '../../auth/access';
 import { DomainError } from '../../api';
 import { AccessError } from '../../auth/access';
-import { assertV2MachineKey } from '../access';
+import { assertV2MachineKeyInTransaction } from '../access';
 import { withTenant } from '../../db/tenant';
 import { executeWorkflowInTransaction } from '../workflow';
 import { hash, revisionHash, retryDelay, uuid, type IntegrationEvent } from './contract';
+import {beginTiming,observeTimingCount,timeAsync} from '../../timing-diagnostics';
 
 export type IntegrationIdentity = Identity & {sourceSystem?:string;keyId?:string};
 type EventRow = IntegrationEvent & {id:string;sequence:string;tenant_id:string;entity_kind:string;actor_id:string;source_key_id:string;request_hash:string;revision_hash:string;status:string;reason:string|null;result:unknown;attempts:number;received_at:string;processed_at:string|null};
@@ -98,15 +99,17 @@ async function resolveInput(client:PoolClient,event:EventRow,objectId:string|nul
 
 // One warehouse is serialized by a transaction-scoped advisory lock. No processing state lives in RAM.
 export async function processEvents(identity:IntegrationIdentity,warehouseId:string,limit=25) {
+  const endBatch=beginTiming('integration.batch');try{
   const output=[];
   for(let i=0;i<Math.max(1,Math.min(50,limit));i++) {
     const item=await withTenant(identity.tenant.id,async client=>{
-      const lock=await client.query<{locked:boolean}>(`SELECT pg_try_advisory_xact_lock(hashtextextended($1,0)) AS locked`,['v2-integration:'+identity.tenant.id+':'+warehouseId]);
+      const endEvent=beginTiming('integration.event');try{
+      const lock=await timeAsync('integration.queue_sql',()=>client.query<{locked:boolean}>(`SELECT pg_try_advisory_xact_lock(hashtextextended($1,0)) AS locked`,['v2-integration:'+identity.tenant.id+':'+warehouseId]));
       if(!lock.rows[0].locked) return null;
-      const pending=await client.query<EventRow>(`SELECT * FROM v2_integration_events WHERE tenant_id=$1 AND warehouse_id=$2 AND status IN ('accepted','dependency_wait','retry_wait') AND next_attempt_at<=now() ORDER BY next_attempt_at,sequence FOR UPDATE SKIP LOCKED LIMIT 1`,[identity.tenant.id,warehouseId]);
-      const event=pending.rows[0];if(!event)return null;
-      await client.query(`INSERT INTO v2_integration_entities(tenant_id,source_system,entity_kind,external_entity_id,warehouse_id) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,[identity.tenant.id,event.source_system,event.entity_kind,event.external_entity_id,warehouseId]);
-      const {rows:[entity]}=await client.query(`SELECT * FROM v2_integration_entities WHERE tenant_id=$1 AND source_system=$2 AND entity_kind=$3 AND external_entity_id=$4 FOR UPDATE`,[identity.tenant.id,event.source_system,event.entity_kind,event.external_entity_id]);
+      const pending=await timeAsync('integration.queue_sql',()=>client.query<EventRow>(`SELECT * FROM v2_integration_events WHERE tenant_id=$1 AND warehouse_id=$2 AND status IN ('accepted','dependency_wait','retry_wait') AND next_attempt_at<=now() ORDER BY next_attempt_at,sequence FOR UPDATE SKIP LOCKED LIMIT 1`,[identity.tenant.id,warehouseId]));
+      const event=pending.rows[0];if(!event)return null;observeTimingCount('integration.events',1);
+      await timeAsync('integration.entity_sql',()=>client.query(`INSERT INTO v2_integration_entities(tenant_id,source_system,entity_kind,external_entity_id,warehouse_id) VALUES($1,$2,$3,$4,$5) ON CONFLICT DO NOTHING`,[identity.tenant.id,event.source_system,event.entity_kind,event.external_entity_id,warehouseId]));
+      const {rows:[entity]}=await timeAsync('integration.entity_lock',()=>client.query(`SELECT * FROM v2_integration_entities WHERE tenant_id=$1 AND source_system=$2 AND entity_kind=$3 AND external_entity_id=$4 FOR UPDATE`,[identity.tenant.id,event.source_system,event.entity_kind,event.external_entity_id]));
       let status='applied',reason:string|null=null,result:unknown=null;
       if(entity.warehouse_id!==warehouseId) {status='business_rejected';reason='EXTERNAL_ENTITY_WAREHOUSE_CONFLICT';}
       else if(event.revision>entity.revision+1) {status='dependency_wait';reason='MISSING_PREVIOUS_REVISION';}
@@ -114,12 +117,12 @@ export async function processEvents(identity:IntegrationIdentity,warehouseId:str
       else {
         await client.query('SAVEPOINT integration_business');
         try {
-          const sourceIdentity=await assertV2MachineKey(identity.tenant.id,event.source_key_id,'integration:event',warehouseId);
+          const sourceIdentity=await timeAsync('integration.source_authorization',()=>assertV2MachineKeyInTransaction(client,identity.tenant.id,event.source_key_id,'integration:event',warehouseId));
           if(!entity.object_id && event.event_type.match(/^(receipt|order)\.(update|cancel)$/)) throw new DomainError(409,'EXTERNAL_ENTITY_NOT_CREATED');
           if(entity.object_id&&event.event_type.endsWith('.create')) throw new DomainError(409,'EXTERNAL_ENTITY_ALREADY_CREATED');
-          const input=await resolveInput(client,event,entity.object_id);
+          const input=await timeAsync('integration.resolve',()=>resolveInput(client,event,entity.object_id));
           const actor={...sourceIdentity,user:{id:event.actor_id,name:'External integration',email:''},role:'worker' as const};
-          const applied=await executeWorkflowInTransaction(client,actor,input);
+          const applied=await executeWorkflowInTransaction(client,actor,input,{includeSnapshot:false});
           result=applied.result;
           const id=typeof applied.result==='object'&&applied.result&&'id' in applied.result?String(applied.result.id):entity.object_id;
           await client.query('UPDATE v2_integration_entities SET revision=$5,object_id=COALESCE(object_id,$6::uuid) WHERE tenant_id=$1 AND source_system=$2 AND entity_kind=$3 AND external_entity_id=$4',[identity.tenant.id,event.source_system,event.entity_kind,event.external_entity_id,event.revision,id]);
@@ -134,13 +137,15 @@ export async function processEvents(identity:IntegrationIdentity,warehouseId:str
         }
       }
       const delay=status==='dependency_wait'?1000:status==='retry_wait'?retryDelay(event.attempts):0;
-      const updated=await client.query<EventRow>(`UPDATE v2_integration_events SET status=$2::varchar,reason=$3,result=$4,attempts=attempts+CASE WHEN $2::varchar='dependency_wait' THEN 0 ELSE 1 END,next_attempt_at=now()+$5::double precision*interval '1 millisecond',processed_at=CASE WHEN $2::varchar IN ('applied','business_rejected','quarantined') THEN now() ELSE NULL END WHERE id=$1 RETURNING *`,[event.id,status,reason,result,delay]);
+      const updated=await timeAsync('integration.status_sql',()=>client.query<EventRow>(`UPDATE v2_integration_events SET status=$2::varchar,reason=$3,result=$4,attempts=attempts+CASE WHEN $2::varchar='dependency_wait' THEN 0 ELSE 1 END,next_attempt_at=now()+$5::double precision*interval '1 millisecond',processed_at=CASE WHEN $2::varchar IN ('applied','business_rejected','quarantined') THEN now() ELSE NULL END WHERE id=$1 RETURNING *`,[event.id,status,reason,result,delay]));
       if(status==='applied'||status==='business_rejected')await client.query(`UPDATE v2_integration_events SET next_attempt_at=now() WHERE tenant_id=$1 AND source_system=$2 AND entity_kind=$3 AND external_entity_id=$4 AND status='dependency_wait'`,[identity.tenant.id,event.source_system,event.entity_kind,event.external_entity_id]);
       return visible(updated.rows[0]);
+      }catch(error){endEvent(true);throw error;}finally{endEvent();}
     });
-    if(!item)break;output.push(item);
+    if(!item)break;output.push(item);const outcome=({applied:'integration.applied',business_rejected:'integration.business_rejected',dependency_wait:'integration.dependency_wait',retry_wait:'integration.retry_wait',quarantined:'integration.quarantined'} as Record<string,string>)[item.status];if(outcome)observeTimingCount(outcome,1);
   }
   return {events:output};
+  }catch(error){endBatch(true);throw error;}finally{endBatch();}
 }
 
 export async function retryEvent(identity:IntegrationIdentity,warehouseId:string,id:string) {

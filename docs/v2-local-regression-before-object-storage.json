@@ -1,0 +1,41 @@
+{
+  "verified_at": "2026-10-20T23:40:50.269184+00:00",
+  "build_id": "4qCVxN_qG8SkhYcwTYCgG",
+  "scope": "local function/regression; not public deployment or G3/G4/G5 qualification",
+  "typecheck": "passed",
+  "unit": {
+    "passed": 203
+  },
+  "simulator": {
+    "passed": 55
+  },
+  "integration": {
+    "passed": 182,
+    "skipped": 0
+  },
+  "production_build": "passed",
+  "e2e": {
+    "full_suite_passed": 41,
+    "full_suite_failed": 2,
+    "targeted_after_fixture_corrections_passed": 2,
+    "coverage_total_passed": 43,
+    "single_full_suite_43_passed": false
+  },
+  "verify_command_exit_code": 1,
+  "resolution": "Full verify reached E2E; two E2E fixture failures corrected and targeted rerun passed. Product source/build unchanged. Do not report original npm run verify as exit0.",
+  "migration_count": 19,
+  "evidence": [
+    {
+      "path": "/tmp/wms-v2-resume-verify-fixed.log",
+      "sha256": "436b87778cc28cdd21d3fc8a1c39bfb0c1baf9d4ba689c309893eba5ea72780e"
+    },
+    {
+      "path": "/tmp/wms-v2-targeted-regressions.log",
+      "sha256": "8a3148ffabb2df4e731065ff3c7478e6574e945296fa63c647ce71459a063d2e"
+    },
+    {
+      "path": "/tmp/wms-v2-targeted-e2e-browser.log",
+      "sha256": "61246d08f1873b9eba81f01eb7ee548955f993a6331574605ff3653eb8a55512"
+    }
+  ]
+}

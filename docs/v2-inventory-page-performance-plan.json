@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0",
+  "profile": "inventory-pages-v1",
+  "state": "prepared_code_only_not_executed",
+  "execution_restriction": "Current full25 run is active. No benchmark syntax check, tests, build, runtime preparation, server start or database query was executed for this revision. Await root slot and the next fully verified standalone build.",
+  "fixture": {
+    "run_id": "5ee81f14-1139-4772-8b6c-8ce61931f850",
+    "baseline_manifest": "docs/v2-performance-baseline.json",
+    "baseline_manifest_sha256": "55e439d6049193d52295763a29042aa07c3a1fd27070da700df3b2b8204af7aa",
+    "total_ledger": 1000000,
+    "companies": 2,
+    "positions_per_company": 1600,
+    "physical_inventory_writes_allowed": false,
+    "expectations": "Independent fixture arithmetic and baseline reference identifiers; WMS stock responses do not create expected quantities."
+  },
+  "timing": {
+    "samples_per_db_api_endpoint": 100,
+    "db_api_concurrency": 5,
+    "browser_samples_per_company": 10,
+    "browser_samples_total": 20,
+    "browser_warmups_per_company": 1,
+    "browser_company_p95_target_ms": 2000,
+    "p95": "nearest rank; each company and combined result must meet the target",
+    "timed_action": "Navigate dashboard, select inventory tab, wait first row and two animation frames, verify 100 DOM rows/1600 total/page index0/page size100.",
+    "error_policy": "Any measured error, warmup error, missing sample or early stop fails. Existing fail-fast and raw sample preservation remain unchanged."
+  },
+  "independent_preservation": {
+    "performed_after_timed_samples": true,
+    "included_in_latency_samples": false,
+    "required_for_overall_pass": true,
+    "pages_per_company": 16,
+    "rows_per_page": 100,
+    "expected_union_per_company": 1600,
+    "expected_duplicates": 0,
+    "expected_missing": 0,
+    "expected_extra": 0,
+    "every_row": "Compare item/location key and all seven bucket values with independent manifest; verify exactly two trace buttons.",
+    "every_page": "All seven metric totals remain equal to full filtered manifest totals.",
+    "full_csv": "Download from page16; require all1600keys and seven values, company/warehouse/filter/asOf/version/EA/count metadata. Store hashes and counts only.",
+    "search": "Choose final-page item/location; full item filter returns all16 positions, pair filter1; verify totals and reset page0. Filtered CSV contains all16 item positions.",
+    "traces": "Return to page16; actual linked-order context and actual ledger GET must match the selected item/location and warehouse.",
+    "ui_e2e_separate_scope": "Actual reservation link, mobile navigation and page clamping use UI agent's isolated fixture E2E; this prepared performance fixture has no orders."
+  },
+  "comparison": {
+    "previous_display": "inventory-1600-dom-v1: all1600 DOM rows were displayed simultaneously",
+    "next_display": "inventory-pages-v1: first100 DOM rows; all1600 records remain available through16 pages",
+    "display_condition_changed": true,
+    "direct_same_display_comparison_allowed": false,
+    "preserved_failure": "docs/v2-performance-latest-build-failure.json",
+    "preserved_diagnostic": "docs/v2-performance-browser-ce-spike-diagnostic.json",
+    "preserved_earlier_success": "docs/v2-performance-optimized-build-success.json",
+    "current_latest_result": "_ceZRl8gR2Kae5HHrI6GQ companyA p95 3730ms FAILED; no page-aware measurement result exists."
+  },
+  "source_sha256": {
+    "scripts/v2-performance.mjs": "a7a7309bf13898635a1e927548196d4b121405c00b6f4e21653ff099fdded915",
+    "scripts/v2-inventory-page-proof.mjs": "e66c41d650840b4975f7b53f8d32cc024a1111aec7ee3ec07c5f3ed4e614d3f8"
+  },
+  "build_scope": "No next build is assigned yet. Current full25 frozen build does not include these pagination/ongoing identity/workflow fixes. Future benchmark must record its own BUILD_ID and artifact/source hashes.",
+  "verdict": "not_executed"
+}

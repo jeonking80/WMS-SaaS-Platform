@@ -1,0 +1,53 @@
+{
+  "generated_at": "2026-10-20T15:20:44.749Z",
+  "source_root": "/workspace/WMS-SaaS-Platform/apps/simulator",
+  "client_root": "/tmp/wms-v2-congestion-next-client",
+  "entry": "profile.mjs",
+  "scheduler_version": "independent-source-lanes-v2",
+  "all_relative_dependencies_included": true,
+  "module_count": 12,
+  "modules": {
+    "profile.mjs": {
+      "sha256": "039ddfcf3e0e721b4a2b05f82a33332f57611421d6b8c9353b2184ef6511f8fe"
+    },
+    "shift-profile.mjs": {
+      "sha256": "bda397cc7999d559bfde63b7bd1b737dd6e28ed9d11c11ef8d35da6756d9814c"
+    },
+    "profile-plan.mjs": {
+      "sha256": "d7ce46fb8135686261acf0cfcbbb62e585f3f08c900b9378ba13b66383d82b54"
+    },
+    "planner.mjs": {
+      "sha256": "500f76774a771d0f20d19cd271cec034b9ec3aa874114bec484f75871cd6be19"
+    },
+    "store.mjs": {
+      "sha256": "bf0ae2d2823515e41cb2a85078ec41213c76c74455447c15e806bd17b7c50678"
+    },
+    "runner.mjs": {
+      "sha256": "294a30f2e48e0319be6ec165d42ddb5a67431e17cb20be342466f738f80a5d45"
+    },
+    "scheduling.mjs": {
+      "sha256": "4acc27b880914f612e49473ee5379004bdb34073e5b2dc0bf5cec19dfe638bff"
+    },
+    "oracle.mjs": {
+      "sha256": "69954edc764625c5779ff073b1722ce63c7fe525eaa1c894221749298312bffd"
+    },
+    "profile-recovery.mjs": {
+      "sha256": "eac0af913b46f70545d18502a5a4692a13daaf36a30fe70895ecfc0dc63ec174"
+    },
+    "profile-quality.mjs": {
+      "sha256": "c8609737ec279b9d7e7efb8e01c5b4d8f9a16e4264e69ffa5aeee1abcfcb110f"
+    },
+    "profile-index.mjs": {
+      "sha256": "35104f6f69ad79faaa9f7dbd7bfda2b4607f2e94fec5d1f35794abd84511c39a"
+    },
+    "profile-scheduler.mjs": {
+      "sha256": "ebc3dd5f46bfec7d04ba94266a6ddae53663ba076496259e3a67e5e21bc8f326"
+    }
+  },
+  "approved_source_manifest": "docs/v2-profile-next-revision.json",
+  "old_run_resume_permitted": false,
+  "runtime_build_id": "_ceZRl8gR2Kae5HHrI6GQ",
+  "runtime_root": "/tmp/wms-v2-congestion-next-runtime",
+  "runtime_env_files_present": 0,
+  "runtime_external_symlinks": 0
+}

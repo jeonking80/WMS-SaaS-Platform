@@ -85,3 +85,14 @@ package.create의 선택 weight_grams는 1~1,000,000,000 정수 g이다. 배송 
 order.update.delivery는 미포장 잔량의 새 기본 배송지를 바꾸며 이미 완료/출하된 포장과 출하의 배송지 스냅샷은 보존한다. 기존 포장 주소를 바꾸려면 포장 해제 후 다시 포장한다. order.damage와 order.return_picked outcome:'hold'는 snapshot.holds의 추적 lot 및 result.lot_ids를 생성하므로 일반보류 해제→stock.inspect→stock.putaway 경로를 따른다. receipt/return 품질보류는 원 lot으로 hold.release 후 해당 receipt/return inspect/putaway를 사용한다. 원장 조회/CSV는 선택 location_id 필터를 지원하며 커서와 함께 동일 필터를 유지해야 한다.
 
 추가 실제 API 수락 시나리오: 같은 CLI/모듈은 T01/T02/T05/T06/T07/T08도 지원한다. 각 실행은 PREPARE API로 신규 품목과 RECEIVING/STORAGE 2개/STAGING/HOLD 위치를 만들고, 시나리오별 required_checks를 모두 통과해야 not_executed=[]가 된다. T02는 동시 HTTP 예약의 허용 승자와 부족 잔량을 확인하고 재입고 후 명시 재예약하며, T06은 위치 차단·실사 승인·파손 대체까지 연속 실행한다. T07의 응답 유실은 실제 확정 HTTP 응답을 클라이언트에서 버린 뒤 원키 조회하는 주입이며 선로 장애로 부르지 않는다. T08은 의존성대기·업무거절·내용충돌을 실제 사건 결과로 구분하고 새 revision으로 복구한다. 독립 판정은 계획한 수량 delta와 같은 version 경계의 실제 재고/전체 원장을 대조한다. [실행 요약](v2-operational-acceptance-latest.json)에 최종6개 신규 실행의 개별 보고서·runner·server bundle 해시와35개 필수 체크를 보존했다.
+# 역사 작업자 표시
+
+반환된 창고 업무 기록이 참조한 작업자만 회사 조건으로 이름을 확인한다. 원장 행과 배송 사건은 `actor_name?`, 승인 행은 `requester_name?`/`decider_name?`, 배정·교대 인계 행은 `assignee_name?`을 반환한다. 퇴사·중지 계정과 회수·만료 키도 보존된 현재 이름을 사용할 수 있다. 이름 변경 당시의 스냅샷은 아니며, 이름 확인이 안 되면 원래 ID를 식별용으로 유지한다. 이메일은 추가하지 않는다. 이 필드는 활성 배정 후보와 별도이며 `identity/context`의 후보 자격은 변경하지 않는다.
+
+## 저장 형식 2의 트랜잭션 계약
+
+마이그레이션 `0019`(누적 20개)는 창고 메타데이터와 모든 배열 원소의 본문을 분리한다. 업무 상태는 누락 없이 전체 재구성하고, 쓰기에서는 변경된 본문만 저장한다. 과거 완료 자료를 제외하거나 대사를 생략하지 않는다. 창고 header 잠금과 재고·요청·실적·원장·본문 갱신은 같은 트랜잭션에 남는다.
+
+`v2_workflow_state`는 기존 비잠금 조회와 이관 쓰기용 `security_invoker` 호환 뷰다. 전체 본문을 잠그고 읽어야 하는 코드는 뷰에 `FOR SHARE/UPDATE`를 붙이지 않는다. 잠금 대기 후 header와 본문의 스냅샷 시점이 달라질 수 있으므로 `readWorkflowState`처럼 **header 잠금 쿼리 완료 후 별도 문장으로 본문을 읽는다**. 일반 비잠금 뷰 조회는 문장 단위의 일관된 스냅샷을 사용한다. 호환 뷰의 기존 본문 기반 수정이 동시 쓰기와 충돌하면 `40001`로 거절하며, 호출자는 전체 트랜잭션의 재시도 여부를 판단한다.
+
+새 형식의 독립 검토는 혼합 ID·JSON null 보존, 배열 순서/삭제, 회사·창고 격리, 중간 저장 실패의 전체 롤백과 원키 재시도를 검사했다. 성능 효과는 이 기능 검증과 별도의 실제 부하 시험으로 판정한다.

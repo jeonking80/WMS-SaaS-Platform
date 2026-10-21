@@ -1,5 +1,6 @@
 import { betterAuth } from "better-auth";
 import { getPool } from "../db/pool";
+import { authenticationRateLimit } from "./rate-limit.mjs";
 
 function createAuth() {
   const secret = process.env.BETTER_AUTH_SECRET;
@@ -28,7 +29,7 @@ function createAuth() {
       updateAge: 60 * 60,
       cookieCache: { enabled: false },
     },
-    rateLimit: { enabled: true },
+    rateLimit: authenticationRateLimit,
     telemetry: { enabled: false },
   });
 }

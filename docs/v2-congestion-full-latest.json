@@ -1,0 +1,234 @@
+{
+  "run_id": "89990772-835e-4b2d-b9ee-4750ad668da0",
+  "status": "failed_client_exited_before_25_minutes",
+  "execution": "interrupted",
+  "verdict": "failed",
+  "runtime_build_id": "-oBhg3XQlSYuVZ5MbZfge",
+  "client_modules": [
+    {
+      "file": "profile.mjs",
+      "sha256": "db2f803b581d760fbaeeb291e97bb9285e3c0f607a751ff8d863ab6d2039a8ff"
+    },
+    {
+      "file": "profile-plan.mjs",
+      "sha256": "d7ce46fb8135686261acf0cfcbbb62e585f3f08c900b9378ba13b66383d82b54"
+    },
+    {
+      "file": "runner.mjs",
+      "sha256": "294a30f2e48e0319be6ec165d42ddb5a67431e17cb20be342466f738f80a5d45"
+    },
+    {
+      "file": "planner.mjs",
+      "sha256": "500f76774a771d0f20d19cd271cec034b9ec3aa874114bec484f75871cd6be19"
+    },
+    {
+      "file": "store.mjs",
+      "sha256": "5d03cd21cb52b2b5b892d09f06a0065b3c81c88c50b382862a9ef750192fb83f"
+    },
+    {
+      "file": "oracle.mjs",
+      "sha256": "69954edc764625c5779ff073b1722ce63c7fe525eaa1c894221749298312bffd"
+    },
+    {
+      "file": "scheduling.mjs",
+      "sha256": "4acc27b880914f612e49473ee5379004bdb34073e5b2dc0bf5cec19dfe638bff"
+    },
+    {
+      "file": "shift-profile.mjs",
+      "sha256": "852a6019df4f27c2513414bd997048ea369944d32b39f95b41349bc0e1fd73fb"
+    }
+  ],
+  "measured_started_at": "2026-10-20T14:36:51.646Z",
+  "fatal_snapshot_response_at": "2026-10-20T14:58:57.953Z",
+  "last_persisted_original_api_at": "2026-10-20T14:58:58.674Z",
+  "actual_recorded_duration_ms": 1327028,
+  "required_duration_ms": 1500000,
+  "required_unique_events": 5400,
+  "actual_delivered_unique_events": 2305,
+  "continuous_25_minute_execution": false,
+  "original_run_resumed": false,
+  "original_journal_modified": false,
+  "final_reconciliation_requests": "GET only, after client exit",
+  "boundary_attempts": [
+    {
+      "run_id": "89990772-835e-4b2d-b9ee-4750ad668da0:0",
+      "attempt": 1,
+      "observed_at": "2026-10-20T15:02:30.105Z",
+      "first_version": 4299,
+      "second_version": 4299,
+      "stable": true
+    },
+    {
+      "run_id": "89990772-835e-4b2d-b9ee-4750ad668da0:1",
+      "attempt": 1,
+      "observed_at": "2026-10-20T15:02:32.752Z",
+      "first_version": 3987,
+      "second_version": 3987,
+      "stable": true
+    }
+  ],
+  "companies": [
+    {
+      "company_id": "69b9bc57-6220-4f93-825a-bdc03a5b23f4",
+      "boundary": 4299,
+      "planned_events": 2700,
+      "accepted_events": 1135,
+      "unaccepted_events": 1565,
+      "completed_shipments": 432,
+      "completed_measured_receipts": 216,
+      "maximum_delivery_lateness_ms": 620398,
+      "expected_business_rejections": 12,
+      "source_definition_mismatches": 0,
+      "incomplete_original_lines": 1072,
+      "completed_command_stock_ledger_differences": 0,
+      "full_ledger_rows": 7258,
+      "incomplete_operations": 1922,
+      "quality_targets": {
+        "qualification": true,
+        "met": false,
+        "window_start": "2026-10-20T14:36:51.646Z",
+        "window_end": "2026-10-20T14:58:58.674Z",
+        "baseline_seed_and_final_reconciliation_excluded": true,
+        "latency_definition": "Client request start through complete response body and JSON decoding.",
+        "checks": {
+          "physical_confirmation_p95": {
+            "observed_ms": 5033,
+            "maximum_ms": 1500,
+            "samples": 2390
+          },
+          "external_acceptance_p95": {
+            "observed_ms": 3483,
+            "maximum_ms": 1000,
+            "samples": 1135
+          },
+          "external_application_p95": {
+            "observed_ms": 56667,
+            "maximum_ms": 5000,
+            "samples": 1094
+          },
+          "technical_failure_rate": {
+            "numerator": 43,
+            "denominator": 10534,
+            "observed": 0.004082020125308524,
+            "strict_maximum": 0.001
+          },
+          "recovery": {
+            "observed_ms": 0,
+            "maximum_ms": 600000,
+            "unresolved": 1922
+          }
+        },
+        "limitations": [
+          "Successful HTTP workflow responses measure automated command confirmation, not real scanner hardware latency.",
+          "Browser display and real-device requirements need their separate evidence."
+        ]
+      },
+      "integrity_passed": false,
+      "verdict": "failed"
+    },
+    {
+      "company_id": "69708ca6-d9fe-450e-9425-d0bd447a861f",
+      "boundary": 3987,
+      "planned_events": 2700,
+      "accepted_events": 1170,
+      "unaccepted_events": 1530,
+      "completed_shipments": 425,
+      "completed_measured_receipts": 224,
+      "maximum_delivery_lateness_ms": 595791,
+      "expected_business_rejections": 10,
+      "source_definition_mismatches": 0,
+      "incomplete_original_lines": 1188,
+      "completed_command_stock_ledger_differences": 0,
+      "full_ledger_rows": 7335,
+      "incomplete_operations": 1898,
+      "quality_targets": {
+        "qualification": true,
+        "met": false,
+        "window_start": "2026-10-20T14:36:51.646Z",
+        "window_end": "2026-10-20T14:58:58.674Z",
+        "baseline_seed_and_final_reconciliation_excluded": true,
+        "latency_definition": "Client request start through complete response body and JSON decoding.",
+        "checks": {
+          "physical_confirmation_p95": {
+            "observed_ms": 4354,
+            "maximum_ms": 1500,
+            "samples": 2391
+          },
+          "external_acceptance_p95": {
+            "observed_ms": 3420,
+            "maximum_ms": 1000,
+            "samples": 1170
+          },
+          "external_application_p95": {
+            "observed_ms": 51134,
+            "maximum_ms": 5000,
+            "samples": 1160
+          },
+          "technical_failure_rate": {
+            "numerator": 50,
+            "denominator": 10538,
+            "observed": 0.004744733345985955,
+            "strict_maximum": 0.001
+          },
+          "recovery": {
+            "observed_ms": 0,
+            "maximum_ms": 600000,
+            "unresolved": 1898
+          }
+        },
+        "limitations": [
+          "Successful HTTP workflow responses measure automated command confirmation, not real scanner hardware latency.",
+          "Browser display and real-device requirements need their separate evidence."
+        ]
+      },
+      "integrity_passed": false,
+      "verdict": "failed"
+    }
+  ],
+  "peak_recovery_observation": {
+    "at": "2026-10-20T15:01:51.646Z",
+    "client_exited_before_observation": true,
+    "recovered": false,
+    "companies": [
+      {
+        "run_id": "89990772-835e-4b2d-b9ee-4750ad668da0:0",
+        "unresolved_source": 1001,
+        "unresolved_physical": 1242
+      },
+      {
+        "run_id": "89990772-835e-4b2d-b9ee-4750ad668da0:1",
+        "unresolved_source": 959,
+        "unresolved_physical": 1241
+      }
+    ]
+  },
+  "artifacts": {
+    "report": "artifacts/v2-congestion-full/89990772-835e-4b2d-b9ee-4750ad668da0-post-exit-reconciliation.json",
+    "journal": "artifacts/v2-congestion-full/profile.sqlite",
+    "original_exit": "artifacts/v2-congestion-full/client-exit.txt",
+    "technical_errors": "artifacts/v2-congestion-full/technical-errors.json",
+    "peak_recovery": "artifacts/v2-congestion-full/peak-recovery.json",
+    "frozen_manifest": "artifacts/v2-congestion-full/89990772-835e-4b2d-b9ee-4750ad668da0-frozen-manifest.json"
+  },
+  "limitations": [
+    "The client exited on an unhandled HTTP503 before 25 minutes; this is not a completed full25 run.",
+    "No full5400 delivery, physical completion, recovery or end-to-end integrity pass is claimed.",
+    "Zero completed-command stock/ledger differences and zero original quantity-definition mismatches apply only to the captured post-exit boundary. Original-line completion gaps remain.",
+    "API response timing includes full response body and JSON decoding; it does not certify browser display or real scanner devices."
+  ],
+  "generated_at": "2026-10-20T15:03:40.967Z",
+  "journal_files": {
+    "profile.sqlite": {
+      "bytes": 22728704,
+      "sha256": "6aae9e12f7fbc12db5860217a41f5edd26e8bfeb92679fa547f7a6a440275d91"
+    },
+    "profile.sqlite-wal": {
+      "bytes": 7766232,
+      "sha256": "c6e74ac43d466eb294dd4f828940ae6f6d58afd0c581e1b9ec92bd30714a08d1"
+    },
+    "profile.sqlite-shm": {
+      "bytes": 32768,
+      "sha256": "a861e8f6116bca9f80da350e7d0dbc02f9390d59bd9736302a3b2ed94f628856"
+    }
+  }
+}

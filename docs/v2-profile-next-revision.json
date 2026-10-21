@@ -1,0 +1,103 @@
+{
+  "generated_at": "2026-10-20T15:20:25.220825+00:00",
+  "phase": "local_regression_passed_runtime_profiles_pending",
+  "scheduler_version": "independent-source-lanes-v2",
+  "quality_reporting_version": "scheduled-windows-peak-cohort-v1",
+  "generator_version": "2.0.0 (unchanged)",
+  "current_official_run": "Uses the previously frozen independent /tmp client. No live-run file, journal or database was modified by this work. Failed timing/unfinished evidence remains a failure.",
+  "algorithm_changes": [
+    "Rebuild per-work operation ID, applied external revision and pending reservation-by-order indices from fresh durable rows.",
+    "Seed completeness performs one stable SHA256 per seed and Map lookups, avoiding a SHA256 per candidate operation; seed statuses are reread, never permanently latched true.",
+    "Immutable catalog/source/config/seed definitions are loaded only after startup or resume validation; mutable context/status/result data stays fresh after awaits.",
+    "The 50ms source scheduler decodes only the selected due events; lightweight SQLite context/ID/status/EXISTS readers replace repeated full operation/config JSON parsing.",
+    "Completed receipt/order stages skip payload construction only if all corresponding stages are done; prior reservation supersession remains before the order skip.",
+    "8-hour task eligibility uses one fresh shift context per work selection; milestone reads exclude the large immutable baseline config."
+  ],
+  "explicit_scheduling_changes": {
+    "new_transmission_slots_per_company": 10,
+    "existing_result_poll_slots_per_company": 10,
+    "maximum_simultaneous_source_requests_per_company": 20,
+    "independent_lane_pulse_ms": 50,
+    "shared_active_operation_dedup": true,
+    "processor": "Independent 50ms eligibility pulse, at most one in-flight processor per company; no source batch-completion gate.",
+    "old_scheduler": "One mixed ordinal due list, first20, batch Promise.all gate; pending result polls could delay new event transmissions.",
+    "resume": "Exact scheduler version is required before connection/enqueue; old runs must use their original frozen client.",
+    "latency": "Request start through full response body and JSON decoding, including client event-loop waiting; response headers alone do not end measurement."
+  },
+  "unchanged_constraints": {
+    "outbound_unique_event_plan": 5400,
+    "congestion_duration_ms": 1500000,
+    "peak_total_new_events_per_second": 10,
+    "workers_per_company": 10,
+    "work_snapshot_poll_condition_ms": 500,
+    "main_loop_delay_ms": 50,
+    "original_request_ids_and_bodies": true,
+    "retryAt_and_uncertain_result_lookup_before_retransmission": true,
+    "sqlite_wal_and_synchronous_full": true,
+    "independent_oracle_deltas_and_full_ledger_boundary_reconciliation": true,
+    "legacy_whole_window_quality_fields_and_strict_verdict_checks": true
+  },
+  "additional_quality_evidence": {
+    "normal_external_window_assignment": "Canonical planned offset, not late actual transmission time.",
+    "normal_physical_and_api_window_assignment": "Actual request start.",
+    "peak_backlog": "Immutable pre-peak-end event identity cohort stored at peak end900000ms; received server backlog and unsent source backlog are distinguished. Deadline1500000ms.",
+    "normal_peak_reporting": "Before/peak/after and combined normal p95, sample counts, actual outcomes and failures; existing whole-window fields remain.",
+    "expected_rejections": "At startup only planned order.update event IDs permit business_rejected USE_CANCELLATION/CREATE_LINKED_ORDER with fixed owner/follow-up. Exact policy is persisted and recomputed on resume; other reasons/types/technical/quarantine are not exempted.",
+    "unapplied_quantity": "Each expected rejected revision exposes its original result and line delta versus the preceding successfully applied source plan; no automatic addition/cancellation is performed.",
+    "final_verdict": "Existing whole-window quality and the new normal/peak-cohort quality must both pass for a full profile; smoke remains unqualified."
+  },
+  "validation": {
+    "executed": true,
+    "reason": "Root full npm run verify passed; subsequent simulator-only wrapper guards passed the complete 55-test simulator suite. Actual fault/profile tests remain pending.",
+    "new_tests": {
+      "algorithm_and_sqlite_and_quality_metadata": 7,
+      "scheduler": 3,
+      "quality_helper": 12,
+      "bounded_recovery_and_seed_shutdown_accounting": 8,
+      "shift_unverified_coordinator": 2,
+      "shift_full_verdict_guards": 3
+    },
+    "not_claimed": [
+      "Actual faster profile",
+      "Proxy-injected snapshot/ledger recovery pass",
+      "25-minute full profile pass",
+      "8-hour full profile pass"
+    ],
+    "simulator_unit_suite": {
+      "result": "passed",
+      "passed": 55,
+      "failed": 0,
+      "exit_code": 0,
+      "log": "/tmp/wms-v2-simulator-final-verdict.log",
+      "regression": "Lifecycle final_reconciliation.status stays unverified, HTTP403/503 is separately retained in http_status; original expected lifecycle status is unchanged."
+    }
+  },
+  "source_sha256": {
+    "apps/simulator/profile.mjs": "039ddfcf3e0e721b4a2b05f82a33332f57611421d6b8c9353b2184ef6511f8fe",
+    "apps/simulator/profile-index.mjs": "35104f6f69ad79faaa9f7dbd7bfda2b4607f2e94fec5d1f35794abd84511c39a",
+    "apps/simulator/profile-scheduler.mjs": "ebc3dd5f46bfec7d04ba94266a6ddae53663ba076496259e3a67e5e21bc8f326",
+    "apps/simulator/profile-quality.mjs": "c8609737ec279b9d7e7efb8e01c5b4d8f9a16e4264e69ffa5aeee1abcfcb110f",
+    "apps/simulator/store.mjs": "bf0ae2d2823515e41cb2a85078ec41213c76c74455447c15e806bd17b7c50678",
+    "apps/simulator/shift-profile.mjs": "bda397cc7999d559bfde63b7bd1b737dd6e28ed9d11c11ef8d35da6756d9814c",
+    "apps/simulator/test/profile-index.test.mjs": "d47e2379b26dc15ef8569e07ae60699e5809c4cfb0aa21089fca92d2e3cc8e63",
+    "apps/simulator/test/profile-scheduler.test.mjs": "edd643ef01a66185904b36bc9b2490bcf56d9c4af050ac24679d8b803c145eaf",
+    "apps/simulator/test/profile-quality.test.mjs": "b74f7663f262195905b3b97612470f2ca529ecdfdc9f42c456fff473a01361a6",
+    "apps/simulator/profile-recovery.mjs": "eac0af913b46f70545d18502a5a4692a13daaf36a30fe70895ecfc0dc63ec174",
+    "apps/simulator/test/profile-recovery.test.mjs": "9248e2d60f79cd619c569174d0e4bf4ca1bb777bb8e546b27d1dc0d3fe1d6b67",
+    "apps/simulator/test/shift-profile.test.mjs": "a511fcf42d91d083f60c2eb9abfa0c09eb30eb243d999d07a524906b38a011c8"
+  },
+  "recovery_version": "bounded-control-and-final-read-v1",
+  "bounded_failure_recovery": {
+    "main_control": "5xx/network503/429 use durable attempts/next_at and Retry-After (seconds or date); max6 consecutive failures. Permanent403 etc stop gracefully. Invalidated snapshots cannot start new physical commands. Source lanes and original request IDs are unchanged.",
+    "deadline": "Checked independently of retry eligibility before and after awaits; in-flight control HTTP requests use the remaining deadline budget.",
+    "final_reads": "Snapshot and each exact boundary/cursor ledger request retry at most3 attempts within60000ms; unavailable final data yields unverified failed JSON, never stale-snapshot success.",
+    "shutdown": "Normal, exceptional and finally paths share memoized source/physical/process settlement before report/journal closure; settlement failures are recorded.",
+    "preparation": "Without measured_start, report has not_started, null measurement clocks and unverified integrity. Preparation is never a measured25min interval.",
+    "report_writes": "Journal failure report is durable; JSON uses temporary file+rename. Filesystem failure emits PROFILE_REPORT_WRITE_FAILED stderr and exits nonzero; filesystem success cannot be guaranteed.",
+    "accounting": "Failed HTTP attempts remain in api_call observations and total/normal technical numerator and denominator.",
+    "resume": "Exact recovery_version required in run.config; counters survive resume.",
+    "shift_coordinator": "Null boundary, unverified raw final data or not-started measurement produce failed/unverified shift summaries with no extra reconciliation HTTP; independent final-read exceptions are also preserved as failed summary evidence.",
+    "preflight_scope": "Connection/catalog preflight before journal creation remains outside the post-start retry controller. Proxy tests target the first main/seed read after journal creation.",
+    "http_status_separation": "final_reconciliation.status is a lifecycle string, and final_reconciliation.http_status is the separate HTTP integer; errorEvidence remains a nested HTTP failure shape elsewhere."
+  }
+}

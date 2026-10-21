@@ -1,0 +1,195 @@
+{
+  "run_id": "c83531b5-faad-4e95-836e-26c7056ed465",
+  "status": "running_not_a_pass",
+  "generated_at": "2026-10-20T16:04:52.731Z",
+  "client_pid": 228072,
+  "runtime_pid": 218307,
+  "runtime_build_id": "_ceZRl8gR2Kae5HHrI6GQ",
+  "client_modules": {
+    "profile.mjs": {
+      "sha256": "039ddfcf3e0e721b4a2b05f82a33332f57611421d6b8c9353b2184ef6511f8fe"
+    },
+    "shift-profile.mjs": {
+      "sha256": "bda397cc7999d559bfde63b7bd1b737dd6e28ed9d11c11ef8d35da6756d9814c"
+    },
+    "profile-plan.mjs": {
+      "sha256": "d7ce46fb8135686261acf0cfcbbb62e585f3f08c900b9378ba13b66383d82b54"
+    },
+    "planner.mjs": {
+      "sha256": "500f76774a771d0f20d19cd271cec034b9ec3aa874114bec484f75871cd6be19"
+    },
+    "store.mjs": {
+      "sha256": "bf0ae2d2823515e41cb2a85078ec41213c76c74455447c15e806bd17b7c50678"
+    },
+    "runner.mjs": {
+      "sha256": "294a30f2e48e0319be6ec165d42ddb5a67431e17cb20be342466f738f80a5d45"
+    },
+    "scheduling.mjs": {
+      "sha256": "4acc27b880914f612e49473ee5379004bdb34073e5b2dc0bf5cec19dfe638bff"
+    },
+    "oracle.mjs": {
+      "sha256": "69954edc764625c5779ff073b1722ce63c7fe525eaa1c894221749298312bffd"
+    },
+    "profile-recovery.mjs": {
+      "sha256": "eac0af913b46f70545d18502a5a4692a13daaf36a30fe70895ecfc0dc63ec174"
+    },
+    "profile-quality.mjs": {
+      "sha256": "c8609737ec279b9d7e7efb8e01c5b4d8f9a16e4264e69ffa5aeee1abcfcb110f"
+    },
+    "profile-index.mjs": {
+      "sha256": "35104f6f69ad79faaa9f7dbd7bfda2b4607f2e94fec5d1f35794abd84511c39a"
+    },
+    "profile-scheduler.mjs": {
+      "sha256": "ebc3dd5f46bfec7d04ba94266a6ddae53663ba076496259e3a67e5e21bc8f326"
+    }
+  },
+  "environment": {
+    "measured_at": "2026-10-20T15:24:30.816Z",
+    "cpu_max_raw": "400000 100000",
+    "cpu_quota_cores": 4,
+    "memory_max_raw": "34359738368",
+    "memory_limit_bytes": 34359738368,
+    "node_available_parallelism": 4,
+    "topology": "Simulator client, WMS API server and PostgreSQL share this local execution host.",
+    "scope": "Evidence applies from this timestamp to the next run. Historical values for the previous run were not measured.",
+    "capacity_claim": "No dedicated production capacity or field-device certification is claimed.",
+    "getconf_online_processors": 5,
+    "getconf_measured_at": "2026-10-20T15:24:38.954Z"
+  },
+  "required_real_duration_ms": 1500000,
+  "required_unique_events": 5400,
+  "old_run_resumed": false,
+  "companies": [
+    {
+      "run_id": "c83531b5-faad-4e95-836e-26c7056ed465:0",
+      "status": "running",
+      "scheduler_version": "independent-source-lanes-v2",
+      "recovery_version": "bounded-control-and-final-read-v1",
+      "phase": "recovery",
+      "measured_started_at": "2026-10-20T15:33:35.072Z",
+      "planned_end_at": "2026-10-20T15:58:35.072Z",
+      "peak_end_at": "2026-10-20T15:48:35.072Z",
+      "elapsed_ms": 1877659,
+      "target_events": 2700,
+      "scheduled_rate_per_second": 0,
+      "planned_due": 2700,
+      "accepted_unique_events": 2700,
+      "finalized_unique_events": 1312,
+      "undelivered_due_events": 0,
+      "queue_backlog": 1388,
+      "maximum_delivery_lateness_ms": 3188,
+      "actual_rate_since_previous_checkpoint": 0,
+      "completed_shipments": 848,
+      "completed_putaways_including_seed": 360,
+      "expected_business_rejections": 47,
+      "quarantined": 0,
+      "measured_window_api_attempts": 16065,
+      "measured_window_technical_failures": 51,
+      "status_counts": [
+        {
+          "kind": "command",
+          "status": "done",
+          "n": 4480
+        },
+        {
+          "kind": "command",
+          "status": "superseded",
+          "n": 73
+        },
+        {
+          "kind": "command",
+          "status": "unconfirmed",
+          "n": 10
+        },
+        {
+          "kind": "command",
+          "status": "unsent",
+          "n": 61
+        },
+        {
+          "kind": "event",
+          "status": "done",
+          "n": 1365
+        },
+        {
+          "kind": "event",
+          "status": "expected_business_rejected",
+          "n": 47
+        },
+        {
+          "kind": "event",
+          "status": "unconfirmed",
+          "n": 1388
+        }
+      ],
+      "peak_cohort_frozen": true,
+      "control_read_recovery": null
+    },
+    {
+      "run_id": "c83531b5-faad-4e95-836e-26c7056ed465:1",
+      "status": "running",
+      "scheduler_version": "independent-source-lanes-v2",
+      "recovery_version": "bounded-control-and-final-read-v1",
+      "phase": "recovery",
+      "measured_started_at": "2026-10-20T15:33:35.072Z",
+      "planned_end_at": "2026-10-20T15:58:35.072Z",
+      "peak_end_at": "2026-10-20T15:48:35.072Z",
+      "elapsed_ms": 1877659,
+      "target_events": 2700,
+      "scheduled_rate_per_second": 0,
+      "planned_due": 2700,
+      "accepted_unique_events": 2700,
+      "finalized_unique_events": 1311,
+      "undelivered_due_events": 0,
+      "queue_backlog": 1389,
+      "maximum_delivery_lateness_ms": 3190,
+      "actual_rate_since_previous_checkpoint": 0,
+      "completed_shipments": 847,
+      "completed_putaways_including_seed": 360,
+      "expected_business_rejections": 49,
+      "quarantined": 0,
+      "measured_window_api_attempts": 16356,
+      "measured_window_technical_failures": 44,
+      "status_counts": [
+        {
+          "kind": "command",
+          "status": "done",
+          "n": 4482
+        },
+        {
+          "kind": "command",
+          "status": "superseded",
+          "n": 72
+        },
+        {
+          "kind": "command",
+          "status": "unconfirmed",
+          "n": 1
+        },
+        {
+          "kind": "command",
+          "status": "unsent",
+          "n": 61
+        },
+        {
+          "kind": "event",
+          "status": "done",
+          "n": 1362
+        },
+        {
+          "kind": "event",
+          "status": "expected_business_rejected",
+          "n": 49
+        },
+        {
+          "kind": "event",
+          "status": "unconfirmed",
+          "n": 1389
+        }
+      ],
+      "peak_cohort_frozen": true,
+      "control_read_recovery": null
+    }
+  ],
+  "final_reconciliation": "Pending final fixed boundary and complete independent ledger reconciliation."
+}

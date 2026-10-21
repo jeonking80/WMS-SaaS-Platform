@@ -1,0 +1,111 @@
+{
+  "run_id": "c83531b5-faad-4e95-836e-26c7056ed465",
+  "scheduled_capture_at": "2026-10-20T15:58:35.072Z",
+  "captured_at": "2026-10-20T15:58:35.072Z",
+  "capture_lag_ms": 0,
+  "supply_window_ms": 1500000,
+  "companies": [
+    {
+      "run_id": "c83531b5-faad-4e95-836e-26c7056ed465:0",
+      "planned_events": 2700,
+      "accepted_with_receipt_id": 2698,
+      "unsent_events": 0,
+      "awaiting_result_events_with_receipt": 1570,
+      "uncertain_first_send_events_without_receipt": 2,
+      "applied_events": 1081,
+      "expected_business_rejected_events": 47,
+      "quarantined_operations": 0,
+      "nonterminal_physical_commands": 50,
+      "completed_shipments": 734,
+      "completed_putaways_including_seed": 324,
+      "states": [
+        {
+          "kind": "command",
+          "status": "done",
+          "n": 3920
+        },
+        {
+          "kind": "command",
+          "status": "superseded",
+          "n": 58
+        },
+        {
+          "kind": "command",
+          "status": "unsent",
+          "n": 50
+        },
+        {
+          "kind": "event",
+          "status": "done",
+          "n": 1181
+        },
+        {
+          "kind": "event",
+          "status": "expected_business_rejected",
+          "n": 47
+        },
+        {
+          "kind": "event",
+          "status": "unconfirmed",
+          "n": 1572
+        }
+      ]
+    },
+    {
+      "run_id": "c83531b5-faad-4e95-836e-26c7056ed465:1",
+      "planned_events": 2700,
+      "accepted_with_receipt_id": 2698,
+      "unsent_events": 0,
+      "awaiting_result_events_with_receipt": 1569,
+      "uncertain_first_send_events_without_receipt": 2,
+      "applied_events": 1080,
+      "expected_business_rejected_events": 49,
+      "quarantined_operations": 0,
+      "nonterminal_physical_commands": 54,
+      "completed_shipments": 734,
+      "completed_putaways_including_seed": 324,
+      "states": [
+        {
+          "kind": "command",
+          "status": "done",
+          "n": 3919
+        },
+        {
+          "kind": "command",
+          "status": "superseded",
+          "n": 57
+        },
+        {
+          "kind": "command",
+          "status": "unconfirmed",
+          "n": 4
+        },
+        {
+          "kind": "command",
+          "status": "unsent",
+          "n": 50
+        },
+        {
+          "kind": "event",
+          "status": "done",
+          "n": 1180
+        },
+        {
+          "kind": "event",
+          "status": "expected_business_rejected",
+          "n": 49
+        },
+        {
+          "kind": "event",
+          "status": "unconfirmed",
+          "n": 1571
+        }
+      ]
+    }
+  ],
+  "source": "Read-only original SQLite journal; no WMS/API/database writes or journal mutations.",
+  "limitations": [
+    "These are exact-time client-known outcomes. An uncertain accepted response can require a later original-key GET; it is not classified as definitely unsent.",
+    "Any execution after this timestamp is fallback drain. Later completion cannot replace the exact 25-minute peak-cohort recovery verdict."
+  ]
+}

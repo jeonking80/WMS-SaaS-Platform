@@ -28,7 +28,7 @@ const actor = randomUUID();
 const approver = randomUUID();
 const identity: Identity = { user: { id: actor, name: 'Worker', email: `${actor}@example.test` }, tenant: { id: tenant, name: 'A' }, role: 'worker' };
 const manager: Identity = { user: { id: approver, name: 'Approver', email: `${approver}@example.test` }, tenant: identity.tenant, role: 'admin' };
-const tables = ['v2_workflow_state', 'v2_workflow_stock', 'v2_workflow_ledger', 'v2_workflow_requests'];
+const tables = ['v2_workflow_state','v2_workflow_state_header','v2_workflow_object_state', 'v2_workflow_stock', 'v2_workflow_ledger', 'v2_workflow_requests'];
 
 beforeAll(async () => {
   await owner.query(`CREATE ROLE "${role}" LOGIN NOSUPERUSER NOBYPASSRLS NOCREATEDB NOCREATEROLE PASSWORD ${pg.escapeLiteral(password)}`);
@@ -418,8 +418,9 @@ describe('WMS v2 acceptance against PostgreSQL with enforced tenant RLS', () => 
 
   it('AC-14 enforces FORCE RLS and composite tenant references with a real nonowner application role', async () => {
     const w = await world(); const item = await w.item(); await w.seed(item, 4);
-    const flags = await owner.query(`SELECT c.relname,c.relrowsecurity,c.relforcerowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=$1 AND c.relname=ANY($2)`, [schema, tables]);
-    expect(flags.rows).toHaveLength(4);
+    const flags = await owner.query(`SELECT c.relname,c.relrowsecurity,c.relforcerowsecurity FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname=$1 AND c.relname=ANY($2)`, [schema, tables.filter(table=>table!=='v2_workflow_state')]);
+    expect(flags.rows).toHaveLength(5);
+    expect((await owner.query(`SELECT reloptions FROM pg_class WHERE oid=$1::regclass`,[`${schema}.v2_workflow_state`])).rows[0].reloptions).toContain('security_invoker=true');
     for (const row of flags.rows) expect(row).toMatchObject({ relrowsecurity: true, relforcerowsecurity: true });
     expect((await state.pool!.query('SELECT rolsuper,rolbypassrls FROM pg_roles WHERE rolname=current_user')).rows[0]).toEqual({ rolsuper: false, rolbypassrls: false });
     // Neither the absence of context nor another authenticated company can see A's data.

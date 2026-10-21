@@ -133,3 +133,28 @@ test('v2 recovers the original committed receive request after a lost browser re
   expect(snapshot.stock.filter(row => row.item_id === w.item).reduce((sum, row) => sum + row.H, 0)).toBe(3);
   expect(snapshot.ledger.filter(row => row.request_id === input.request_id)).toEqual([expect.objectContaining({ bucket: 'Q', delta: 3 })]);
 });
+
+test('업무 홈의 승인 대기는 현재 창고의 실제 대기 승인 목록으로 연결된다', async ({page}) => {
+  test.setTimeout(120_000);
+  await login(page.request);
+  const w = await fixture(page.request);
+  const receipt = await w.command('receipt.create', {lines:[{item_id:w.item,quantity:2}],external_id:w.prefix});
+  await w.command('receipt.close.request', {receipt_id:receipt.result.id,reason:'홈 승인 연결 검증용 잔량 마감 요청'});
+  await page.goto(`/dashboard/v2?warehouse_id=${w.warehouse}&tab=queue`);
+  const entry = page.getByRole('link',{name:'승인 대기 1건 검토',exact:true});
+  await expect(entry).toHaveAttribute('href',`/dashboard/v2?warehouse_id=${w.warehouse}&tab=inventory&inventory_view=approval&approval_status=pending`);
+  await entry.click();
+  await expect(page.getByRole('tab',{name:'재고·실사·승인',exact:true})).toHaveAttribute('aria-selected','true');
+  await expect(page.getByRole('button',{name:'승인',exact:true})).toHaveAttribute('aria-selected','true');
+  const state = page.getByRole('combobox',{name:'승인 상태',exact:true});
+  await expect(state).toHaveValue('pending');
+  await expect(page.getByText('요청 사유: 홈 승인 연결 검증용 잔량 마감 요청',{exact:true})).toBeVisible();
+  await state.selectOption('approved');
+  await expect(page.getByText('선택한 상태의 승인 요청이 없습니다.',{exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:/승인 1 · 예정 잔량 마감/})).toHaveCount(0);
+  await state.selectOption('all');
+  await expect(page.getByRole('heading',{name:/승인 1 · 예정 잔량 마감/})).toBeVisible();
+  await page.reload();
+  await expect(state).toHaveValue('pending');
+  await expect(page.getByText('요청 사유: 홈 승인 연결 검증용 잔량 마감 요청',{exact:true})).toBeVisible();
+});

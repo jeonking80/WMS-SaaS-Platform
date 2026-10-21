@@ -21,14 +21,20 @@ import {GET as monitorGet} from '../../src/app/api/v2/operations/monitor/route';
 const url=process.env.TEST_DATABASE_URL;
 if(!url||!decodeURIComponent(new URL(url).pathname).endsWith('_test'))throw new Error('Dedicated test DB required');
 const schema='masters_'+randomUUID().replaceAll('-','');const role='app_'+randomUUID().replaceAll('-','');const password=randomBytes(24).toString('hex');
+const guardRole=role+'_guard';
 const owner=new pg.Pool({connectionString:url});const appUrl=new URL(url);appUrl.username=role;appUrl.password=password;
 const tenant=randomUUID(),foreign=randomUUID(),warehouse=randomUUID(),otherWarehouse=randomUUID(),actor=randomUUID();
 const identity:Identity={user:{id:actor,name:'Master',email:actor+'@example.test'},tenant:{id:tenant,name:'A'},role:'admin'};
-let created=false;
+let created=false,guardCreated=false;
 beforeAll(async()=>{
  await owner.query(`CREATE ROLE "${role}" LOGIN NOSUPERUSER NOBYPASSRLS PASSWORD ${pg.escapeLiteral(password)}`);created=true;
  await migrate(url,{schema,migrationsSchema:schema,createSchema:true,createMigrationsSchema:true,log:()=>{}});
+ await owner.query(`CREATE ROLE "${guardRole}" NOLOGIN NOSUPERUSER NOBYPASSRLS`);guardCreated=true;
+ await owner.query(`GRANT USAGE,CREATE ON SCHEMA "${schema}" TO "${guardRole}"`);await owner.query(`GRANT SELECT ON ALL TABLES IN SCHEMA "${schema}" TO "${guardRole}"`);
+ for(const signature of ['master_workflow_in_use(uuid,text,uuid)','master_workflow_in_use_scoped(uuid,text,uuid)','master_active_guard()','master_barcode_immutable()'])await owner.query(`ALTER FUNCTION "${schema}".${signature} OWNER TO "${guardRole}"`);
+ await owner.query(`REVOKE CREATE ON SCHEMA "${schema}" FROM "${guardRole}"`);
  await owner.query(`GRANT USAGE ON SCHEMA "${schema}" TO "${role}"`);await owner.query(`GRANT SELECT,INSERT,UPDATE,DELETE ON ALL TABLES IN SCHEMA "${schema}" TO "${role}"`);await owner.query(`GRANT USAGE,SELECT ON ALL SEQUENCES IN SCHEMA "${schema}" TO "${role}"`);
+ await owner.query(`GRANT EXECUTE ON FUNCTION "${schema}".master_workflow_in_use(uuid,text,uuid) TO "${role}"`);
  await owner.query(`INSERT INTO "${schema}".tenants(id,name) VALUES($1,'A'),($2,'B')`,[tenant,foreign]);
  await owner.query(`INSERT INTO "${schema}"."user"(id,name,email) VALUES($1,'Master',$2)`,[actor,identity.user.email]);
  await owner.query(`INSERT INTO "${schema}".memberships(user_id,tenant_id,role) VALUES($1,$2,'admin')`,[actor,tenant]);
@@ -36,13 +42,55 @@ beforeAll(async()=>{
  await withTenant(tenant,async c=>{await c.query("INSERT INTO warehouses(id,tenant_id,code,name) VALUES($1,$2,'MAIN','Main'),($3,$2,'OTHER','Other')",[warehouse,tenant,otherWarehouse]);await c.query('INSERT INTO v2_warehouse_grants(tenant_id,user_id,warehouse_id) VALUES($1,$2,$3)',[tenant,actor,warehouse]);});
  process.env.BETTER_AUTH_URL='http://localhost:3000';
 },30000);
-afterAll(async()=>{await state.pool?.end();try{await owner.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);}finally{if(created)await owner.query(`DROP ROLE "${role}"`);await owner.end();}});
+afterAll(async()=>{await state.pool?.end();try{await owner.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);}finally{if(created)await owner.query(`DROP ROLE "${role}"`);if(guardCreated)await owner.query(`DROP ROLE "${guardRole}"`);await owner.end();}});
 const tx=<T>(fn:(c:pg.PoolClient)=>Promise<T>)=>withTenant(tenant,fn);
 async function item(code:string=randomUUID()){return tx(c=>insertMaster(c,tenant,warehouse,'items',{code:code.toUpperCase(),name:code}));}
 async function location(code:string=randomUUID(),kind='STORAGE'){return tx(c=>insertMaster(c,tenant,warehouse,'locations',{code,name:code,kind}));}
 function req(method='GET',body?:unknown,wh=warehouse,extra=''){return new Request(`http://localhost:3000/api/v2/masters/items?warehouse_id=${wh}${extra}`,{method,headers:{origin:'http://localhost:3000','content-type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});}
 const ctx=(kind='items')=>({params:Promise.resolve({kind})});
 describe('V2 masters PostgreSQL isolation and operations',()=>{
+ it('blocks shared master retirement for hidden-warehouse work without granting visibility or a tenant bypass',async()=>{
+  const i=await item(),p=await tx(c=>insertMaster(c,tenant,warehouse,'partners',{code:randomUUID(),name:'Shared partner',customer:true,supplier:true}));
+  const d=await tx(c=>insertMaster(c,tenant,warehouse,'destinations',{name:'Shared destination',recipient_name:'Recipient',address_line1:'Fixture',partner_id:p.id}));
+  const hiddenState={...emptyState(),orders:[{id:randomUUID(),version:1,lines:[{id:randomUUID(),item_id:i.id,quantity:1,shipped:0,cancelled:0}],delivery:{partner_id:p.id,destination_id:d.id},reservations:[],picks:[],created_at:new Date().toISOString()}]};
+  // The compatibility view supports legacy body writes; conflict arbitration uses its physical header.
+  await owner.query(`INSERT INTO "${schema}".v2_workflow_state_header(tenant_id,warehouse_id,state) VALUES($1,$2,'{}') ON CONFLICT(tenant_id,warehouse_id) DO NOTHING`,[tenant,otherWarehouse]);
+  await owner.query(`UPDATE "${schema}".v2_workflow_state SET state=$3::jsonb WHERE tenant_id=$1 AND warehouse_id=$2`,[tenant,otherWarehouse,JSON.stringify(hiddenState)]);
+  const scoped=<T>(fn:(c:pg.PoolClient)=>Promise<T>)=>tx(async c=>{await c.query("SELECT set_config('app.user_id',$1,true)",[actor]);return fn(c);});
+  try{
+   expect((await owner.query('SELECT rolsuper,rolbypassrls FROM pg_roles WHERE rolname=$1',[guardRole])).rows).toEqual([{rolsuper:false,rolbypassrls:false}]);
+   expect((await scoped(c=>c.query('SELECT warehouse_id FROM v2_workflow_state WHERE warehouse_id=$1',[otherWarehouse]))).rows).toEqual([]);
+   for(const [kind,id]of [['items',i.id],['partners',p.id],['destinations',d.id]] as const){
+    await expect(scoped(c=>updateMaster(c,warehouse,kind,id,{active:false}))).rejects.toMatchObject({code:'MASTER_IN_USE'});
+    const table={items:'items',partners:'business_partners',destinations:'delivery_destinations'}[kind];
+    await expect(scoped(c=>c.query(`UPDATE ${table} SET active=false WHERE id=$1`,[id]))).rejects.toMatchObject({code:'23503'});
+   }
+   await scoped(async c=>{
+    expect((await c.query('SELECT master_workflow_in_use($1,\'items\',$2) used',[tenant,i.id])).rows[0].used).toBe(true);
+    expect((await c.query("SELECT current_setting('app.user_id') actor")).rows[0].actor).toBe(actor);
+    expect((await c.query('SELECT warehouse_id FROM v2_workflow_state WHERE warehouse_id=$1',[otherWarehouse])).rows).toEqual([]);
+   });
+   await expect(scoped(c=>c.query('SELECT master_workflow_in_use($1,\'items\',$2)',[foreign,i.id]))).rejects.toMatchObject({code:'42501'});
+   await expect(scoped(c=>c.query('SELECT master_workflow_in_use_scoped($1,\'items\',$2)',[tenant,i.id]))).rejects.toMatchObject({code:'42501'});
+   // Trigger scope must remain fixed even when a caller creates a shadow table.
+   await scoped(async c=>{await c.query('CREATE TEMP TABLE v2_workflow_state(state jsonb) ON COMMIT DROP');expect((await c.query('SELECT master_workflow_in_use($1,\'items\',$2) used',[tenant,i.id])).rows[0].used).toBe(true);});
+   await owner.query(`UPDATE "${schema}".v2_workflow_state SET state='{ "orders": {} }' WHERE warehouse_id=$1`,[otherWarehouse]);
+   await scoped(async c=>{await c.query('SAVEPOINT invalid_state');await expect(c.query('SELECT master_workflow_in_use($1,\'items\',$2)',[tenant,i.id])).rejects.toMatchObject({code:'22023'});await c.query('ROLLBACK TO SAVEPOINT invalid_state');expect((await c.query("SELECT current_setting('app.user_id') actor")).rows[0].actor).toBe(actor);expect((await c.query('SELECT warehouse_id FROM v2_workflow_state WHERE warehouse_id=$1',[otherWarehouse])).rows).toEqual([]);});
+  }finally{await owner.query(`UPDATE "${schema}".v2_workflow_state SET state='{}' WHERE warehouse_id=$1`,[otherWarehouse]);}
+ });
+ it('blocks shared item and barcode retirement for legacy stock and drafts in an ungranted warehouse',async()=>{
+  const i=await item(),hiddenLocation=randomUUID(),document=randomUUID();const b=await tx(c=>insertMaster(c,tenant,warehouse,'barcodes',{barcode:randomUUID(),item_id:i.id,unit:'EA',quantity:1}));
+  await owner.query(`INSERT INTO "${schema}".locations(id,tenant_id,warehouse_id,code,name) VALUES($1::uuid,$2,$3,$1::text,'Hidden')`,[hiddenLocation,tenant,otherWarehouse]);
+  await owner.query(`INSERT INTO "${schema}".stock_balances(tenant_id,warehouse_id,location_id,item_id,quantity) VALUES($1,$2,$3,$4,1)`,[tenant,otherWarehouse,hiddenLocation,i.id]);
+  const scoped=<T>(fn:(c:pg.PoolClient)=>Promise<T>)=>tx(async c=>{await c.query("SELECT set_config('app.user_id',$1,true)",[actor]);return fn(c);});
+  expect((await scoped(c=>c.query('SELECT * FROM stock_balances WHERE item_id=$1',[i.id]))).rows).toEqual([]);
+  await expect(scoped(c=>updateMaster(c,warehouse,'items',i.id,{active:false}))).rejects.toMatchObject({code:'MASTER_IN_USE'});
+  await expect(scoped(c=>c.query('UPDATE master_barcodes SET active=false WHERE id=$1',[b.id]))).rejects.toMatchObject({code:'23503'});
+  await owner.query(`UPDATE "${schema}".stock_balances SET quantity=0 WHERE item_id=$1`,[i.id]);
+  await owner.query(`INSERT INTO "${schema}".inventory_documents(id,tenant_id,warehouse_id,destination_location_id,kind,status) VALUES($1,$2,$3,$4,'INBOUND','DRAFT')`,[document,tenant,otherWarehouse,hiddenLocation]);
+  await owner.query(`INSERT INTO "${schema}".inventory_document_lines(tenant_id,document_id,item_id,quantity) VALUES($1,$2,$3,1)`,[tenant,document,i.id]);
+  await expect(scoped(c=>c.query('UPDATE items SET active=false WHERE id=$1',[i.id]))).rejects.toMatchObject({code:'23503'});
+ });
  it('enforces FORCE RLS and composite cross-tenant target references',async()=>{
   const i=await item();await withTenant(foreign,async c=>expect((await c.query('SELECT id FROM items WHERE id=$1',[i.id])).rows).toEqual([]));
   await expect(withTenant(foreign,c=>c.query("INSERT INTO master_barcodes(tenant_id,barcode,item_id,unit,quantity) VALUES($1,'foreign',$2,'EA',1)",[foreign,i.id]))).rejects.toMatchObject({code:'23503'});

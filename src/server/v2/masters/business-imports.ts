@@ -62,7 +62,7 @@ export async function applyBusinessCsv(c:PoolClient,identity:Identity,warehouse:
   // Refresh active codes and immutable snapshots immediately before the same-transaction create.
   const fresh=[];for(const row of group)fresh.push(await businessRow(c,kind,row.data.source as Record<string,string>));
   const payload={...fresh[0].payload,lines:fresh.map(r=>r.line)};
-  const outcome=await executeWorkflowInTransaction(c,identity,{warehouse_id:warehouse,request_id:randomUUID(),command:kind==='receipts'?'receipt.create':'order.create',payload});
+  const outcome=await executeWorkflowInTransaction(c,identity,{warehouse_id:warehouse,request_id:randomUUID(),command:kind==='receipts'?'receipt.create':'order.create',payload},{includeSnapshot:false});
   const result={external_id:id,row_numbers:group.map(r=>r.row_number),request_keys:group.map(r=>r.request_key),...outcome.result};results.push(result);applied++;
   for(const row of group)await c.query('INSERT INTO master_csv_applied_rows(tenant_id,preview_id,row_number,result) VALUES($1,$2,$3,$4::jsonb)',[tenant,previewId,row.row_number,JSON.stringify(result)]);
  }

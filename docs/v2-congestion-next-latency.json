@@ -1,0 +1,59 @@
+{
+  "run_id": "c83531b5-faad-4e95-836e-26c7056ed465",
+  "at": "2026-10-20T15:53:36.447Z",
+  "window": "Original requests started from measured_start through min(now,25-minute end); p95 includes complete response body and JSON decoding.",
+  "resources": [
+    {
+      "pid": 228072,
+      "cpu_ms": 818690,
+      "rss_bytes": 485437440,
+      "cores_since_previous": 0.5317761165062854,
+      "clock_tick_assumption": 100
+    },
+    {
+      "pid": 218307,
+      "cpu_ms": 802990,
+      "rss_bytes": 495476736,
+      "cores_since_previous": 0.6531613974661652,
+      "clock_tick_assumption": 100
+    }
+  ],
+  "companies": [
+    {
+      "run_id": "c83531b5-faad-4e95-836e-26c7056ed465:0",
+      "measured_elapsed_ms": 1201375,
+      "physical": {
+        "samples": 3120,
+        "p95_ms": 2827
+      },
+      "acceptance": {
+        "samples": 2401,
+        "p95_ms": 2170
+      },
+      "snapshot": {
+        "samples": 885,
+        "p95_ms": 2445
+      },
+      "technical_failures": 35,
+      "total_api_attempts": 13319
+    },
+    {
+      "run_id": "c83531b5-faad-4e95-836e-26c7056ed465:1",
+      "measured_elapsed_ms": 1201375,
+      "physical": {
+        "samples": 3113,
+        "p95_ms": 2784
+      },
+      "acceptance": {
+        "samples": 2401,
+        "p95_ms": 2163
+      },
+      "snapshot": {
+        "samples": 885,
+        "p95_ms": 2404
+      },
+      "technical_failures": 33,
+      "total_api_attempts": 13547
+    }
+  ]
+}

@@ -218,7 +218,8 @@ describe('P5 transfer and reversal with restricted PostgreSQL application role',
     const item = await stocked(100);
     const document = await outbound([{ item_id: item, quantity: 100 }]);
     await postDocument(identity, document.id, 1, randomUUID());
-    await owner.query(`UPDATE "${schema}".items SET active=false WHERE id=$1`, [item]);
+    // The outbound consumed all stock, so retiring this historical item is legitimate.
+    await withTenant(tenant, client => client.query('UPDATE items SET active=false WHERE id=$1', [item]));
     await reverseDocument(identity, document.id, 2, randomUUID());
     expect((await quantities(item))[0].quantity).toBe('100');
     expect((await reversalOf(document.id))[0].kind).toBe('INBOUND');

@@ -1,0 +1,173 @@
+{
+  "run_id": "c83531b5-faad-4e95-836e-26c7056ed465",
+  "recovered_at": "2026-10-20T23:27:40.359126+00:00",
+  "source_report": "artifacts/v2-congestion-next-full/c83531b5-faad-4e95-836e-26c7056ed465.json",
+  "source_report_sha256": "931372e6e9fd3146f1fcee477a841d6ae9defcc16f896d585772444a537410de",
+  "source_report_generated_at": "2026-10-20T16:08:56.298Z",
+  "execution": "interrupted",
+  "overall_verdict": "failed",
+  "exact_25_minute_peak_cohort_verdict": "failed",
+  "performance_verdict": "failed",
+  "fallback_drain": "did_not_finish_by_original_35_minute_deadline",
+  "companies": [
+    {
+      "company_id": "0f917fcc-9891-46b4-a1df-e78099082193",
+      "boundary": 6618,
+      "ledger_rows": 14758,
+      "final_reconciliation": {
+        "status": "completed",
+        "boundary": 6618,
+        "independent_match": false,
+        "read_retries": 0
+      },
+      "difference_classification": {
+        "original_quantity": 250
+      },
+      "original_quantity_source_quantity_matches": false,
+      "original_quantity_not_completed": 250,
+      "stock_ledger_physical_delta_bucket_differences": 0,
+      "incomplete_operations": 1365,
+      "completed_shipments": 906,
+      "measured_orders": 1890,
+      "completed_measured_receipts": 279,
+      "measured_receipts": 540,
+      "runtime_failure": {
+        "stage": "recovery_deadline",
+        "code": "RECOVERY_DEADLINE_EXCEEDED",
+        "deadline_ms": 1792512515072
+      },
+      "integrity_passed": false,
+      "verdict": "failed",
+      "quality_targets": {
+        "qualification": true,
+        "met": false,
+        "window_start": "2026-10-20T15:33:35.072Z",
+        "window_end": "2026-10-20T15:58:35.072Z",
+        "baseline_seed_and_final_reconciliation_excluded": true,
+        "latency_definition": "Client request start through complete response body and JSON decoding.",
+        "checks": {
+          "physical_confirmation_p95": {
+            "observed_ms": 3085,
+            "maximum_ms": 1500,
+            "samples": 3620
+          },
+          "external_acceptance_p95": {
+            "observed_ms": 2257,
+            "maximum_ms": 1000,
+            "samples": 2698
+          },
+          "external_application_p95": {
+            "observed_ms": 1186209,
+            "maximum_ms": 5000,
+            "samples": 1361
+          },
+          "technical_failure_rate": {
+            "numerator": 50,
+            "denominator": 16052,
+            "observed": 0.0031148766508846248,
+            "strict_maximum": 0.001
+          },
+          "recovery": {
+            "observed_ms": 600004,
+            "maximum_ms": 600000,
+            "unresolved": 1365
+          }
+        },
+        "limitations": [
+          "Successful HTTP workflow responses measure automated command confirmation, not real scanner hardware latency.",
+          "Browser display and real-device requirements need their separate evidence."
+        ]
+      }
+    },
+    {
+      "company_id": "68c514f9-9da3-4003-b26b-7a62e7bd2d31",
+      "boundary": 6643,
+      "ledger_rows": 14700,
+      "final_reconciliation": {
+        "status": "completed",
+        "boundary": 6643,
+        "independent_match": false,
+        "read_retries": 0
+      },
+      "difference_classification": {
+        "original_quantity": 259
+      },
+      "original_quantity_source_quantity_matches": true,
+      "original_quantity_not_completed": 259,
+      "stock_ledger_physical_delta_bucket_differences": 0,
+      "incomplete_operations": 1365,
+      "completed_shipments": 908,
+      "measured_orders": 1890,
+      "completed_measured_receipts": 280,
+      "measured_receipts": 540,
+      "runtime_failure": null,
+      "integrity_passed": false,
+      "verdict": "failed",
+      "quality_targets": {
+        "qualification": true,
+        "met": false,
+        "window_start": "2026-10-20T15:33:35.072Z",
+        "window_end": "2026-10-20T15:58:35.072Z",
+        "baseline_seed_and_final_reconciliation_excluded": true,
+        "latency_definition": "Client request start through complete response body and JSON decoding.",
+        "checks": {
+          "physical_confirmation_p95": {
+            "observed_ms": 3042,
+            "maximum_ms": 1500,
+            "samples": 3619
+          },
+          "external_acceptance_p95": {
+            "observed_ms": 2250,
+            "maximum_ms": 1000,
+            "samples": 2698
+          },
+          "external_application_p95": {
+            "observed_ms": 1189743,
+            "maximum_ms": 5000,
+            "samples": 1361
+          },
+          "technical_failure_rate": {
+            "numerator": 43,
+            "denominator": 16341,
+            "observed": 0.002631417905880913,
+            "strict_maximum": 0.001
+          },
+          "recovery": {
+            "observed_ms": 600004,
+            "maximum_ms": 600000,
+            "unresolved": 1365
+          }
+        },
+        "limitations": [
+          "Successful HTTP workflow responses measure automated command confirmation, not real scanner hardware latency.",
+          "Browser display and real-device requirements need their separate evidence."
+        ]
+      }
+    }
+  ],
+  "fixed_boundary_ledger_evidence": {
+    "basis": "Original final report and frozen client profile.mjs lines201-206. Final read loops all ledger pages at snapshot.version and throws on boundary mismatch or stalled cursor. Physical-command expected buckets, stock buckets and ledger sums are compared before original-quantity checks. All reported differences are original_quantity; zero stock/ledger bucket differences.",
+    "raw_snapshot_and_full_ledger_export_present": false,
+    "limitation": "This is recovery/classification of original client evidence; no additional API or server database query performed. Overall independent_match remains false because originals were unfinished."
+  },
+  "process_observation": {
+    "client_pid": 228072,
+    "client_present": false,
+    "runtime_pid": 218307,
+    "runtime_present": false,
+    "runtime_parent_pid": 218298,
+    "runtime_stop_timestamp": "2026-10-20T23:27:49.149973+00:00",
+    "limitation": "Observed process state during recovery; does not establish historical stop time.",
+    "runtime_stop_observed_at": "2026-10-20T23:27:49.149973+00:00",
+    "runtime_stop_method": "Authorized graceful SIGTERM to original runtime218307 and launcher218298; both exited or zombie, no running process remains."
+  },
+  "preservation": {
+    "original_sqlite": "artifacts/v2-congestion-next-full/profile.sqlite",
+    "original_sqlite_mutated": false,
+    "server_database_accessed": false,
+    "test_restarted": false,
+    "private_binding_location": "/tmp/v2-congestion-next-full-targets.json",
+    "private_binding_contents_included": false
+  },
+  "stale_artifact": "docs/v2-congestion-next-active.json and artifacts/v2-congestion-next-full/active.json are historical running snapshots, superseded by original final report."
+}

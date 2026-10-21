@@ -2,6 +2,7 @@ import type { PoolClient } from "pg";
 import { getPool } from "./pool";
 import { requestActor,requestWarehouse } from "../request-log";
 import {transactionApplicationName} from '../../../scripts/v2-lock-scope.mjs';
+import {beginTiming,observeTimingPool,timeAsync} from '../timing-diagnostics';
 
 /** Only pass the tenant resolved from the authenticated server-side membership. */
 export async function withTenant<T>(
@@ -11,10 +12,14 @@ export async function withTenant<T>(
   if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tenantId)) {
     throw new Error("Invalid tenant identifier.");
   }
-  const client = await getPool().connect();
+  const pool=getPool();observeTimingPool('business',pool);
+  const client = await timeAsync('db.pool_acquire',()=>{const pending=pool.connect();observeTimingPool('business',pool);return pending;});
+  const endHeld=beginTiming('db.connection_held');
   let discard = false;
   try {
-    await client.query("BEGIN");
+    await timeAsync('db.begin',()=>client.query("BEGIN"));
+    const endContext=beginTiming('db.context');
+    try{
     await client.query("SELECT set_config('app.tenant_id', $1, true)", [tenantId]);
     const actor = requestActor();
     if (actor) {
@@ -28,17 +33,19 @@ export async function withTenant<T>(
     await client.query("SELECT set_config('application_name',$1,true)",[
       transactionApplicationName(tenantId,actor?requestWarehouse():null),
     ]);
-    const result = await operation(client);
-    await client.query("COMMIT");
+    endContext();}catch(error){endContext(true);throw error;}
+    const result = await timeAsync('db.operation',()=>operation(client));
+    await timeAsync('db.commit',()=>client.query("COMMIT"));
     return result;
   } catch (error) {
     try {
-      await client.query("ROLLBACK");
+      await timeAsync('db.rollback',()=>client.query("ROLLBACK"));
     } catch {
       discard = true;
     }
     throw error;
   } finally {
     client.release(discard);
+    endHeld();observeTimingPool('business',pool);
   }
 }

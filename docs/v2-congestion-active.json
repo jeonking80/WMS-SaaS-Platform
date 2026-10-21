@@ -1,7 +1,20 @@
 {
   "run_id": "89990772-835e-4b2d-b9ee-4750ad668da0",
-  "status": "running_not_a_pass",
-  "generated_at": "2026-10-20T14:37:02.724Z",
+  "process_resources": [
+    {
+      "pid": 184103,
+      "status": "unavailable"
+    },
+    {
+      "pid": 175965,
+      "cpu_ms": 1041740,
+      "state": "S",
+      "rss_bytes": 468652032,
+      "cores_used_since_previous_checkpoint": 0.4796980327131227
+    }
+  ],
+  "status": "failed_client_exited_before_25_minutes",
+  "generated_at": "2026-10-20T15:03:40.967Z",
   "process_started_at": "2026-10-20T14:35:55.317Z",
   "client_pid": 184103,
   "runtime_pid": 175965,
@@ -47,109 +60,141 @@
     {
       "run_id": "89990772-835e-4b2d-b9ee-4750ad668da0:0",
       "status": "running",
-      "phase": "1_per_second_first_10_minutes",
+      "phase": "1_per_second_last_10_minutes",
       "measured_started_at": "2026-10-20T14:36:51.646Z",
       "planned_end_at": "2026-10-20T15:01:51.646Z",
       "recovery_deadline_at": "2026-10-20T15:11:51.646Z",
-      "elapsed_ms": 11078,
-      "remaining_ms": 1488922,
+      "elapsed_ms": 1385364,
+      "remaining_ms": 114636,
       "target_events": 2700,
       "scheduled_rate_per_second": 1,
-      "planned_due": 12,
-      "accepted_unique_events": 11,
-      "finalized_unique_events": 10,
-      "undelivered_due_events": 1,
-      "queue_backlog": 1,
-      "maximum_delivery_lateness_ms": 846,
-      "completed_shipments": 3,
-      "completed_receipt_putaways_including_seed": 100,
-      "normal_window_api_calls": 62,
-      "normal_window_technical_failures": 0,
+      "planned_due": 2586,
+      "accepted_unique_events": 1135,
+      "actual_average_accepted_per_second": 0.8192792652328197,
+      "actual_rate_last_checkpoint_per_second": 0.28330264221376017,
+      "finalized_unique_events": 1099,
+      "undelivered_due_events": 1451,
+      "queue_backlog": 36,
+      "maximum_delivery_lateness_ms": 620398,
+      "completed_shipments": 432,
+      "completed_receipt_putaways_including_seed": 316,
+      "normal_window_api_calls": 10534,
+      "normal_window_technical_failures": 43,
       "status_counts": [
         {
           "kind": "command",
           "status": "done",
-          "n": 323
+          "n": 2690
         },
         {
           "kind": "command",
-          "status": "unconfirmed",
-          "n": 5
+          "status": "superseded",
+          "n": 54
+        },
+        {
+          "kind": "command",
+          "status": "unsent",
+          "n": 328
         },
         {
           "kind": "event",
           "status": "done",
-          "n": 109
+          "n": 1187
         },
         {
           "kind": "event",
           "status": "expected_business_rejected",
-          "n": 1
+          "n": 12
         },
         {
           "kind": "event",
           "status": "unconfirmed",
-          "n": 1
+          "n": 36
         },
         {
           "kind": "event",
           "status": "unsent",
-          "n": 2689
+          "n": 1565
         }
       ]
     },
     {
       "run_id": "89990772-835e-4b2d-b9ee-4750ad668da0:1",
       "status": "running",
-      "phase": "1_per_second_first_10_minutes",
+      "phase": "1_per_second_last_10_minutes",
       "measured_started_at": "2026-10-20T14:36:51.646Z",
       "planned_end_at": "2026-10-20T15:01:51.646Z",
       "recovery_deadline_at": "2026-10-20T15:11:51.646Z",
-      "elapsed_ms": 11078,
-      "remaining_ms": 1488922,
+      "elapsed_ms": 1385364,
+      "remaining_ms": 114636,
       "target_events": 2700,
       "scheduled_rate_per_second": 1,
-      "planned_due": 12,
-      "accepted_unique_events": 11,
-      "finalized_unique_events": 10,
-      "undelivered_due_events": 1,
-      "queue_backlog": 1,
-      "maximum_delivery_lateness_ms": 876,
-      "completed_shipments": 4,
-      "completed_receipt_putaways_including_seed": 100,
-      "normal_window_api_calls": 63,
-      "normal_window_technical_failures": 0,
+      "planned_due": 2586,
+      "accepted_unique_events": 1170,
+      "actual_average_accepted_per_second": 0.8445433835439639,
+      "actual_rate_last_checkpoint_per_second": 0.2749702115604143,
+      "finalized_unique_events": 1141,
+      "undelivered_due_events": 1416,
+      "queue_backlog": 29,
+      "maximum_delivery_lateness_ms": 595791,
+      "completed_shipments": 425,
+      "completed_receipt_putaways_including_seed": 324,
+      "normal_window_api_calls": 10538,
+      "normal_window_technical_failures": 50,
       "status_counts": [
         {
           "kind": "command",
           "status": "done",
-          "n": 324
+          "n": 2691
         },
         {
           "kind": "command",
-          "status": "waiting_stock",
+          "status": "superseded",
+          "n": 62
+        },
+        {
+          "kind": "command",
+          "status": "unconfirmed",
           "n": 1
+        },
+        {
+          "kind": "command",
+          "status": "unsent",
+          "n": 367
         },
         {
           "kind": "event",
           "status": "done",
-          "n": 110
+          "n": 1231
+        },
+        {
+          "kind": "event",
+          "status": "expected_business_rejected",
+          "n": 10
         },
         {
           "kind": "event",
           "status": "unconfirmed",
-          "n": 2
+          "n": 37
         },
         {
           "kind": "event",
           "status": "unsent",
-          "n": 2688
+          "n": 1522
         }
       ]
     }
   ],
-  "final_reconciliation": "pending until all source and physical work settles at the frozen ledger boundary",
+  "final_reconciliation": "Post-exit API-only fixed-boundary collection completed; completed-command stock/ledger differences are zero, but original-line completion gaps and unfinished events remain. Overall integrity failed.",
   "resume": {
-    "command": "node --env-file=/tmp/v2-sim-shared-bindings.env /tmp/v2-congestion-client-start.mjs 89990772-835e-4b2d-b9ee-4750ad668da0"
-  }
+    "permitted": false,
+    "reason": "Preserved failed original run. Root instructed no resumption or original-journal writes; any new revision requires a fresh company/catalog/run."
+  },
+  "final_report": "artifacts/v2-congestion-full/89990772-835e-4b2d-b9ee-4750ad668da0-post-exit-reconciliation.json",
+  "client_running": false,
+  "client_exit_code": 1,
+  "runtime_running": false,
+  "runtime_stopped_at": "2026-10-20T15:04:13.316Z",
+  "actual_recorded_end_at": "2026-10-20T14:58:58.674Z",
+  "continuous_25_minute_execution": false
 }

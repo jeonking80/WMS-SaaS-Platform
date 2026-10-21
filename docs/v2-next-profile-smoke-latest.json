@@ -1,0 +1,560 @@
+{
+  "generated_at": "2026-10-20T15:23:02.809Z",
+  "kind": "actual_http_api_profile_recovery_smoke",
+  "runtime_build_id": "_ceZRl8gR2Kae5HHrI6GQ",
+  "frozen_client_manifest": "/tmp/wms-v2-congestion-next-client/manifest.json",
+  "scheduler_version": "independent-source-lanes-v2",
+  "recovery_version": "bounded-control-and-final-read-v1",
+  "test_verdict": "passed",
+  "cases": [
+    {
+      "mode": "none",
+      "run_id": "388da8a7-61ba-48c0-a37a-f508d2cd717f",
+      "exit": {
+        "code": 0,
+        "signal": null
+      },
+      "execution": "finished",
+      "verdict": "passed",
+      "companies": [
+        {
+          "delivered": 20,
+          "shipments": 14,
+          "putaways": 4,
+          "boundary": 88,
+          "differences": 0,
+          "incomplete": 0,
+          "final_reconciliation": {
+            "status": "completed",
+            "boundary": 88,
+            "independent_match": true,
+            "read_retries": 0
+          },
+          "quality_met": true
+        },
+        {
+          "delivered": 20,
+          "shipments": 14,
+          "putaways": 4,
+          "boundary": 88,
+          "differences": 0,
+          "incomplete": 0,
+          "final_reconciliation": {
+            "status": "completed",
+            "boundary": 88,
+            "independent_match": true,
+            "read_retries": 0
+          },
+          "quality_met": true
+        }
+      ],
+      "output": "/workspace/WMS-SaaS-Platform/artifacts/v2-next-smoke/none",
+      "injections": [],
+      "forwarded_post_count": 251,
+      "unknown_forwarded_post_body_count": 0,
+      "failed_api_observations": [],
+      "retry_observations": [],
+      "checks": {
+        "only_get_faults": true,
+        "all_business_body_bytes_forwarded_unchanged": true,
+        "all_forwarded_post_bodies_match_original_journal_or_processor_contract": true,
+        "all_40_original_events_done": true,
+        "normal_unchanged": true,
+        "transient_snapshot_recovered": true,
+        "transient_ledger_recovered": true,
+        "persistent_final_failure_preserved": true
+      },
+      "test_verdict": "passed"
+    },
+    {
+      "mode": "snapshot-once",
+      "run_id": "099313f1-5e7b-484e-bcf3-dff02a6c9c28",
+      "exit": {
+        "code": 0,
+        "signal": null
+      },
+      "execution": "finished",
+      "verdict": "passed",
+      "companies": [
+        {
+          "delivered": 20,
+          "shipments": 14,
+          "putaways": 4,
+          "boundary": 176,
+          "differences": 0,
+          "incomplete": 0,
+          "final_reconciliation": {
+            "status": "completed",
+            "boundary": 176,
+            "independent_match": true,
+            "read_retries": 0
+          },
+          "quality_met": true
+        },
+        {
+          "delivered": 20,
+          "shipments": 14,
+          "putaways": 4,
+          "boundary": 176,
+          "differences": 0,
+          "incomplete": 0,
+          "final_reconciliation": {
+            "status": "completed",
+            "boundary": 176,
+            "independent_match": true,
+            "read_retries": 0
+          },
+          "quality_met": true
+        }
+      ],
+      "output": "/workspace/WMS-SaaS-Platform/artifacts/v2-next-smoke/snapshot-once",
+      "injections": [
+        {
+          "at": "2026-10-20T15:21:27.025Z",
+          "event": "injected_read_failure",
+          "method": "GET",
+          "path": "/api/v2/workflow",
+          "status": 503,
+          "mode": "snapshot-once",
+          "injected": 1
+        }
+      ],
+      "forwarded_post_count": 257,
+      "unknown_forwarded_post_body_count": 0,
+      "failed_api_observations": [
+        {
+          "run_id": "099313f1-5e7b-484e-bcf3-dff02a6c9c28:0",
+          "at": "2026-10-20T15:21:27.027Z",
+          "kind": "api_call",
+          "details": {
+            "role": 0,
+            "path": "/api/v2/workflow",
+            "method": "GET",
+            "status": 503,
+            "response_body_complete": true,
+            "started_at_ms": 1792509687022,
+            "completed_at_ms": 1792509687027,
+            "latency_ms": 5
+          }
+        }
+      ],
+      "retry_observations": [
+        {
+          "run_id": "099313f1-5e7b-484e-bcf3-dff02a6c9c28:0",
+          "at": "2026-10-20T15:21:27.030Z",
+          "kind": "control_read_failure",
+          "details": {
+            "status": 503,
+            "code": "SERVICE_UNAVAILABLE",
+            "retry_status": "retrying",
+            "attempts": 1,
+            "next_at": 1792509688533.1719
+          }
+        }
+      ],
+      "checks": {
+        "only_get_faults": true,
+        "all_business_body_bytes_forwarded_unchanged": true,
+        "all_forwarded_post_bodies_match_original_journal_or_processor_contract": true,
+        "all_40_original_events_done": true,
+        "normal_unchanged": true,
+        "transient_snapshot_recovered": true,
+        "transient_ledger_recovered": true,
+        "persistent_final_failure_preserved": true
+      },
+      "test_verdict": "passed"
+    },
+    {
+      "mode": "ledger-once",
+      "run_id": "7897f667-5683-40ac-8a8e-c294106dee75",
+      "exit": {
+        "code": 0,
+        "signal": null
+      },
+      "execution": "finished",
+      "verdict": "passed",
+      "companies": [
+        {
+          "delivered": 20,
+          "shipments": 14,
+          "putaways": 4,
+          "boundary": 264,
+          "differences": 0,
+          "incomplete": 0,
+          "final_reconciliation": {
+            "status": "completed",
+            "boundary": 264,
+            "independent_match": true,
+            "read_retries": 1
+          },
+          "quality_met": true
+        },
+        {
+          "delivered": 20,
+          "shipments": 14,
+          "putaways": 4,
+          "boundary": 264,
+          "differences": 0,
+          "incomplete": 0,
+          "final_reconciliation": {
+            "status": "completed",
+            "boundary": 264,
+            "independent_match": true,
+            "read_retries": 0
+          },
+          "quality_met": true
+        }
+      ],
+      "output": "/workspace/WMS-SaaS-Platform/artifacts/v2-next-smoke/ledger-once",
+      "injections": [
+        {
+          "at": "2026-10-20T15:21:45.368Z",
+          "event": "injected_read_failure",
+          "method": "GET",
+          "path": "/api/v2/workflow/ledger",
+          "status": 503,
+          "mode": "ledger-once",
+          "injected": 1
+        }
+      ],
+      "forwarded_post_count": 255,
+      "unknown_forwarded_post_body_count": 0,
+      "failed_api_observations": [
+        {
+          "run_id": "7897f667-5683-40ac-8a8e-c294106dee75:0",
+          "at": "2026-10-20T15:21:45.370Z",
+          "kind": "api_call",
+          "details": {
+            "role": 0,
+            "path": "/api/v2/workflow/ledger",
+            "method": "GET",
+            "status": 503,
+            "response_body_complete": true,
+            "started_at_ms": 1792509705367,
+            "completed_at_ms": 1792509705370,
+            "latency_ms": 3
+          }
+        }
+      ],
+      "retry_observations": [
+        {
+          "run_id": "7897f667-5683-40ac-8a8e-c294106dee75:0",
+          "at": "2026-10-20T15:21:45.370Z",
+          "kind": "final_read_retry",
+          "details": {
+            "stage": "ledger",
+            "attempt": 1,
+            "next_at": 1792509706738.3398,
+            "last_failure": {
+              "status": 503,
+              "code": "SERVICE_UNAVAILABLE"
+            }
+          }
+        }
+      ],
+      "checks": {
+        "only_get_faults": true,
+        "all_business_body_bytes_forwarded_unchanged": true,
+        "all_forwarded_post_bodies_match_original_journal_or_processor_contract": true,
+        "all_40_original_events_done": true,
+        "normal_unchanged": true,
+        "transient_snapshot_recovered": true,
+        "transient_ledger_recovered": true,
+        "persistent_final_failure_preserved": true
+      },
+      "test_verdict": "passed"
+    },
+    {
+      "mode": "ledger-persistent",
+      "run_id": "9fdb4485-8e5d-4883-8a71-2b8240dac79d",
+      "exit": {
+        "code": 1,
+        "signal": null
+      },
+      "execution": "finished",
+      "verdict": "failed",
+      "companies": [
+        {
+          "delivered": 20,
+          "boundary": null,
+          "differences": null,
+          "incomplete": 0,
+          "final_reconciliation": {
+            "status": "unverified",
+            "stage": "final_reconciliation",
+            "http_status": 503,
+            "code": "FINAL_READ_RETRY_EXHAUSTED",
+            "attempts": 3,
+            "last_failure": {
+              "status": 503,
+              "code": "SERVICE_UNAVAILABLE"
+            }
+          },
+          "quality_met": false
+        },
+        {
+          "delivered": 20,
+          "boundary": null,
+          "differences": null,
+          "incomplete": 0,
+          "final_reconciliation": {
+            "status": "unverified",
+            "stage": "final_reconciliation",
+            "http_status": 503,
+            "code": "FINAL_READ_RETRY_EXHAUSTED",
+            "attempts": 3,
+            "last_failure": {
+              "status": 503,
+              "code": "SERVICE_UNAVAILABLE"
+            }
+          },
+          "quality_met": false
+        }
+      ],
+      "output": "/workspace/WMS-SaaS-Platform/artifacts/v2-next-smoke/ledger-persistent",
+      "injections": [
+        {
+          "at": "2026-10-20T15:21:56.148Z",
+          "event": "injected_read_failure",
+          "method": "GET",
+          "path": "/api/v2/workflow/ledger",
+          "status": 503,
+          "mode": "ledger-persistent",
+          "injected": 1
+        },
+        {
+          "at": "2026-10-20T15:21:58.153Z",
+          "event": "injected_read_failure",
+          "method": "GET",
+          "path": "/api/v2/workflow/ledger",
+          "status": 503,
+          "mode": "ledger-persistent",
+          "injected": 2
+        },
+        {
+          "at": "2026-10-20T15:22:01.430Z",
+          "event": "injected_read_failure",
+          "method": "GET",
+          "path": "/api/v2/workflow/ledger",
+          "status": 503,
+          "mode": "ledger-persistent",
+          "injected": 3
+        },
+        {
+          "at": "2026-10-20T15:22:01.471Z",
+          "event": "injected_read_failure",
+          "method": "GET",
+          "path": "/api/v2/workflow/ledger",
+          "status": 503,
+          "mode": "ledger-persistent",
+          "injected": 4
+        },
+        {
+          "at": "2026-10-20T15:22:03.388Z",
+          "event": "injected_read_failure",
+          "method": "GET",
+          "path": "/api/v2/workflow/ledger",
+          "status": 503,
+          "mode": "ledger-persistent",
+          "injected": 5
+        },
+        {
+          "at": "2026-10-20T15:22:07.059Z",
+          "event": "injected_read_failure",
+          "method": "GET",
+          "path": "/api/v2/workflow/ledger",
+          "status": 503,
+          "mode": "ledger-persistent",
+          "injected": 6
+        }
+      ],
+      "forwarded_post_count": 242,
+      "unknown_forwarded_post_body_count": 0,
+      "failed_api_observations": [
+        {
+          "run_id": "9fdb4485-8e5d-4883-8a71-2b8240dac79d:0",
+          "at": "2026-10-20T15:21:56.149Z",
+          "kind": "api_call",
+          "details": {
+            "role": 0,
+            "path": "/api/v2/workflow/ledger",
+            "method": "GET",
+            "status": 503,
+            "response_body_complete": true,
+            "started_at_ms": 1792509716146,
+            "completed_at_ms": 1792509716149,
+            "latency_ms": 3
+          }
+        },
+        {
+          "run_id": "9fdb4485-8e5d-4883-8a71-2b8240dac79d:0",
+          "at": "2026-10-20T15:21:58.155Z",
+          "kind": "api_call",
+          "details": {
+            "role": 0,
+            "path": "/api/v2/workflow/ledger",
+            "method": "GET",
+            "status": 503,
+            "response_body_complete": true,
+            "started_at_ms": 1792509718143,
+            "completed_at_ms": 1792509718155,
+            "latency_ms": 12
+          }
+        },
+        {
+          "run_id": "9fdb4485-8e5d-4883-8a71-2b8240dac79d:0",
+          "at": "2026-10-20T15:22:01.431Z",
+          "kind": "api_call",
+          "details": {
+            "role": 0,
+            "path": "/api/v2/workflow/ledger",
+            "method": "GET",
+            "status": 503,
+            "response_body_complete": true,
+            "started_at_ms": 1792509721427,
+            "completed_at_ms": 1792509721431,
+            "latency_ms": 4
+          }
+        },
+        {
+          "run_id": "9fdb4485-8e5d-4883-8a71-2b8240dac79d:1",
+          "at": "2026-10-20T15:22:01.472Z",
+          "kind": "api_call",
+          "details": {
+            "role": 0,
+            "path": "/api/v2/workflow/ledger",
+            "method": "GET",
+            "status": 503,
+            "response_body_complete": true,
+            "started_at_ms": 1792509721470,
+            "completed_at_ms": 1792509721472,
+            "latency_ms": 2
+          }
+        },
+        {
+          "run_id": "9fdb4485-8e5d-4883-8a71-2b8240dac79d:1",
+          "at": "2026-10-20T15:22:03.389Z",
+          "kind": "api_call",
+          "details": {
+            "role": 0,
+            "path": "/api/v2/workflow/ledger",
+            "method": "GET",
+            "status": 503,
+            "response_body_complete": true,
+            "started_at_ms": 1792509723385,
+            "completed_at_ms": 1792509723389,
+            "latency_ms": 4
+          }
+        },
+        {
+          "run_id": "9fdb4485-8e5d-4883-8a71-2b8240dac79d:1",
+          "at": "2026-10-20T15:22:07.061Z",
+          "kind": "api_call",
+          "details": {
+            "role": 0,
+            "path": "/api/v2/workflow/ledger",
+            "method": "GET",
+            "status": 503,
+            "response_body_complete": true,
+            "started_at_ms": 1792509727057,
+            "completed_at_ms": 1792509727060,
+            "latency_ms": 3
+          }
+        }
+      ],
+      "retry_observations": [
+        {
+          "run_id": "9fdb4485-8e5d-4883-8a71-2b8240dac79d:0",
+          "at": "2026-10-20T15:21:56.151Z",
+          "kind": "final_read_retry",
+          "details": {
+            "stage": "ledger",
+            "attempt": 1,
+            "next_at": 1792509718143.827,
+            "last_failure": {
+              "status": 503,
+              "code": "SERVICE_UNAVAILABLE"
+            }
+          }
+        },
+        {
+          "run_id": "9fdb4485-8e5d-4883-8a71-2b8240dac79d:0",
+          "at": "2026-10-20T15:21:58.157Z",
+          "kind": "final_read_retry",
+          "details": {
+            "stage": "ledger",
+            "attempt": 2,
+            "next_at": 1792509721427.0706,
+            "last_failure": {
+              "status": 503,
+              "code": "SERVICE_UNAVAILABLE"
+            }
+          }
+        },
+        {
+          "run_id": "9fdb4485-8e5d-4883-8a71-2b8240dac79d:1",
+          "at": "2026-10-20T15:22:01.472Z",
+          "kind": "final_read_retry",
+          "details": {
+            "stage": "ledger",
+            "attempt": 1,
+            "next_at": 1792509723385.7036,
+            "last_failure": {
+              "status": 503,
+              "code": "SERVICE_UNAVAILABLE"
+            }
+          }
+        },
+        {
+          "run_id": "9fdb4485-8e5d-4883-8a71-2b8240dac79d:1",
+          "at": "2026-10-20T15:22:03.390Z",
+          "kind": "final_read_retry",
+          "details": {
+            "stage": "ledger",
+            "attempt": 2,
+            "next_at": 1792509727056.0051,
+            "last_failure": {
+              "status": 503,
+              "code": "SERVICE_UNAVAILABLE"
+            }
+          }
+        }
+      ],
+      "checks": {
+        "only_get_faults": true,
+        "all_business_body_bytes_forwarded_unchanged": true,
+        "all_forwarded_post_bodies_match_original_journal_or_processor_contract": true,
+        "all_40_original_events_done": true,
+        "normal_unchanged": true,
+        "transient_snapshot_recovered": true,
+        "transient_ledger_recovered": true,
+        "persistent_final_failure_preserved": true
+      },
+      "test_verdict": "passed"
+    }
+  ],
+  "full_catalog_untouched": [
+    {
+      "company_id": "0f917fcc-9891-46b4-a1df-e78099082193",
+      "dedicated_full_catalog_items": 100,
+      "nonzero_stock_rows": 0,
+      "related_business_objects": 0,
+      "untouched": true
+    },
+    {
+      "company_id": "68c514f9-9da3-4003-b26b-7a62e7bd2d31",
+      "dedicated_full_catalog_items": 100,
+      "nonzero_stock_rows": 0,
+      "related_business_objects": 0,
+      "untouched": true
+    }
+  ],
+  "full25_started": false,
+  "original_failed_run_resumed": false,
+  "limitations": [
+    "Short smoke tests do not establish the full 25-minute or eight-hour SLA.",
+    "The snapshot fault is injected into the first main-loop snapshot after both journals are created; it occurs before measured_start, is retained in total technical attempts, and is not a normal-window failure sample.",
+    "Persistent final ledger errors intentionally leave that raw report failed and unverified; no stale snapshot or partial ledger is accepted as a successful final reconciliation.",
+    "Faults are HTTP503 GET response injections at a local HTTP proxy; original WMS business POST bodies are forwarded unchanged."
+  ]
+}

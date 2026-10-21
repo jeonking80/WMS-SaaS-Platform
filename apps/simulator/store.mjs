@@ -9,11 +9,26 @@ export function openStore(path) {
     CREATE TABLE IF NOT EXISTS observations(id INTEGER PRIMARY KEY AUTOINCREMENT,run_id TEXT NOT NULL REFERENCES runs(id),at TEXT NOT NULL,kind TEXT NOT NULL,details TEXT NOT NULL);
     CREATE TABLE IF NOT EXISTS intent(id TEXT PRIMARY KEY,run_id TEXT NOT NULL REFERENCES runs(id),command TEXT NOT NULL,payload TEXT NOT NULL,actor TEXT NOT NULL,at TEXT NOT NULL);`);
   if(!db.prepare('PRAGMA table_info(operations)').all().some(x=>x.name==='options'))db.exec("ALTER TABLE operations ADD COLUMN options TEXT NOT NULL DEFAULT '{}'");
+  // Narrow synchronous readers keep the 50ms scheduler from decoding the whole journal.
+  const existsRun=db.prepare('SELECT 1 FROM runs WHERE id=?');
+  const contextRun=db.prepare('SELECT context FROM runs WHERE id=?');
+  const states=db.prepare('SELECT id,kind,status FROM operations WHERE run_id=? ORDER BY ordinal');
+  const uncertainEvents=db.prepare("SELECT 1 FROM operations WHERE run_id=? AND kind='event' AND status='unconfirmed' LIMIT 1");
+  const readyEvents=db.prepare(`SELECT * FROM operations WHERE run_id=? AND kind='event'
+    AND status NOT IN ('done','expected_business_rejected','superseded','quarantined') AND next_at<=?
+    AND (json_extract(input,'$.phase')='seed' OR (?!=0 AND ?>=?+json_extract(input,'$.offset_ms')))
+    AND (?='all' OR (?='new' AND status='unsent') OR (?='poll' AND status!='unsent'))
+    AND id NOT IN (SELECT value FROM json_each(?)) ORDER BY ordinal LIMIT ?`);
   const parseRun=row=>row?{...row,config:JSON.parse(row.config),target:JSON.parse(row.target),context:JSON.parse(row.context),report:row.report?JSON.parse(row.report):null}:null;
   const parseOp=row=>row?{...row,input:JSON.parse(row.input),options:JSON.parse(row.options??'{}'),result:row.result?JSON.parse(row.result):null}:null;
   return {db,
     create(run,ops){db.exec('BEGIN IMMEDIATE');try{db.prepare('INSERT INTO runs(id,created_at,status,config,target) VALUES(?,?,?,?,?)').run(run.id,new Date().toISOString(),'paused',JSON.stringify(run.config),JSON.stringify(run.target));const insert=db.prepare('INSERT INTO operations(id,run_id,ordinal,kind,label,role,input,options) VALUES(?,?,?,?,?,?,?,?)');for(const [ordinal,op]of ops.entries())insert.run(op.id,run.id,ordinal,op.kind,op.label,op.role,JSON.stringify(op.input),JSON.stringify(op.options??{}));db.exec('COMMIT');}catch(error){db.exec('ROLLBACK');throw error;}},
     list(){return db.prepare('SELECT * FROM runs ORDER BY created_at DESC').all().map(parseRun);},
+    hasRun(id){return !!existsRun.get(id);},
+    context(id){const row=contextRun.get(id);return row?JSON.parse(row.context):null;},
+    operationStates(id){return states.all(id);},
+    hasUnconfirmedEvents(id){return !!uncertainEvents.get(id);},
+    readyEvents(id,now,start,limit=20,lane='all',excluded=[]){return readyEvents.all(id,now,start??0,now,start??0,lane,lane,lane,JSON.stringify(excluded),limit).map(parseOp);},
     run(id){return parseRun(db.prepare('SELECT * FROM runs WHERE id=?').get(id));},
     updateRun(id,patch){const entries=Object.entries(patch);for(const [key]of entries)if(!['status','checkpoint','context','boundary','report'].includes(key))throw Error('Invalid run field');if(entries.length)db.prepare(`UPDATE runs SET ${entries.map(([key])=>key+'=?').join(',')} WHERE id=?`).run(...entries.map(([,value])=>typeof value==='object'?JSON.stringify(value):value),id);},
     operations(id){return db.prepare('SELECT * FROM operations WHERE run_id=? ORDER BY ordinal').all(id).map(parseOp);},

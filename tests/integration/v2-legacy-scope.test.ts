@@ -146,7 +146,7 @@ describe("Legacy HTTP warehouse scope under real FORCE RLS",()=>{
       expect(rows.some((row:{code:string})=>row.code==='PAGE-1001')).toBe(true);
       for(const path of ['/api/lookups?kind=items','/api/lookups?kind=locations&after=invalid','/api/lookups?after='+location])expect((await api(path)).status).toBe(400);
     } finally {
-      await owner.query(`UPDATE "${schema}".locations SET active=false WHERE tenant_id=$1 AND code LIKE 'PAGE-%'`,[company]);
+      await withTenant(company,c=>c.query("UPDATE locations SET active=false WHERE tenant_id=$1 AND code LIKE 'PAGE-%'",[company]));
     }
   });
   it("applies grant and role revocation on the existing session's next HTTP request",async()=>{

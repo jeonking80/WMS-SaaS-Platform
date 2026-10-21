@@ -24,9 +24,9 @@ export function shiftWorkerIndex(runtime,entity,snapshot=runtime.lastSnapshot){
  if(task){const index=runtime.workerActorIds.indexOf(task.assignee_id);requireValue(index>=0,'SHIFT_ASSIGNEE_OUTSIDE_WORKERS');return index;}
  return Number.parseInt(hash(entity).slice(0,8),16)%runtime.workers.length;
 }
-export function shiftWorkAllowed(runtime,operation,store){
+export function shiftWorkAllowed(runtime,operation,store,shiftState){
  const policy=runtime.shiftPolicy;if(!policy)return true;
- const shift=store.run(runtime.id).context.shift??{};
+ const shift=shiftState??store.run(runtime.id).context.shift??{};
  return !(operation.input.command==='order.pick'&&operation.input.payload.order_id===shift.pinned_order_id&&!shift.handover_completed_at);
 }
 function controlOperation(runtime,store,stage,command,payload){
@@ -47,9 +47,10 @@ async function executeControl(runtime,store,op){
  }
 }
 export async function performShiftMilestones(runtime,snapshot,store,now=Date.now()){
- const policy=runtime.shiftPolicy,run=store.run(runtime.id);if(!policy||!run.context.measured_start)return {snapshot};
- let shift=run.context.shift??{};
- const save=patch=>{const current=store.run(runtime.id);shift={...(current.context.shift??{}),...patch};store.updateRun(runtime.id,{context:{...current.context,shift}});};
+ const policy=runtime.shiftPolicy;if(!policy)return {snapshot};
+ const context=store.context(runtime.id);if(!context.measured_start)return {snapshot};
+ let shift=context.shift??{};
+ const save=patch=>{const current=store.context(runtime.id);shift={...(current.shift??{}),...patch};store.updateRun(runtime.id,{context:{...current,shift}});};
  if(!shift.pinned_order_id){
   const first=store.operations(runtime.id).find(op=>op.kind==='event'&&op.input.phase==='measured'&&op.input.event.event_type==='order.create'&&op.status==='done');
   const order=snapshot.orders.find(order=>order.id===first?.result?.result?.id);if(!order)return {snapshot};
@@ -65,7 +66,7 @@ export async function performShiftMilestones(runtime,snapshot,store,now=Date.now
   const times=reserved.map(row=>Date.parse(row.reserved_at));requireValue(times.every(Number.isFinite),'SHIFT_RESERVED_TIMESTAMP_MISSING');const reservedAt=Math.min(...times),age=now-reservedAt;
   if(age>=policy.reservation_warning_ms&&!shift.long_reservation_observed_at){save({long_reservation_observed_at:now,reserved_at:reservedAt,reservation_age_at_warning_ms:age});store.observe(runtime.id,'shift_long_reservation',{order_id:order.id,reserved_at:reservedAt,observed_at:now,age_ms:age,threshold_ms:policy.reservation_warning_ms,profile_threshold:true,production_24_hour_warning_claimed:false,quantity:reserved.reduce((sum,row)=>sum+row.quantity,0)});}
  }
- if(!shift.handover_completed_at&&now-run.context.measured_start>=policy.handover_at_ms){
+ if(!shift.handover_completed_at&&now-context.measured_start>=policy.handover_at_ms){
   if(runtime.active.size)return {snapshot,pauseWork:true};
   requireValue(shift.long_reservation_observed_at,'SHIFT_LONG_RESERVATION_NOT_OBSERVED');
   const uncertain=store.operations(runtime.id).filter(op=>op.kind==='command'&&op.status==='unconfirmed');for(const op of uncertain)await runtime.recoverCommand(op);
@@ -82,7 +83,7 @@ export async function performShiftMilestones(runtime,snapshot,store,now=Date.now
   requireValue(JSON.stringify(fresh.stock)===JSON.stringify(after.stock),'SHIFT_HANDOVER_CHANGED_PHYSICAL_STOCK');
   requireValue([...after.tasks].reverse().find(t=>t.object_id===shift.pinned_order_id)?.assignee_id===pinned.assignee_id,'SHIFT_HANDOVER_ASSIGNMENT_NOT_PERSISTED');
   save({handover_completed_at:now,final_assignee:pinned.assignee_id,shift_report_id:result.result.id});
-  store.observe(runtime.id,'shift_handover',{order_id:shift.pinned_order_id,from:shift.initial_assignee,to:pinned.assignee_id,at:now,elapsed_ms:now-run.context.measured_start,report_id:result.result.id,stock_unchanged:true,handed_over_objects:handover.length});
+  store.observe(runtime.id,'shift_handover',{order_id:shift.pinned_order_id,from:shift.initial_assignee,to:pinned.assignee_id,at:now,elapsed_ms:now-context.measured_start,report_id:result.result.id,stock_unchanged:true,handed_over_objects:handover.length});
   return {snapshot:after,pauseWork:true};
  }
  return {snapshot};
@@ -160,11 +161,13 @@ export function evaluateShiftJournal({ mode, target, run, operations, runtimeRep
   if((shift.reservation_age_at_warning_ms??-1)<policy.reservation_warning_ms)failures.push('T11_RESERVATION_DURATION_NOT_MET');
   if((shift.handover_completed_at??0)-Number(run.context.measured_start)<policy.handover_at_ms)failures.push('T11_SHIFT_TIME_NOT_MET');
   const functionalPassed=failures.length===0;if(mode==='full'&&(!runtimeReport.quality_targets?.qualification||!runtimeReport.quality_targets?.met))failures.push('PERFORMANCE_TARGETS_NOT_MET');
+  if(mode==='full'&&(!runtimeReport.profile_quality?.qualification||!runtimeReport.profile_quality?.met))failures.push('SCHEDULED_WINDOW_TARGETS_NOT_MET');
+  if(mode==='full'&&runtimeReport.verdict!=='passed')failures.push('RUNTIME_FINAL_VERDICT_FAILED');
   const seedEvents = operations.filter(op => op.kind === 'event' && op.input.phase === 'seed');
   return { company_id: target.company_id, warehouse_id: target.warehouse_id, mode, measured_start: Number.isFinite(measuredStart) ? new Date(measuredStart).toISOString() : null,
     elapsed_ms: Number.isFinite(elapsed) ? elapsed : null, required_duration_ms: expectedDuration, planned_orders: count('order.create'), planned_receipts: count('receipt.create'),
     initial_seed_receipts: seedEvents.length, initial_seed_is_measured_throughput: false, baseline_source_run_id:target.baseline?.source_run_id??null, worker_accounts_observed: actors.size, stage_counts: stageCounts, t11:{policy,held_order_id:shift.pinned_order_id,initial_assignee:shift.initial_assignee,final_assignee:shift.final_assignee,reservation_age_at_warning_ms:shift.reservation_age_at_warning_ms,handover_completed_at:shift.handover_completed_at,shift_report_id:shift.shift_report_id},
-    functional_passed:functionalPassed,performance_targets:runtimeReport.quality_targets??{qualification:false,met:null}, failures: [...new Set(failures)], verdict: failures.length ? 'failed' : mode === 'full' ? 'passed' : 'smoke_passed', eight_hour_requirement_passed: mode === 'full' && failures.length === 0 };
+    functional_passed:functionalPassed,runtime_verdict:runtimeReport.verdict,performance_targets:runtimeReport.quality_targets??{qualification:false,met:null}, scheduled_window_targets:runtimeReport.profile_quality??{qualification:false,met:null}, failures: [...new Set(failures)], verdict: failures.length ? 'failed' : mode === 'full' ? 'passed' : 'smoke_passed', eight_hour_requirement_passed: mode === 'full' && failures.length === 0 };
 }
 
 function http(target, environment, fetcher) {
@@ -262,6 +265,16 @@ function spawnRuntime(configPath, mode, resumeId, environment) {
   });
 }
 
+export async function reconcileShiftRuntime({target,operations,api,runtimeReport,verify}) {
+  if(!Number.isInteger(runtimeReport.boundary)||runtimeReport.boundary<0||runtimeReport.final_reconciliation?.status==='unverified'||runtimeReport.measurement?.status==='not_started')return {status:'unverified',passed:false,boundary:runtimeReport.boundary??null,reason:'FINAL_RECONCILIATION_UNVERIFIED',measurement:runtimeReport.measurement??null};
+  try {
+    if(verify)await verify();
+    return {status:'completed',...await reconcileShiftBoundary(target,operations,api,runtimeReport.boundary)};
+  } catch(error) {
+    return {status:'unverified',passed:false,boundary:runtimeReport.boundary,reason:'FINAL_RECONCILIATION_UNVERIFIED',code:/^[A-Z0-9_]{1,100}$/.test(error.code??'')?error.code:'SHIFT_FINAL_READ_FAILED'};
+  }
+}
+
 export async function runShiftProfile({ configPath, mode = 'full', resumeId, environment = process.env, fetcher = fetch, executor = spawnRuntime }) {
   const absolute = resolve(configPath), config = JSON.parse(await readFile(absolute, 'utf8'));
   const specification = validateShiftConfiguration(config, mode, environment);
@@ -278,10 +291,9 @@ export async function runShiftProfile({ configPath, mode = 'full', resumeId, env
       const runtimeReport = raw.companies.find(company => company.company_id === target.company_id);
       requireValue(runtimeReport, 'SHIFT_RUNTIME_COMPANY_MISSING');
       const api = http(target, environment, fetcher);
-      requireValue(await verifyTarget(api, target) === targetFingerprints[index], 'SHIFT_TARGET_CHANGED');
       const judged = evaluateShiftJournal({ mode, target, run, operations, runtimeReport });
-      const reconciliation = await reconcileShiftBoundary(target, operations, api, runtimeReport.boundary);
-      if (!reconciliation.passed) { judged.failures.push('INDEPENDENT_BOUNDARY_RECONCILIATION_FAILED'); judged.verdict = 'failed'; judged.eight_hour_requirement_passed = false; }
+      const reconciliation = await reconcileShiftRuntime({target,operations,api,runtimeReport,verify:async()=>requireValue(await verifyTarget(api,target)===targetFingerprints[index],'SHIFT_TARGET_CHANGED')});
+      if (!reconciliation.passed) { judged.failures.push(reconciliation.status==='unverified'?'FINAL_RECONCILIATION_UNVERIFIED':'INDEPENDENT_BOUNDARY_RECONCILIATION_FAILED'); judged.functional_passed=false; judged.verdict = 'failed'; judged.eight_hour_requirement_passed = false; }
       companies.push({ ...judged, reconciliation, target_fingerprint: targetFingerprints[index] });
     }
   } finally { store.close(); }

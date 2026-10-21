@@ -1,57 +1,34 @@
 {
-  "recorded_at": "2026-10-20T14:36:39.202442+00:00",
-  "build_id": "-oBhg3XQlSYuVZ5MbZfge",
-  "scope": "local regression; not full proposal completion or public deployment",
-  "github_actions_used": false,
-  "verify_command_exit": 1,
-  "verify_exit_reason": "39/41 browser cases passed; two test-fixture issues were corrected without changing app source. The subsequent three-case rerun passed, covering both failures and the existing lost-response case.",
-  "checks": {
-    "typescript": "passed",
-    "unit": {
-      "passed": 191
-    },
-    "integration": {
-      "passed": 165
-    },
-    "build": "passed",
-    "e2e": {
-      "suite_passed": 39,
-      "suite_failed": 2,
-      "corrected_targeted_passed": 3,
-      "distinct_test_cases_passed": 41,
-      "single_all_green_suite_after_final_fixture_fixes": false,
-      "legacy_picker_scope": "UI contract fixture; actual database pagination, permissions and correction effects covered separately in v2-workflow integration tests"
-    },
-    "simulator_unit": {
-      "passed": 20,
-      "report": "v2-simulator-freeze-latest.json"
-    },
-    "simulator_integration_after_compact_persistence": {
-      "passed": 9,
-      "actual_scenarios": 12
-    },
-    "final_typecheck": "passed"
+  "verified_at": "2026-10-21T00:12:44.104965+00:00",
+  "build_id": "2rKXP8Qbi54h8gu6e8KB5",
+  "scope": "local function/regression; not public deployment or G3/G4/G5 qualification",
+  "typecheck": "passed",
+  "unit": {
+    "passed": 225
   },
+  "simulator": {
+    "passed": 55
+  },
+  "integration": {
+    "passed": 187,
+    "skipped": 0
+  },
+  "production_build": "passed",
+  "e2e": {
+    "full_suite_passed": 44,
+    "full_suite_failed": 0
+  },
+  "verify_command_exit_code": 0,
+  "migration_count": 20,
   "evidence": [
     {
-      "path": "/tmp/wms-v2-verify-pagination-final.log",
-      "sha256": "018c5fc7e5d54e3ae3925ac779263467a9a57909d9266774ae317d68566759ca"
-    },
-    {
-      "path": "/tmp/wms-v2-final-fixture-e2e.log",
-      "sha256": "cbe298aeb94b2b94b4bd37c71c9b5f1f64c9a65c883101cf9fd35a4c8d092801"
-    },
-    {
-      "path": "/tmp/wms-v2-final-fixture-types.log",
-      "sha256": "76162e465989f3f070a9de8db711fbf358e53b74d09ce1bbdb57c727e4c4a16d"
+      "path": "/tmp/wms-v2-schema20-verify.log",
+      "sha256": "6eb055fbd6b0cea4a1555e6afa57ae66835ad1e366f405c5569ff8c451564770"
     }
   ],
-  "pending": [
-    "25-minute congestion",
-    "8-hour shift",
-    "G4 real users/devices/provider",
-    "G5 five business days"
-  ],
-  "whole_proposal_complete": false,
-  "source_scope": "App build -oBhg3XQlSYuVZ5MbZfge is unchanged after full verification; only test fixtures and the separately-tested simulator revision total report changed."
+  "independent_storage_review": {
+    "focused_pg_passed": 56,
+    "scope": "includes mixed ID, JSON null, RLS, array parity, concurrency, atomic rollback and replay"
+  },
+  "restore_evidence": "restore-verification-schema20.json"
 }

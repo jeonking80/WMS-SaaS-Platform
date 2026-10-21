@@ -10,6 +10,7 @@ import pg from 'pg';
 import { hashPassword } from 'better-auth/crypto';
 import { chromium, request as playwrightRequest, expect } from '@playwright/test';
 import { migrate } from './db-migrate.mjs';
+import {INVENTORY_PAGE_SIZE,INVENTORY_DISPLAY_PROFILE,verifyInventoryPagePreservation} from './v2-inventory-page-proof.mjs';
 
 const args = new Set(process.argv.slice(2));
 const reportPath = resolve(process.env.V2_PERF_REPORT ?? 'docs/v2-performance-latest.json');
@@ -94,9 +95,9 @@ async function fixtureOwnership() {
 async function grantApplicationAccess() {
   // Match db-bootstrap --grant inside this owned fixture, without changing role or table ownership.
   await fixtureOwnership();
-  const mutable = ['v2_workflow_state','v2_workflow_stock','v2_workflow_objects','v2_identity_links','v2_machine_keys','business_partners','master_barcodes','master_csv_previews','v2_integration_limits','v2_integration_entities','v2_integration_events'];
+  const mutable = ['v2_workflow_state','v2_workflow_state_header','v2_workflow_stock','v2_workflow_objects','v2_identity_links','v2_machine_keys','business_partners','master_barcodes','master_csv_previews','v2_integration_limits','v2_integration_entities','v2_integration_events'];
   const appendOnly = ['v2_workflow_requests','v2_workflow_performances','v2_workflow_receivings','v2_workflow_ledger','v2_identity_audit','master_csv_applies','master_csv_applied_rows','v2_cutovers','api_request_metrics','v2_opening_imports'];
-  const grants = ['v2_warehouse_grants','v2_machine_warehouses'];
+  const grants = ['v2_warehouse_grants','v2_machine_warehouses','v2_workflow_object_state'];
   await databaseClient.query('GRANT USAGE ON SCHEMA public TO wms_app');
   await databaseClient.query('GRANT SELECT,INSERT,UPDATE ON delivery_destinations,stock_balances TO wms_app');
   await databaseClient.query('GRANT SELECT,INSERT,UPDATE,DELETE ON "user",session,account,verification,items,warehouses,locations,inventory_documents,inventory_document_lines TO wms_app');
@@ -186,7 +187,7 @@ async function prepare() {
   phase = 'verify fixture and refresh statistics';
   report.fixture.actual_counts = (await databaseClient.query('SELECT tenant_id,count(*)::integer AS ledger_rows,sum(delta)::text AS physical_quantity FROM v2_workflow_ledger GROUP BY tenant_id ORDER BY tenant_id')).rows;
   if (report.fixture.actual_counts.length !== 2 || report.fixture.actual_counts.some(row => row.ledger_rows !== ledgerPerTenant || Number(row.physical_quantity) !== ledgerPerTenant)) failure('FIXTURE_COUNT_MISMATCH');
-  for (const table of ['items','locations','memberships','v2_warehouse_grants','v2_workflow_state','v2_workflow_stock','v2_workflow_requests','v2_workflow_ledger']) await databaseClient.query(`ANALYZE ${table}`);
+  for (const table of ['items','locations','memberships','v2_warehouse_grants','v2_workflow_state','v2_workflow_state_header','v2_workflow_stock','v2_workflow_requests','v2_workflow_ledger']) await databaseClient.query(`ANALYZE ${table}`);
   report.fixture.planner_statistics = 'ANALYZE after complete fixture seed';
   report.fixture.database_bytes = Number((await databaseClient.query('SELECT pg_database_size(current_database())::text AS bytes')).rows[0].bytes);
   report.machine.postgresql = (await databaseClient.query('SHOW server_version')).rows[0].server_version;
@@ -225,6 +226,8 @@ async function measureDatabase() {
   report.migrations = (await databaseClient.query('SELECT name FROM pgmigrations ORDER BY id')).rows.map(row => row.name);
   report.measured_source = {};
   for (const file of Object.keys(report.source)) report.measured_source[file] = createHash('sha256').update(await readFile(file)).digest('hex');
+  report.measurement_source = {};
+  for (const file of ['scripts/v2-performance.mjs','scripts/v2-inventory-page-proof.mjs','src/app/dashboard/v2/inventory-ui.tsx','src/app/dashboard/v2/v2.css']) report.measurement_source[file] = createHash('sha256').update(await readFile(file)).digest('hex');
   report.method.concurrent_other_workloads = process.env.V2_PERF_COMPETING_WORKLOADS ?? 'Not declared; do not infer exclusive-host conditions.';
   report.method.read_write_ratio = '100% business/API GET reads; ordinary request telemetry and auth session maintenance can write their own rows. Physical inventory and business documents are unchanged.';
   report.measurement_started_at = new Date().toISOString();
@@ -275,7 +278,7 @@ async function prepareRuntime() {
 async function startServer() {
   await prepareRuntime();phase='start owned isolated API server';
   try{await fetch(`${origin}/api/health`);failure('BENCHMARK_PORT_OCCUPIED');}catch(error){if(error.code==='BENCHMARK_PORT_OCCUPIED')throw error;}
-  const serverEnvironment={...process.env,NODE_ENV:'production',DATABASE_URL:databaseUrl(report.fixture.database,true),BETTER_AUTH_URL:origin,WMS_ENVIRONMENT:'test',PORT:String(port),HOSTNAME:'127.0.0.1'};
+  const serverEnvironment={...process.env,NODE_ENV:'production',DATABASE_URL:databaseUrl(report.fixture.database,true),BETTER_AUTH_URL:origin,WMS_ENVIRONMENT:'test',WMS_TIMING_DIAGNOSTICS:'0',PORT:String(port),HOSTNAME:'127.0.0.1'};
   server=ownedRuntime?spawn(process.execPath,[join(ownedRuntime,'server.js')],{cwd:ownedRuntime,env:serverEnvironment,stdio:['ignore','ignore','ignore']}):spawn(process.execPath,['node_modules/next/dist/bin/next','start','--hostname','127.0.0.1','--port',String(port)],{cwd:process.cwd(),env:serverEnvironment,stdio:['ignore','ignore','ignore']});
   let ready=false;
   for(let index=0;index<120;index++){if(server.exitCode!==null)failure('BENCHMARK_SERVER_EXITED');try{if((await fetch(`${origin}/api/ready`)).ok){ready=true;break;}}catch{}await delay(500);}
@@ -312,8 +315,15 @@ async function measureApi() {
   const denied=await contexts[0].get(`/api/v2/workflow?warehouse_id=${report.fixture.tenants[1].warehouse_id}`);
   report.isolation_probe={status:denied.status(),passed:denied.status()===403};if(!report.isolation_probe.passed)failure('CROSS_TENANT_EXPOSURE');
 }
+function inventoryDisplayContract(){
+ report.measurement_profile=INVENTORY_DISPLAY_PROFILE;
+ report.method.server_timing_diagnostics='Explicitly disabled during acceptance measurements; opt-in diagnostics require a separate diagnostic runtime.';
+ report.method.exclusions=[...new Set([...report.method.exclusions,'post-measurement independent inventory preservation proof'])];
+ report.method.required_qualification={samples_per_endpoint:100,concurrency:5,browser_samples:20,browser_samples_per_company:10,browser_target_ms:2000,inventory_preservation_required:true};
+ report.method.inventory_display={profile:INVENTORY_DISPLAY_PROFILE,total_positions_per_company:stockSlots,first_page_rows:INVENTORY_PAGE_SIZE,complete_pages_per_company:stockSlots/INVENTORY_PAGE_SIZE,first_page_timing:'Navigation through first100rows plus two animation frames; total1600/page0/page-size100 are checked in every sample.',independent_preservation:'After timed samples: both companies traverse16pages and compare all1600keys,7bucket values,global totals,full CSV,full-scope search and last-page traces with the independent manifest.',comparison:'Display condition changed from the preserved1600-simultaneous-DOM profile. Earlier pass/failure is retained separately;2s/company/sample counts/1Mledger/API scope are unchanged.'};
+}
 async function measureBrowser() {
-  phase='browser data-display measurements';
+  phase='browser first-page data-display measurements';inventoryDisplayContract();
   const executablePath=process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH || (await stat('/usr/bin/chromium').then(()=>'/usr/bin/chromium').catch(()=>undefined));
   browser=await chromium.launch({executablePath});report.machine.chromium=browser.version();
   const values=[],warmups=[];let failures=0;
@@ -324,17 +334,31 @@ async function measureBrowser() {
       try {
         const navigation=await page.goto('/dashboard/v2');if(!navigation?.ok())failure('BROWSER_NAVIGATION_FAILED');
         await page.getByRole('tab',{name:'재고·실사·승인',exact:true}).click();
-        const section=page.getByRole('heading',{name:'위치·품목별 재고',exact:true}).locator('xpath=ancestor::section[1]');
-        await expect(section.locator('tbody tr').first()).toBeVisible({timeout:15000});
+        const table=page.getByRole('table',{name:'위치·품목별 재고 목록',exact:true});
+        await expect(table.locator('tbody tr').first()).toBeVisible({timeout:15000});
         await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
-        const rows=await section.locator('tbody tr').count();if(rows!==report.fixture.balances_per_tenant)failure('BROWSER_ROW_COUNT_MISMATCH');
-        const value={ok:true,company:report.fixture.tenants[company].company,ms:performance.now()-start,rendered_rows:rows};if(index)values.push(value);else warmups.push(value);
+        const {rows,total,pageIndex,pageSize}=await table.evaluate(node=>({rows:node.querySelectorAll('tbody tr').length,total:Number(node.getAttribute('data-stock-total')),pageIndex:Number(node.getAttribute('data-stock-page-index')),pageSize:Number(node.getAttribute('data-stock-page-size'))}));
+        if(rows!==INVENTORY_PAGE_SIZE||total!==report.fixture.balances_per_tenant||pageIndex!==0||pageSize!==INVENTORY_PAGE_SIZE)failure('BROWSER_PAGE_CONTRACT_MISMATCH');
+        const value={ok:true,company:report.fixture.tenants[company].company,ms:performance.now()-start,display_profile:INVENTORY_DISPLAY_PROFILE,rendered_rows:rows,total_positions:total,page_index:pageIndex,page_size:pageSize};if(index)values.push(value);else warmups.push(value);
       }catch(error){failures++;const value={ok:false,company:report.fixture.tenants[company].company,ms:performance.now()-start,code:String(error.code??error.name)};if(index)values.push(value);else warmups.push(value);}
     }
     await context.close();
   }
-  report.browser.inventory=summarize(values);report.browser.inventory.warmups=warmups;report.browser.inventory.requested_measured_samples=20;report.browser.inventory.early_stopped=values.length<20;progress(`Browser inventory: p95=${displayMs(report.browser.inventory.p95_ms)} ms, errors=${report.browser.inventory.errors}`);await writeReport();
+  report.browser.inventory=summarize(values);report.browser.inventory.warmups=warmups;report.browser.inventory.requested_measured_samples=20;report.browser.inventory.early_stopped=values.length<20;progress(`Browser inventory first page: p95=${displayMs(report.browser.inventory.p95_ms)} ms, errors=${report.browser.inventory.errors}`);await writeReport();
+  report.inventory_preservation={profile:INVENTORY_DISPLAY_PROFILE,baseline_manifest_sha256:report.baseline_manifest_sha256,excluded_from_latency_statistics:true,companies:[],passed:false};
+  if(values.length===20&&!report.browser.inventory.errors&&warmups.every(sample=>sample.ok)){
+    phase='independent inventory pagination preservation proof';
+    const baseline=JSON.parse(await readFile(baselinePath,'utf8'));
+    for(let index=0;index<2;index++){
+      const tenant=baseline.tenants.find(tenant=>tenant.id===report.fixture.tenants[index].id);
+      const evidence=await verifyInventoryPagePreservation({browser,origin,storageState:await contexts[index].storageState(),tenant:{...tenant,expected_version:report.fixture.ledger_per_tenant/20}});
+      report.inventory_preservation.companies.push(evidence);progress(`Inventory preservation ${tenant.company}: ${evidence.passed?'passed':'failed'}`);await writeReport();
+    }
+    report.inventory_preservation.passed=report.inventory_preservation.companies.length===2&&report.inventory_preservation.companies.every(company=>company.passed);
+  }else report.inventory_preservation.reason='BROWSER_SAMPLES_INCOMPLETE_OR_ERRORS';
+  await writeReport();
 }
+
 async function cleanupFixture() {
   phase='remove only the owned fixture database';await fixtureOwnership();
   await owner.query(`DROP DATABASE ${pg.escapeIdentifier(report.fixture.database)}`);
@@ -350,17 +374,18 @@ try {
   else await prepare();
   if(args.has('--cleanup')) {await cleanupFixture();report.phase='cleaned';}
   else if(args.has('--prepare-runtime-only')) {
-    if(report.phase==='measured')report.previous_measurement={build_id:report.build_id,measurement_started_at:report.measurement_started_at,finished_at:report.finished_at,verdict:report.verdict};
+    if(report.phase==='measured')report.previous_measurement={measurement_profile:report.measurement_profile??'inventory-1600-dom-v1',build_id:report.build_id,measurement_started_at:report.measurement_started_at,finished_at:report.finished_at,verdict:report.verdict,failure_analysis:report.latest_failure_analysis};
     // Preparing a new build must never label its unmeasured runtime with older successful samples.
-    report.phase='runtime_prepared';delete report.verdict;delete report.finished_at;delete report.measurement_started_at;report.db={};report.api={};report.browser={};delete report.isolation_probe;
+    report.phase='runtime_prepared';delete report.verdict;delete report.finished_at;delete report.measurement_started_at;delete report.latest_failure_analysis;report.db={};report.api={};report.browser={};delete report.inventory_preservation;delete report.isolation_probe;inventoryDisplayContract();
     await prepareRuntime();
   }
   else if(!args.has('--prepare-only')) {
     if(report.fixture.ledger_per_tenant!==ledgerPerTenant)failure('RESUME_PROFILE_MISMATCH');
-    delete report.error; delete report.cleanup_error;delete report.verdict;delete report.finished_at;delete report.isolation_probe; report.db={}; report.api={}; report.browser={}; report.phase='measuring';
+    if(report.phase==='measured')report.previous_measurement={measurement_profile:report.measurement_profile??'inventory-1600-dom-v1',build_id:report.build_id,measurement_started_at:report.measurement_started_at,finished_at:report.finished_at,verdict:report.verdict,failure_analysis:report.latest_failure_analysis};
+    delete report.error; delete report.cleanup_error;delete report.verdict;delete report.finished_at;delete report.latest_failure_analysis;delete report.isolation_probe; report.db={}; report.api={}; report.browser={}; delete report.inventory_preservation;inventoryDisplayContract(); report.phase='measuring';
     await measureDatabase();await startServer();await measureApi();await measureBrowser();
     const metrics=[...Object.values(report.db),...Object.values(report.api),...Object.values(report.browser)];
-    report.verdict=report.fixture.full_million_profile&&metrics.every(metric=>metric.target_met&&!metric.early_stopped&&metric.count===metric.requested_measured_samples&&metric.warmups.every(sample=>sample.ok))&&report.isolation_probe?.passed?'passed_local_million_ledger_read_profile':'failed_local_read_profile';
+    report.verdict=report.fixture.full_million_profile&&samples===100&&concurrency===5&&metrics.every(metric=>metric.target_met&&!metric.early_stopped&&metric.count===metric.requested_measured_samples&&metric.warmups.every(sample=>sample.ok))&&report.isolation_probe?.passed&&report.inventory_preservation?.passed?'passed_local_million_ledger_read_profile':'failed_local_read_profile';
     report.phase='measured';report.finished_at=new Date().toISOString();
     if(report.verdict==='failed_local_read_profile')process.exitCode=1;
   }

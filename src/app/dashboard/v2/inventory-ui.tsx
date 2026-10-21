@@ -3,7 +3,7 @@ import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Ledger, OriginPicker } from "./ledger-ui";
 import {approvalActorExcluded,approvalAssigneeEligible} from "@/server/v2/workflow/approval-eligibility";
 import { ActionEditor, Assignment } from "./workflow-ui";
-import { orderGuide, receiptGuide } from "./workflow-guide";
+import { orderGuide, receiptGuide } from "@/server/v2/insights/guide";
 import {genericHoldOwnership,pendingGenericHold} from "@/server/v2/workflow/hold-ownership";
 import { api, ApiFailure, message, downloadCsv, Field, label, nameOf, personLabel, Note, options, Quantity, Select, Submit, time, type Context } from "./common";
 type Open=(kind:string,id:string)=>void;

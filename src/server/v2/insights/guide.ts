@@ -1,4 +1,4 @@
-import type { Order, Package, Receipt, Return } from '@/server/v2/workflow/types';
+import type { Order, Package, Receipt, Return } from '../workflow/types';
 
 export type StepState = 'todo' | 'done' | 'idle';
 export type Step = { key: string; caption: string; count: number; unit: string; state: StepState };

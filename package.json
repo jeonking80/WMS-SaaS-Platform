@@ -34,6 +34,7 @@
     "operations:monitor": "node --env-file-if-exists=.env.local scripts/v2-monitor.mjs"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "0.137.0",
     "better-auth": "1.7.11",
     "next": "16.4.2",
     "pg": "8.23.1",

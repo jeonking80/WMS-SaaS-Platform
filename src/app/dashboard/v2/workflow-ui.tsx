@@ -4,7 +4,7 @@ import type { Line, Lot, Order, Receipt, Return } from "@/server/v2/workflow/typ
 import { exportBusiness, exportShipments } from "./document-export";
 import { printPackage } from "./package-print";
 import { businessDayAt, businessInputTime, businessInputTimestamp } from "./workflow-time";
-import { orderGuide, receiptGuide, type Guide } from "./workflow-guide";
+import { orderGuide, receiptGuide, type Guide } from "@/server/v2/insights/guide";
 import { Delivery } from "./delivery-ui";
 import { Field, nameOf, personLabel, Note, options, printSheet, Quantity, Select, Submit, time, type Context } from "./common";
 type ActionRow={id:string;item_id:string;available:number;location_id?:string;caption?:string};

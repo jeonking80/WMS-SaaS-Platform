@@ -1,0 +1,16 @@
+{
+  "language": "korean",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.claude/hooks/korean-only.mjs\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

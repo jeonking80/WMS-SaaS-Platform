@@ -1,0 +1,4129 @@
+{
+  "diagnostic_only": true,
+  "qualification": false,
+  "build_id": "2rKXP8Qbi54h8gu6e8KB5",
+  "schema_version": 20,
+  "run_order": [
+    "on",
+    "off"
+  ],
+  "runtime_stopped_observed_at": "2026-10-21T00:13:26.874879+00:00",
+  "port3024_listener_present_after_stop": false,
+  "equivalent_initial_copies": true,
+  "restore_archive_sha256": "40cc61a425e306991400d39a8bde88b5f7506415decb8284d279fa40b2f3c78a",
+  "freeze_manifest_sha256": "262ae51ab630aefbd81bfd99def0c23766c8503a20964766bf8271748f753dc6",
+  "aggregate_outcomes": {
+    "on": {
+      "http_requests": 12,
+      "successful_http_requests": 12,
+      "outcome_counts": {
+        "applied": 112,
+        "business_rejected": 0,
+        "dependency_wait": 0,
+        "retry_wait": 0,
+        "quarantined": 0,
+        "received": 0
+      },
+      "client_total_ms": 18718.721716
+    },
+    "off": {
+      "http_requests": 12,
+      "successful_http_requests": 12,
+      "outcome_counts": {
+        "applied": 112,
+        "business_rejected": 0,
+        "dependency_wait": 0,
+        "retry_wait": 0,
+        "quarantined": 0,
+        "received": 0
+      },
+      "client_total_ms": 18141.149688
+    }
+  },
+  "modes": {
+    "on": {
+      "client": {
+        "diagnostic_only": true,
+        "qualification": false,
+        "status": "completed",
+        "reason_category": null,
+        "build_id": "2rKXP8Qbi54h8gu6e8KB5",
+        "instrumentation": "on",
+        "schema_version": 20,
+        "generated_at": "2026-10-21T00:12:53.402Z",
+        "request_bound": 12,
+        "processing_selection_bound": 112,
+        "results": [
+          {
+            "target_index": 0,
+            "label": "connection",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 159.11461500000001
+          },
+          {
+            "target_index": 0,
+            "label": "workflow_before",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 220.570259
+          },
+          {
+            "target_index": 0,
+            "label": "process_limit_1",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 229.136755,
+            "event_status_counts": {
+              "applied": 1,
+              "business_rejected": 0,
+              "dependency_wait": 0,
+              "retry_wait": 0,
+              "quarantined": 0,
+              "received": 0
+            }
+          },
+          {
+            "target_index": 0,
+            "label": "process_limit_5",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 849.7628970000001,
+            "event_status_counts": {
+              "applied": 5,
+              "business_rejected": 0,
+              "dependency_wait": 0,
+              "retry_wait": 0,
+              "quarantined": 0,
+              "received": 0
+            }
+          },
+          {
+            "target_index": 0,
+            "label": "process_limit_50",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 7910.37737,
+            "event_status_counts": {
+              "applied": 50,
+              "business_rejected": 0,
+              "dependency_wait": 0,
+              "retry_wait": 0,
+              "quarantined": 0,
+              "received": 0
+            }
+          },
+          {
+            "target_index": 0,
+            "label": "workflow_after",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 208.3698600000007
+          },
+          {
+            "target_index": 1,
+            "label": "connection",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 11.8147259999987
+          },
+          {
+            "target_index": 1,
+            "label": "workflow_before",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 161.1275029999997
+          },
+          {
+            "target_index": 1,
+            "label": "process_limit_1",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 161.55775200000062,
+            "event_status_counts": {
+              "applied": 1,
+              "business_rejected": 0,
+              "dependency_wait": 0,
+              "retry_wait": 0,
+              "quarantined": 0,
+              "received": 0
+            }
+          },
+          {
+            "target_index": 1,
+            "label": "process_limit_5",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 737.8517490000013,
+            "event_status_counts": {
+              "applied": 5,
+              "business_rejected": 0,
+              "dependency_wait": 0,
+              "retry_wait": 0,
+              "quarantined": 0,
+              "received": 0
+            }
+          },
+          {
+            "target_index": 1,
+            "label": "process_limit_50",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 7896.396046,
+            "event_status_counts": {
+              "applied": 50,
+              "business_rejected": 0,
+              "dependency_wait": 0,
+              "retry_wait": 0,
+              "quarantined": 0,
+              "received": 0
+            }
+          },
+          {
+            "target_index": 1,
+            "label": "workflow_after",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 172.64218400000027
+          }
+        ],
+        "limitations": [
+          "Sequential tiny batches do not qualify congestion performance.",
+          "Limit is a maximum; dependency/retry eligibility can produce fewer events.",
+          "Client elapsed includes complete response JSON decoding.",
+          "Sequential on/off runs change backlog; overhead comparison needs equivalent restored copies and matching build/configuration.",
+          "Inclusive nested server spans must not be summed or subtracted as overhead.",
+          "Failures stop without retries; partial completed-request evidence is preserved."
+        ]
+      },
+      "safe_server_records": [
+        {
+          "event": "wms_timing_diagnostic",
+          "schema_version": 1,
+          "operation": "other",
+          "request_failed_count": 0,
+          "request_elapsed_ms": 28.752755999999863,
+          "spans": {
+            "db.pool_acquire": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 11.968496999999843,
+              "max_ms": 11.877340000000004
+            },
+            "db.begin": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 1.2190310000000864,
+              "max_ms": 0.930735000000368
+            },
+            "db.context": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 3.803201000000172,
+              "max_ms": 2.4132730000001175
+            },
+            "db.operation": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 7.371077000000241,
+              "max_ms": 3.8692110000001776
+            },
+            "db.commit": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.7574330000002192,
+              "max_ms": 0.39524600000004284
+            },
+            "db.connection_held": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 13.47412200000008,
+              "max_ms": 7.823410999999851
+            },
+            "http.json_response": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.4271639999997205,
+              "max_ms": 1.4271639999997205
+            },
+            "request.handler": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 28.096565000000282,
+              "max_ms": 28.096565000000282
+            }
+          },
+          "counts": {
+            "http.status": {
+              "samples": 1,
+              "total": 200,
+              "max": 200
+            },
+            "http.error_responses": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            }
+          },
+          "bytes": {},
+          "pool_counts": {
+            "business": {
+              "samples": 6,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            }
+          },
+          "overhead": {
+            "timer_calls": 14,
+            "bookkeeping_ms": 0.12090600000010454,
+            "collector_finalize_ms": 0.0389380000001438,
+            "logging_overhead_measured": false,
+            "extra_db_queries": 0,
+            "extra_business_payload_serializations": 0
+          },
+          "interpretation": "Span times are inclusive and may overlap; do not sum nested spans. Request time ends before diagnostic output and HTTP body transport. Instrumentation overhead is not subtracted."
+        },
+        {
+          "event": "wms_timing_diagnostic",
+          "schema_version": 1,
+          "operation": "v2.workflow.read",
+          "request_failed_count": 0,
+          "request_elapsed_ms": 173.82579299999998,
+          "spans": {
+            "db.pool_acquire": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 0.2665819999992891,
+              "max_ms": 0.11742699999967954
+            },
+            "db.begin": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 1.2509139999997387,
+              "max_ms": 0.6031459999999242
+            },
+            "db.context": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 3.8908429999992222,
+              "max_ms": 1.188593999999739
+            },
+            "db.operation": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 141.0581559999996,
+              "max_ms": 138.0482219999999
+            },
+            "db.commit": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 2.0310769999991862,
+              "max_ms": 1.2545839999997952
+            },
+            "db.connection_held": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 148.5214689999998,
+              "max_ms": 140.23454300000003
+            },
+            "workflow.state_lock_read": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 73.35364400000026,
+              "max_ms": 70.991939
+            },
+            "workflow.snapshot_clone": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 32.1971639999997,
+              "max_ms": 31.781476999999995
+            },
+            "workflow.legacy_hydrate": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.5046619999998256,
+              "max_ms": 0.5046619999998256
+            },
+            "workflow.snapshot_sql": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 6.5613460000004125,
+              "max_ms": 3.355446000000029
+            },
+            "workflow.snapshot_reconcile": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 6.571509999999762,
+              "max_ms": 6.571509999999762
+            },
+            "workflow.stock_read": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.9022209999998267,
+              "max_ms": 3.9022209999998267
+            },
+            "workflow.aggregate_match": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 4.8058860000001005,
+              "max_ms": 4.8058860000001005
+            },
+            "workflow.persisted_reconcile": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 8.736938999999893,
+              "max_ms": 8.736938999999893
+            },
+            "workflow.actor_names": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.9414309999997386,
+              "max_ms": 1.9414309999997386
+            },
+            "workflow.snapshot": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 62.95527200000015,
+              "max_ms": 62.95527200000015
+            },
+            "http.json_response": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 16.79346200000009,
+              "max_ms": 16.79346200000009
+            },
+            "request.handler": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 166.33527099999992,
+              "max_ms": 166.33527099999992
+            },
+            "telemetry.pool_acquire": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.1631560000000718,
+              "max_ms": 0.1631560000000718
+            },
+            "telemetry.begin": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.45384500000000116,
+              "max_ms": 0.45384500000000116
+            },
+            "telemetry.context": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.7185340000000906,
+              "max_ms": 0.7185340000000906
+            },
+            "telemetry.insert": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.9643300000002455,
+              "max_ms": 3.9643300000002455
+            },
+            "telemetry.commit": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.0827150000000074,
+              "max_ms": 1.0827150000000074
+            },
+            "telemetry.connection_held": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 6.290821000000051,
+              "max_ms": 6.290821000000051
+            },
+            "request.telemetry": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 6.727990999999747,
+              "max_ms": 6.727990999999747
+            }
+          },
+          "counts": {
+            "state.stock_rows": {
+              "samples": 1,
+              "total": 324,
+              "max": 324
+            },
+            "state.orders": {
+              "samples": 1,
+              "total": 1078,
+              "max": 1078
+            },
+            "state.receipts": {
+              "samples": 1,
+              "total": 407,
+              "max": 407
+            },
+            "state.returns": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            },
+            "state.tasks": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            },
+            "state.packages": {
+              "samples": 1,
+              "total": 966,
+              "max": 966
+            },
+            "state.shipments": {
+              "samples": 1,
+              "total": 962,
+              "max": 962
+            },
+            "http.status": {
+              "samples": 1,
+              "total": 200,
+              "max": 200
+            },
+            "http.error_responses": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            }
+          },
+          "bytes": {},
+          "pool_counts": {
+            "business": {
+              "samples": 12,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            },
+            "telemetry": {
+              "samples": 3,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            }
+          },
+          "overhead": {
+            "timer_calls": 46,
+            "bookkeeping_ms": 0.21048900000096182,
+            "collector_finalize_ms": 0.5537259999996422,
+            "logging_overhead_measured": false,
+            "extra_db_queries": 0,
+            "extra_business_payload_serializations": 0
+          },
+          "interpretation": "Span times are inclusive and may overlap; do not sum nested spans. Request time ends before diagnostic output and HTTP body transport. Instrumentation overhead is not subtracted."
+        },
+        {
+          "event": "wms_timing_diagnostic",
+          "schema_version": 1,
+          "operation": "v2.integration.process",
+          "request_failed_count": 0,
+          "request_elapsed_ms": 217.68406699999923,
+          "spans": {
+            "http.body_parse": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.9048549999997704,
+              "max_ms": 1.9048549999997704
+            },
+            "db.pool_acquire": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.17160899999998946,
+              "max_ms": 0.09012600000005477
+            },
+            "db.begin": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.8788159999994605,
+              "max_ms": 0.7025899999998728
+            },
+            "db.context": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 1.684212000000116,
+              "max_ms": 0.9347109999998793
+            },
+            "db.operation": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 206.87743300000056,
+              "max_ms": 205.62069599999995
+            },
+            "db.commit": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 1.454845999999634,
+              "max_ms": 1.2000309999993988
+            },
+            "db.connection_held": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 211.08494599999904,
+              "max_ms": 208.0694629999998
+            },
+            "integration.queue_sql": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 2.139640000000327,
+              "max_ms": 1.749431000000186
+            },
+            "integration.entity_sql": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.7400969999998779,
+              "max_ms": 0.7400969999998779
+            },
+            "integration.entity_lock": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.4195239999999103,
+              "max_ms": 0.4195239999999103
+            },
+            "integration.source_authorization": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.885577000000012,
+              "max_ms": 0.885577000000012
+            },
+            "integration.resolve": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.09023600000000442,
+              "max_ms": 0.09023600000000442
+            },
+            "workflow.request_lock": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.41257299999961106,
+              "max_ms": 0.41257299999961106
+            },
+            "workflow.warehouse_lock": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.4076649999997244,
+              "max_ms": 1.4076649999997244
+            },
+            "workflow.state_initialize": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.1389499999995678,
+              "max_ms": 1.1389499999995678
+            },
+            "workflow.state_lock_read": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 47.608790000000226,
+              "max_ms": 46.43287499999951
+            },
+            "workflow.state_compare_baseline": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 27.3808939999999,
+              "max_ms": 27.3808939999999
+            },
+            "workflow.stock_read": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 5.084214999999858,
+              "max_ms": 3.210606999999982
+            },
+            "workflow.aggregate_match": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 5.739172999999937,
+              "max_ms": 3.613043999999718
+            },
+            "workflow.state_clone": {
+              "count": 3,
+              "failed_count": 0,
+              "inclusive_ms": 44.56263200000012,
+              "max_ms": 43.61618300000009
+            },
+            "workflow.request_hash": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.19059700000070734,
+              "max_ms": 0.19059700000070734
+            },
+            "workflow.references": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 2.3417749999998705,
+              "max_ms": 2.3417749999998705
+            },
+            "workflow.legacy_hydrate": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.24556099999972503,
+              "max_ms": 0.126882000000478
+            },
+            "workflow.scans": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.3465320000004795,
+              "max_ms": 1.3465320000004795
+            },
+            "workflow.reconcile": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 6.1853269999992335,
+              "max_ms": 6.1853269999992335
+            },
+            "workflow.engine": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 51.9151609999999,
+              "max_ms": 51.9151609999999
+            },
+            "workflow.persist_sql": {
+              "count": 3,
+              "failed_count": 0,
+              "inclusive_ms": 11.990820999999414,
+              "max_ms": 6.905925000000025
+            },
+            "workflow.persist_json": {
+              "count": 3,
+              "failed_count": 0,
+              "inclusive_ms": 16.603354999999283,
+              "max_ms": 16.54761999999937
+            },
+            "workflow.snapshot_clone": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.5443820000000414,
+              "max_ms": 0.4927239999997255
+            },
+            "workflow.snapshot_sql": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 3.1352930000002743,
+              "max_ms": 1.5701509999998962
+            },
+            "workflow.snapshot_reconcile": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 4.682158999999956,
+              "max_ms": 4.682158999999956
+            },
+            "workflow.snapshot": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 11.215871000000334,
+              "max_ms": 11.215871000000334
+            },
+            "integration.status_sql": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 2.4156560000001264,
+              "max_ms": 2.4156560000001264
+            },
+            "integration.event": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 205.40654300000006,
+              "max_ms": 205.40654300000006
+            },
+            "integration.batch": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 208.21063500000037,
+              "max_ms": 208.21063500000037
+            },
+            "http.json_response": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.30011300000023766,
+              "max_ms": 0.30011300000023766
+            },
+            "request.handler": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 214.0489090000001,
+              "max_ms": 214.0489090000001
+            },
+            "telemetry.pool_acquire": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.07945999999992637,
+              "max_ms": 0.07945999999992637
+            },
+            "telemetry.begin": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.4358780000002298,
+              "max_ms": 0.4358780000002298
+            },
+            "telemetry.context": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.6352289999995264,
+              "max_ms": 0.6352289999995264
+            },
+            "telemetry.insert": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.5054330000002665,
+              "max_ms": 1.5054330000002665
+            },
+            "telemetry.commit": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.6571220000005269,
+              "max_ms": 0.6571220000005269
+            },
+            "telemetry.connection_held": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.289034999999785,
+              "max_ms": 3.289034999999785
+            },
+            "request.telemetry": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.385229999999865,
+              "max_ms": 3.385229999999865
+            }
+          },
+          "counts": {
+            "integration.events": {
+              "samples": 1,
+              "total": 1,
+              "max": 1
+            },
+            "state.stock_rows": {
+              "samples": 2,
+              "total": 648,
+              "max": 324
+            },
+            "state.orders": {
+              "samples": 2,
+              "total": 2156,
+              "max": 1078
+            },
+            "state.receipts": {
+              "samples": 2,
+              "total": 815,
+              "max": 408
+            },
+            "state.returns": {
+              "samples": 2,
+              "total": 0,
+              "max": 0
+            },
+            "state.tasks": {
+              "samples": 2,
+              "total": 0,
+              "max": 0
+            },
+            "state.packages": {
+              "samples": 2,
+              "total": 1932,
+              "max": 966
+            },
+            "state.shipments": {
+              "samples": 2,
+              "total": 1924,
+              "max": 962
+            },
+            "integration.applied": {
+              "samples": 1,
+              "total": 1,
+              "max": 1
+            },
+            "http.status": {
+              "samples": 1,
+              "total": 200,
+              "max": 200
+            },
+            "http.error_responses": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            }
+          },
+          "bytes": {
+            "workflow.state_json": {
+              "samples": 1,
+              "total": 972,
+              "max": 972
+            }
+          },
+          "pool_counts": {
+            "business": {
+              "samples": 6,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            },
+            "telemetry": {
+              "samples": 3,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            }
+          },
+          "overhead": {
+            "timer_calls": 63,
+            "bookkeeping_ms": 0.19312400000035268,
+            "collector_finalize_ms": 0.07116700000005949,
+            "logging_overhead_measured": false,
+            "extra_db_queries": 0,
+            "extra_business_payload_serializations": 0
+          },
+          "interpretation": "Span times are inclusive and may overlap; do not sum nested spans. Request time ends before diagnostic output and HTTP body transport. Instrumentation overhead is not subtracted."
+        },
+        {
+          "event": "wms_timing_diagnostic",
+          "schema_version": 1,
+          "operation": "v2.integration.process",
+          "request_failed_count": 0,
+          "request_elapsed_ms": 843.3775020000003,
+          "spans": {
+            "http.body_parse": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.3454009999995833,
+              "max_ms": 0.3454009999995833
+            },
+            "db.pool_acquire": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 0.23213899999973364,
+              "max_ms": 0.06743199999982608
+            },
+            "db.begin": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 2.044116000000031,
+              "max_ms": 1.14024100000006
+            },
+            "db.context": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 7.4453599999988,
+              "max_ms": 2.8815400000003137
+            },
+            "db.operation": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 823.9267290000007,
+              "max_ms": 175.860721
+            },
+            "db.commit": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 5.335503999999673,
+              "max_ms": 1.1098560000000361
+            },
+            "db.connection_held": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 839.0810460000002,
+              "max_ms": 178.18919499999993
+            },
+            "integration.queue_sql": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 4.290178000000196,
+              "max_ms": 0.7109940000000279
+            },
+            "integration.entity_sql": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 2.2494849999993676,
+              "max_ms": 0.5358689999993658
+            },
+            "integration.entity_lock": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 1.911181999999826,
+              "max_ms": 0.45652400000017224
+            },
+            "integration.source_authorization": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 4.237827999999354,
+              "max_ms": 0.9908459999996921
+            },
+            "integration.resolve": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 0.06808300000011513,
+              "max_ms": 0.018979000000399537
+            },
+            "workflow.request_lock": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 1.5968990000019403,
+              "max_ms": 0.4823180000003049
+            },
+            "workflow.warehouse_lock": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 5.384162999999717,
+              "max_ms": 1.3209339999993972
+            },
+            "workflow.state_initialize": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 5.036441999998715,
+              "max_ms": 1.0930899999993926
+            },
+            "workflow.state_lock_read": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 290.25199399999747,
+              "max_ms": 64.85361399999965
+            },
+            "workflow.state_compare_baseline": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 76.287104,
+              "max_ms": 16.19741199999953
+            },
+            "workflow.stock_read": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 30.994745000001785,
+              "max_ms": 10.821382000000085
+            },
+            "workflow.aggregate_match": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 34.18236699999761,
+              "max_ms": 11.207252999999582
+            },
+            "workflow.state_clone": {
+              "count": 15,
+              "failed_count": 0,
+              "inclusive_ms": 131.74697699999797,
+              "max_ms": 27.65024099999937
+            },
+            "workflow.request_hash": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 0.4312199999985751,
+              "max_ms": 0.09940000000005966
+            },
+            "workflow.references": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 10.340414999998757,
+              "max_ms": 2.5818419999995967
+            },
+            "workflow.legacy_hydrate": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 0.8498230000004696,
+              "max_ms": 0.15558400000008987
+            },
+            "workflow.scans": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 8.279768000000331,
+              "max_ms": 2.4872949999999037
+            },
+            "workflow.reconcile": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 19.681652999998732,
+              "max_ms": 4.599944999999934
+            },
+            "workflow.engine": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 151.66464300000007,
+              "max_ms": 33.14465500000006
+            },
+            "workflow.persist_sql": {
+              "count": 15,
+              "failed_count": 0,
+              "inclusive_ms": 45.2745640000021,
+              "max_ms": 12.832682000000204
+            },
+            "workflow.persist_json": {
+              "count": 15,
+              "failed_count": 0,
+              "inclusive_ms": 61.1330459999981,
+              "max_ms": 13.741683999999623
+            },
+            "workflow.snapshot_clone": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 1.7781749999994645,
+              "max_ms": 0.37777099999948405
+            },
+            "workflow.snapshot_sql": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 14.565577999998823,
+              "max_ms": 2.346832999999606
+            },
+            "workflow.snapshot_reconcile": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 15.935907999999472,
+              "max_ms": 3.992747999999665
+            },
+            "workflow.snapshot": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 44.58694899999955,
+              "max_ms": 10.262713000000076
+            },
+            "integration.status_sql": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 4.610694999999396,
+              "max_ms": 1.3177939999995942
+            },
+            "integration.event": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 822.3289880000002,
+              "max_ms": 175.8549920000005
+            },
+            "integration.batch": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 836.6044970000003,
+              "max_ms": 836.6044970000003
+            },
+            "http.json_response": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.28839499999958207,
+              "max_ms": 0.28839499999958207
+            },
+            "request.handler": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 840.2923739999997,
+              "max_ms": 840.2923739999997
+            },
+            "telemetry.pool_acquire": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.047762999999577005,
+              "max_ms": 0.047762999999577005
+            },
+            "telemetry.begin": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.14520900000024994,
+              "max_ms": 0.14520900000024994
+            },
+            "telemetry.context": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.317468999999619,
+              "max_ms": 0.317468999999619
+            },
+            "telemetry.insert": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.2718699999995806,
+              "max_ms": 1.2718699999995806
+            },
+            "telemetry.commit": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.8912660000005417,
+              "max_ms": 0.8912660000005417
+            },
+            "telemetry.connection_held": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 2.701208000000406,
+              "max_ms": 2.701208000000406
+            },
+            "request.telemetry": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 2.7639829999998256,
+              "max_ms": 2.7639829999998256
+            }
+          },
+          "counts": {
+            "integration.events": {
+              "samples": 5,
+              "total": 5,
+              "max": 1
+            },
+            "state.stock_rows": {
+              "samples": 10,
+              "total": 3240,
+              "max": 324
+            },
+            "state.orders": {
+              "samples": 10,
+              "total": 10796,
+              "max": 1082
+            },
+            "state.receipts": {
+              "samples": 10,
+              "total": 4080,
+              "max": 408
+            },
+            "state.returns": {
+              "samples": 10,
+              "total": 0,
+              "max": 0
+            },
+            "state.tasks": {
+              "samples": 10,
+              "total": 0,
+              "max": 0
+            },
+            "state.packages": {
+              "samples": 10,
+              "total": 9660,
+              "max": 966
+            },
+            "state.shipments": {
+              "samples": 10,
+              "total": 9620,
+              "max": 962
+            },
+            "integration.applied": {
+              "samples": 5,
+              "total": 5,
+              "max": 1
+            },
+            "http.status": {
+              "samples": 1,
+              "total": 200,
+              "max": 200
+            },
+            "http.error_responses": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            }
+          },
+          "bytes": {
+            "workflow.state_json": {
+              "samples": 5,
+              "total": 7292,
+              "max": 1723
+            }
+          },
+          "pool_counts": {
+            "business": {
+              "samples": 18,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            },
+            "telemetry": {
+              "samples": 3,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            }
+          },
+          "overhead": {
+            "timer_calls": 247,
+            "bookkeeping_ms": 0.6666940000059185,
+            "collector_finalize_ms": 0.028823999999985972,
+            "logging_overhead_measured": false,
+            "extra_db_queries": 0,
+            "extra_business_payload_serializations": 0
+          },
+          "interpretation": "Span times are inclusive and may overlap; do not sum nested spans. Request time ends before diagnostic output and HTTP body transport. Instrumentation overhead is not subtracted."
+        },
+        {
+          "event": "wms_timing_diagnostic",
+          "schema_version": 1,
+          "operation": "v2.integration.process",
+          "request_failed_count": 0,
+          "request_elapsed_ms": 7900.613881,
+          "spans": {
+            "http.body_parse": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.26692300000013347,
+              "max_ms": 0.26692300000013347
+            },
+            "db.pool_acquire": {
+              "count": 51,
+              "failed_count": 0,
+              "inclusive_ms": 2.3431519999994634,
+              "max_ms": 0.26950699999997596
+            },
+            "db.begin": {
+              "count": 51,
+              "failed_count": 0,
+              "inclusive_ms": 9.44524999999976,
+              "max_ms": 0.3749760000000606
+            },
+            "db.context": {
+              "count": 51,
+              "failed_count": 0,
+              "inclusive_ms": 36.735570000002554,
+              "max_ms": 1.8166229999997086
+            },
+            "db.operation": {
+              "count": 51,
+              "failed_count": 0,
+              "inclusive_ms": 7790.423105999993,
+              "max_ms": 194.81225500000073
+            },
+            "db.commit": {
+              "count": 51,
+              "failed_count": 0,
+              "inclusive_ms": 51.67566000000079,
+              "max_ms": 2.23348199999964
+            },
+            "db.connection_held": {
+              "count": 51,
+              "failed_count": 0,
+              "inclusive_ms": 7891.3014909999965,
+              "max_ms": 196.84281999999985
+            },
+            "integration.queue_sql": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 36.066328999999314,
+              "max_ms": 1.7309329999998226
+            },
+            "integration.entity_sql": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 19.04717600001186,
+              "max_ms": 0.7187050000011368
+            },
+            "integration.entity_lock": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 18.376374000002215,
+              "max_ms": 3.0699549999999363
+            },
+            "integration.source_authorization": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 36.599535000005744,
+              "max_ms": 2.5624539999998888
+            },
+            "integration.resolve": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 0.5382010000012087,
+              "max_ms": 0.07925999999952182
+            },
+            "workflow.request_lock": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 12.053001999998742,
+              "max_ms": 0.6819489999998041
+            },
+            "workflow.warehouse_lock": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 52.83067900000697,
+              "max_ms": 1.7215890000006766
+            },
+            "workflow.state_initialize": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 49.01047799999924,
+              "max_ms": 1.9507650000005015
+            },
+            "workflow.state_lock_read": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 2565.7764899999975,
+              "max_ms": 70.77528299999994
+            },
+            "workflow.state_compare_baseline": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 784.6119170000011,
+              "max_ms": 21.801902000001064
+            },
+            "workflow.stock_read": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 351.8742039999979,
+              "max_ms": 11.111503999998604
+            },
+            "workflow.aggregate_match": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 380.5154290000073,
+              "max_ms": 11.814315000001443
+            },
+            "workflow.state_clone": {
+              "count": 150,
+              "failed_count": 0,
+              "inclusive_ms": 1336.1847440000247,
+              "max_ms": 35.166737999999896
+            },
+            "workflow.request_hash": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 4.851825000000645,
+              "max_ms": 0.36862699999983306
+            },
+            "workflow.references": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 106.63548200000332,
+              "max_ms": 5.044574999999895
+            },
+            "workflow.legacy_hydrate": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 9.06173100000251,
+              "max_ms": 0.199771999999939
+            },
+            "workflow.scans": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 67.76241800000207,
+              "max_ms": 3.223616999999649
+            },
+            "workflow.reconcile": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 190.36369099999956,
+              "max_ms": 5.529176999999436
+            },
+            "workflow.engine": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 1514.927141000001,
+              "max_ms": 40.97406599999886
+            },
+            "workflow.persist_sql": {
+              "count": 150,
+              "failed_count": 0,
+              "inclusive_ms": 344.950006999994,
+              "max_ms": 16.58312500000102
+            },
+            "workflow.persist_json": {
+              "count": 150,
+              "failed_count": 0,
+              "inclusive_ms": 621.7678410000053,
+              "max_ms": 17.701931999999942
+            },
+            "workflow.snapshot_clone": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 16.872834999995575,
+              "max_ms": 0.46845699999994395
+            },
+            "workflow.snapshot_sql": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 139.17790300000252,
+              "max_ms": 2.5242010000001756
+            },
+            "workflow.snapshot_reconcile": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 143.80850899999314,
+              "max_ms": 3.8802569999998013
+            },
+            "workflow.snapshot": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 421.4970329999951,
+              "max_ms": 10.743768999999702
+            },
+            "integration.status_sql": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 39.40539499999704,
+              "max_ms": 1.1229949999997189
+            },
+            "integration.event": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 7789.436848000001,
+              "max_ms": 194.80843999999888
+            },
+            "integration.batch": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 7893.226669,
+              "max_ms": 7893.226669
+            },
+            "http.json_response": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.256217000000106,
+              "max_ms": 1.256217000000106
+            },
+            "request.handler": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 7897.083291000001,
+              "max_ms": 7897.083291000001
+            },
+            "telemetry.pool_acquire": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.15748700000040117,
+              "max_ms": 0.15748700000040117
+            },
+            "telemetry.begin": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.3802900000009686,
+              "max_ms": 0.3802900000009686
+            },
+            "telemetry.context": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.39589300000079675,
+              "max_ms": 0.39589300000079675
+            },
+            "telemetry.insert": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.363828999999896,
+              "max_ms": 1.363828999999896
+            },
+            "telemetry.commit": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.6601569999984349,
+              "max_ms": 0.6601569999984349
+            },
+            "telemetry.connection_held": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 2.8381550000012794,
+              "max_ms": 2.8381550000012794
+            },
+            "request.telemetry": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.0271800000009534,
+              "max_ms": 3.0271800000009534
+            }
+          },
+          "counts": {
+            "integration.events": {
+              "samples": 50,
+              "total": 50,
+              "max": 1
+            },
+            "state.stock_rows": {
+              "samples": 100,
+              "total": 32400,
+              "max": 324
+            },
+            "state.orders": {
+              "samples": 100,
+              "total": 109935,
+              "max": 1117
+            },
+            "state.receipts": {
+              "samples": 100,
+              "total": 41320,
+              "max": 418
+            },
+            "state.returns": {
+              "samples": 100,
+              "total": 0,
+              "max": 0
+            },
+            "state.tasks": {
+              "samples": 100,
+              "total": 0,
+              "max": 0
+            },
+            "state.packages": {
+              "samples": 100,
+              "total": 96600,
+              "max": 966
+            },
+            "state.shipments": {
+              "samples": 100,
+              "total": 96200,
+              "max": 962
+            },
+            "integration.applied": {
+              "samples": 50,
+              "total": 50,
+              "max": 1
+            },
+            "http.status": {
+              "samples": 1,
+              "total": 200,
+              "max": 200
+            },
+            "http.error_responses": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            }
+          },
+          "bytes": {
+            "workflow.state_json": {
+              "samples": 50,
+              "total": 66586,
+              "max": 1723
+            }
+          },
+          "pool_counts": {
+            "business": {
+              "samples": 153,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            },
+            "telemetry": {
+              "samples": 3,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            }
+          },
+          "overhead": {
+            "timer_calls": 2317,
+            "bookkeeping_ms": 4.668568000040068,
+            "collector_finalize_ms": 0.07030699999995704,
+            "logging_overhead_measured": false,
+            "extra_db_queries": 0,
+            "extra_business_payload_serializations": 0
+          },
+          "interpretation": "Span times are inclusive and may overlap; do not sum nested spans. Request time ends before diagnostic output and HTTP body transport. Instrumentation overhead is not subtracted."
+        },
+        {
+          "event": "wms_timing_diagnostic",
+          "schema_version": 1,
+          "operation": "v2.workflow.read",
+          "request_failed_count": 0,
+          "request_elapsed_ms": 163.50801599999977,
+          "spans": {
+            "db.pool_acquire": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 0.11693599999853177,
+              "max_ms": 0.05016499999874213
+            },
+            "db.begin": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 1.357388999997056,
+              "max_ms": 0.8535190000002331
+            },
+            "db.context": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 2.2067819999992935,
+              "max_ms": 0.6510529999995924
+            },
+            "db.operation": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 135.4634449999994,
+              "max_ms": 131.53602499999943
+            },
+            "db.commit": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 3.342780999999377,
+              "max_ms": 2.8342130000000907
+            },
+            "db.connection_held": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 142.53265199999987,
+              "max_ms": 134.94140100000004
+            },
+            "workflow.state_lock_read": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 47.80598899999859,
+              "max_ms": 46.708762999998726
+            },
+            "workflow.snapshot_clone": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 27.239000000001397,
+              "max_ms": 26.890473999999813
+            },
+            "workflow.legacy_hydrate": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.07794800000010582,
+              "max_ms": 0.07794800000010582
+            },
+            "workflow.snapshot_sql": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 36.36243800000011,
+              "max_ms": 34.252001999999266
+            },
+            "workflow.snapshot_reconcile": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 4.6862550000005285,
+              "max_ms": 4.6862550000005285
+            },
+            "workflow.stock_read": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 2.2424449999998615,
+              "max_ms": 2.2424449999998615
+            },
+            "workflow.aggregate_match": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 2.4887570000009873,
+              "max_ms": 2.4887570000009873
+            },
+            "workflow.persisted_reconcile": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 9.27130599999873,
+              "max_ms": 9.27130599999873
+            },
+            "workflow.actor_names": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.3460110000014538,
+              "max_ms": 1.3460110000014538
+            },
+            "workflow.snapshot": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 82.34255099999973,
+              "max_ms": 82.34255099999973
+            },
+            "http.json_response": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 16.890769999999975,
+              "max_ms": 16.890769999999975
+            },
+            "request.handler": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 159.97089600000072,
+              "max_ms": 159.97089600000072
+            },
+            "telemetry.pool_acquire": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.06881400000020221,
+              "max_ms": 0.06881400000020221
+            },
+            "telemetry.begin": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.3758170000000973,
+              "max_ms": 0.3758170000000973
+            },
+            "telemetry.context": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.5003159999996569,
+              "max_ms": 0.5003159999996569
+            },
+            "telemetry.insert": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.4757379999991826,
+              "max_ms": 1.4757379999991826
+            },
+            "telemetry.commit": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.7867279999991297,
+              "max_ms": 0.7867279999991297
+            },
+            "telemetry.connection_held": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.1802710000010848,
+              "max_ms": 3.1802710000010848
+            },
+            "request.telemetry": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.2684840000001714,
+              "max_ms": 3.2684840000001714
+            }
+          },
+          "counts": {
+            "state.stock_rows": {
+              "samples": 1,
+              "total": 324,
+              "max": 324
+            },
+            "state.orders": {
+              "samples": 1,
+              "total": 1117,
+              "max": 1117
+            },
+            "state.receipts": {
+              "samples": 1,
+              "total": 418,
+              "max": 418
+            },
+            "state.returns": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            },
+            "state.tasks": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            },
+            "state.packages": {
+              "samples": 1,
+              "total": 966,
+              "max": 966
+            },
+            "state.shipments": {
+              "samples": 1,
+              "total": 962,
+              "max": 962
+            },
+            "http.status": {
+              "samples": 1,
+              "total": 200,
+              "max": 200
+            },
+            "http.error_responses": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            }
+          },
+          "bytes": {},
+          "pool_counts": {
+            "business": {
+              "samples": 12,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            },
+            "telemetry": {
+              "samples": 3,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            }
+          },
+          "overhead": {
+            "timer_calls": 46,
+            "bookkeeping_ms": 0.1232930000005581,
+            "collector_finalize_ms": 0.06447699999989709,
+            "logging_overhead_measured": false,
+            "extra_db_queries": 0,
+            "extra_business_payload_serializations": 0
+          },
+          "interpretation": "Span times are inclusive and may overlap; do not sum nested spans. Request time ends before diagnostic output and HTTP body transport. Instrumentation overhead is not subtracted."
+        },
+        {
+          "event": "wms_timing_diagnostic",
+          "schema_version": 1,
+          "operation": "other",
+          "request_failed_count": 0,
+          "request_elapsed_ms": 4.314172000000326,
+          "spans": {
+            "db.pool_acquire": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.07675600000038685,
+              "max_ms": 0.05800699999963399
+            },
+            "db.begin": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.6321239999997488,
+              "max_ms": 0.5403759999990143
+            },
+            "db.context": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.9273609999982,
+              "max_ms": 0.4660139999996318
+            },
+            "db.operation": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 1.8264369999997143,
+              "max_ms": 1.102774999999383
+            },
+            "db.commit": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.2803140000014537,
+              "max_ms": 0.17860000000109721
+            },
+            "db.connection_held": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 3.7677870000006806,
+              "max_ms": 1.9361619999999675
+            },
+            "http.json_response": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.15845900000022084,
+              "max_ms": 0.15845900000022084
+            },
+            "request.handler": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 4.168261999999231,
+              "max_ms": 4.168261999999231
+            }
+          },
+          "counts": {
+            "http.status": {
+              "samples": 1,
+              "total": 200,
+              "max": 200
+            },
+            "http.error_responses": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            }
+          },
+          "bytes": {},
+          "pool_counts": {
+            "business": {
+              "samples": 6,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            }
+          },
+          "overhead": {
+            "timer_calls": 14,
+            "bookkeeping_ms": 0.021813000001202454,
+            "collector_finalize_ms": 0.02154299999892828,
+            "logging_overhead_measured": false,
+            "extra_db_queries": 0,
+            "extra_business_payload_serializations": 0
+          },
+          "interpretation": "Span times are inclusive and may overlap; do not sum nested spans. Request time ends before diagnostic output and HTTP body transport. Instrumentation overhead is not subtracted."
+        },
+        {
+          "event": "wms_timing_diagnostic",
+          "schema_version": 1,
+          "operation": "v2.workflow.read",
+          "request_failed_count": 0,
+          "request_elapsed_ms": 132.3388730000006,
+          "spans": {
+            "db.pool_acquire": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 0.07792800000243005,
+              "max_ms": 0.03347100000064529
+            },
+            "db.begin": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 0.436890000000858,
+              "max_ms": 0.19336199999997916
+            },
+            "db.context": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 1.3056110000015906,
+              "max_ms": 0.3439090000010765
+            },
+            "db.operation": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 102.36630699999841,
+              "max_ms": 100.87075899999945
+            },
+            "db.commit": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 1.4085769999983313,
+              "max_ms": 0.927890999999363
+            },
+            "db.connection_held": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 105.6402190000008,
+              "max_ms": 102.26938999999948
+            },
+            "workflow.state_lock_read": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 43.836756999999125,
+              "max_ms": 43.000223999999434
+            },
+            "workflow.snapshot_clone": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 27.72506499999872,
+              "max_ms": 27.370449999998527
+            },
+            "workflow.legacy_hydrate": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.08260499999960302,
+              "max_ms": 0.08260499999960302
+            },
+            "workflow.snapshot_sql": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 3.9090220000016416,
+              "max_ms": 2.0996700000014243
+            },
+            "workflow.snapshot_reconcile": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 4.16318499999943,
+              "max_ms": 4.16318499999943
+            },
+            "workflow.stock_read": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 8.94559400000071,
+              "max_ms": 8.94559400000071
+            },
+            "workflow.aggregate_match": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 9.185207000000446,
+              "max_ms": 9.185207000000446
+            },
+            "workflow.persisted_reconcile": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 9.372709999999643,
+              "max_ms": 9.372709999999643
+            },
+            "workflow.actor_names": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.7769630000002508,
+              "max_ms": 0.7769630000002508
+            },
+            "workflow.snapshot": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 55.73612200000025,
+              "max_ms": 55.73612200000025
+            },
+            "http.json_response": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 22.0746139999992,
+              "max_ms": 22.0746139999992
+            },
+            "request.handler": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 127.9692070000001,
+              "max_ms": 127.9692070000001
+            },
+            "telemetry.pool_acquire": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.0632049999985611,
+              "max_ms": 0.0632049999985611
+            },
+            "telemetry.begin": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.5188039999993634,
+              "max_ms": 0.5188039999993634
+            },
+            "telemetry.context": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.7026410000016767,
+              "max_ms": 0.7026410000016767
+            },
+            "telemetry.insert": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.839207000000897,
+              "max_ms": 1.839207000000897
+            },
+            "telemetry.commit": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.8907750000016676,
+              "max_ms": 0.8907750000016676
+            },
+            "telemetry.connection_held": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.9966540000004898,
+              "max_ms": 3.9966540000004898
+            },
+            "request.telemetry": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 4.079619000000093,
+              "max_ms": 4.079619000000093
+            }
+          },
+          "counts": {
+            "state.stock_rows": {
+              "samples": 1,
+              "total": 324,
+              "max": 324
+            },
+            "state.orders": {
+              "samples": 1,
+              "total": 1078,
+              "max": 1078
+            },
+            "state.receipts": {
+              "samples": 1,
+              "total": 406,
+              "max": 406
+            },
+            "state.returns": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            },
+            "state.tasks": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            },
+            "state.packages": {
+              "samples": 1,
+              "total": 967,
+              "max": 967
+            },
+            "state.shipments": {
+              "samples": 1,
+              "total": 964,
+              "max": 964
+            },
+            "http.status": {
+              "samples": 1,
+              "total": 200,
+              "max": 200
+            },
+            "http.error_responses": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            }
+          },
+          "bytes": {},
+          "pool_counts": {
+            "business": {
+              "samples": 12,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            },
+            "telemetry": {
+              "samples": 3,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            }
+          },
+          "overhead": {
+            "timer_calls": 46,
+            "bookkeeping_ms": 0.07519200000569981,
+            "collector_finalize_ms": 0.029494999998860294,
+            "logging_overhead_measured": false,
+            "extra_db_queries": 0,
+            "extra_business_payload_serializations": 0
+          },
+          "interpretation": "Span times are inclusive and may overlap; do not sum nested spans. Request time ends before diagnostic output and HTTP body transport. Instrumentation overhead is not subtracted."
+        },
+        {
+          "event": "wms_timing_diagnostic",
+          "schema_version": 1,
+          "operation": "v2.integration.process",
+          "request_failed_count": 0,
+          "request_elapsed_ms": 152.72697100000005,
+          "spans": {
+            "http.body_parse": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.7975829999995767,
+              "max_ms": 1.7975829999995767
+            },
+            "db.pool_acquire": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.06742100000155915,
+              "max_ms": 0.04584900000008929
+            },
+            "db.begin": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.5649830000002112,
+              "max_ms": 0.45642899999984365
+            },
+            "db.context": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 2.4414059999999154,
+              "max_ms": 1.9667389999995066
+            },
+            "db.operation": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 143.66008300000067,
+              "max_ms": 142.50308600000062
+            },
+            "db.commit": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.9350910000011936,
+              "max_ms": 0.7493910000011965
+            },
+            "db.connection_held": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 147.86862800000017,
+              "max_ms": 144.06828999999925
+            },
+            "integration.queue_sql": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 1.027181000001292,
+              "max_ms": 0.6364410000005591
+            },
+            "integration.entity_sql": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.4909319999987929,
+              "max_ms": 0.4909319999987929
+            },
+            "integration.entity_lock": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.32235599999876285,
+              "max_ms": 0.32235599999876285
+            },
+            "integration.source_authorization": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.978478000000905,
+              "max_ms": 0.978478000000905
+            },
+            "integration.resolve": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.015853000000788597,
+              "max_ms": 0.015853000000788597
+            },
+            "workflow.request_lock": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.357068999999683,
+              "max_ms": 0.357068999999683
+            },
+            "workflow.warehouse_lock": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.005979000001389,
+              "max_ms": 1.005979000001389
+            },
+            "workflow.state_initialize": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.0629039999985253,
+              "max_ms": 1.0629039999985253
+            },
+            "workflow.state_lock_read": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 39.77049799999986,
+              "max_ms": 38.87223199999971
+            },
+            "workflow.state_compare_baseline": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 15.15837300000021,
+              "max_ms": 15.15837300000021
+            },
+            "workflow.stock_read": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 4.0610119999983,
+              "max_ms": 2.4360579999993206
+            },
+            "workflow.aggregate_match": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 4.567184999998062,
+              "max_ms": 2.696470999999292
+            },
+            "workflow.state_clone": {
+              "count": 3,
+              "failed_count": 0,
+              "inclusive_ms": 29.50398900000073,
+              "max_ms": 28.909052000000884
+            },
+            "workflow.request_hash": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.07128699999884702,
+              "max_ms": 0.07128699999884702
+            },
+            "workflow.references": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.903825000001234,
+              "max_ms": 1.903825000001234
+            },
+            "workflow.legacy_hydrate": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.127823000000717,
+              "max_ms": 0.06396700000004785
+            },
+            "workflow.scans": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.8769639999991341,
+              "max_ms": 0.8769639999991341
+            },
+            "workflow.reconcile": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.878515000000334,
+              "max_ms": 3.878515000000334
+            },
+            "workflow.engine": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 33.00347300000067,
+              "max_ms": 33.00347300000067
+            },
+            "workflow.persist_sql": {
+              "count": 3,
+              "failed_count": 0,
+              "inclusive_ms": 11.043109000000186,
+              "max_ms": 8.45785700000124
+            },
+            "workflow.persist_json": {
+              "count": 3,
+              "failed_count": 0,
+              "inclusive_ms": 10.958413999998811,
+              "max_ms": 10.940185999999812
+            },
+            "workflow.snapshot_clone": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 0.28524900000047637,
+              "max_ms": 0.2694659999997384
+            },
+            "workflow.snapshot_sql": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 2.5833200000015495,
+              "max_ms": 1.3730030000006082
+            },
+            "workflow.snapshot_reconcile": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 2.7368719999994937,
+              "max_ms": 2.7368719999994937
+            },
+            "workflow.snapshot": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 7.8741380000010395,
+              "max_ms": 7.8741380000010395
+            },
+            "integration.status_sql": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.8151710000001913,
+              "max_ms": 0.8151710000001913
+            },
+            "integration.event": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 142.49961099999928,
+              "max_ms": 142.49961099999928
+            },
+            "integration.batch": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 144.12681799999882,
+              "max_ms": 144.12681799999882
+            },
+            "http.json_response": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.26828500000010536,
+              "max_ms": 0.26828500000010536
+            },
+            "request.handler": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 150.33597199999895,
+              "max_ms": 150.33597199999895
+            },
+            "telemetry.pool_acquire": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.03329999999914435,
+              "max_ms": 0.03329999999914435
+            },
+            "telemetry.begin": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.2819650000001275,
+              "max_ms": 0.2819650000001275
+            },
+            "telemetry.context": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.32928700000047684,
+              "max_ms": 0.32928700000047684
+            },
+            "telemetry.insert": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.9884520000014163,
+              "max_ms": 0.9884520000014163
+            },
+            "telemetry.commit": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.414096000000427,
+              "max_ms": 0.414096000000427
+            },
+            "telemetry.connection_held": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 2.0614019999993616,
+              "max_ms": 2.0614019999993616
+            },
+            "request.telemetry": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 2.108092000000397,
+              "max_ms": 2.108092000000397
+            }
+          },
+          "counts": {
+            "integration.events": {
+              "samples": 1,
+              "total": 1,
+              "max": 1
+            },
+            "state.stock_rows": {
+              "samples": 2,
+              "total": 648,
+              "max": 324
+            },
+            "state.orders": {
+              "samples": 2,
+              "total": 2156,
+              "max": 1078
+            },
+            "state.receipts": {
+              "samples": 2,
+              "total": 813,
+              "max": 407
+            },
+            "state.returns": {
+              "samples": 2,
+              "total": 0,
+              "max": 0
+            },
+            "state.tasks": {
+              "samples": 2,
+              "total": 0,
+              "max": 0
+            },
+            "state.packages": {
+              "samples": 2,
+              "total": 1934,
+              "max": 967
+            },
+            "state.shipments": {
+              "samples": 2,
+              "total": 1928,
+              "max": 964
+            },
+            "integration.applied": {
+              "samples": 1,
+              "total": 1,
+              "max": 1
+            },
+            "http.status": {
+              "samples": 1,
+              "total": 200,
+              "max": 200
+            },
+            "http.error_responses": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            }
+          },
+          "bytes": {
+            "workflow.state_json": {
+              "samples": 1,
+              "total": 972,
+              "max": 972
+            }
+          },
+          "pool_counts": {
+            "business": {
+              "samples": 6,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            },
+            "telemetry": {
+              "samples": 3,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            }
+          },
+          "overhead": {
+            "timer_calls": 63,
+            "bookkeeping_ms": 0.11506599999665923,
+            "collector_finalize_ms": 0.02694100000007893,
+            "logging_overhead_measured": false,
+            "extra_db_queries": 0,
+            "extra_business_payload_serializations": 0
+          },
+          "interpretation": "Span times are inclusive and may overlap; do not sum nested spans. Request time ends before diagnostic output and HTTP body transport. Instrumentation overhead is not subtracted."
+        },
+        {
+          "event": "wms_timing_diagnostic",
+          "schema_version": 1,
+          "operation": "v2.integration.process",
+          "request_failed_count": 0,
+          "request_elapsed_ms": 733.164553999999,
+          "spans": {
+            "http.body_parse": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.33923200000026554,
+              "max_ms": 0.33923200000026554
+            },
+            "db.pool_acquire": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 0.18338699999912933,
+              "max_ms": 0.036464999999225256
+            },
+            "db.begin": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 1.390970999998899,
+              "max_ms": 0.5187539999988076
+            },
+            "db.context": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 4.050234000000273,
+              "max_ms": 1.0075809999998455
+            },
+            "db.operation": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 718.3503689999998,
+              "max_ms": 151.6680269999997
+            },
+            "db.commit": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 5.372600000002421,
+              "max_ms": 1.408596999999645
+            },
+            "db.connection_held": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 729.460780999998,
+              "max_ms": 153.77219299999888
+            },
+            "integration.queue_sql": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 3.0895129999989877,
+              "max_ms": 0.5885080000007292
+            },
+            "integration.entity_sql": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 2.0163329999995767,
+              "max_ms": 0.4856930000005377
+            },
+            "integration.entity_lock": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 1.7643039999966277,
+              "max_ms": 0.5027789999985544
+            },
+            "integration.source_authorization": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 3.030013000001418,
+              "max_ms": 0.7180840000000899
+            },
+            "integration.resolve": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 0.038015999998606276,
+              "max_ms": 0.014271000000007916
+            },
+            "workflow.request_lock": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 1.1881549999980052,
+              "max_ms": 0.28114500000083353
+            },
+            "workflow.warehouse_lock": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 6.87982700000066,
+              "max_ms": 2.6242120000006253
+            },
+            "workflow.state_initialize": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 4.823030999999901,
+              "max_ms": 1.0412619999988237
+            },
+            "workflow.state_lock_read": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 240.90874800000347,
+              "max_ms": 56.34925099999964
+            },
+            "workflow.state_compare_baseline": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 72.68640100000084,
+              "max_ms": 16.331465000001117
+            },
+            "workflow.stock_read": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 37.79391400000168,
+              "max_ms": 8.915818999999829
+            },
+            "workflow.aggregate_match": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 40.15028999999595,
+              "max_ms": 9.16524500000014
+            },
+            "workflow.state_clone": {
+              "count": 15,
+              "failed_count": 0,
+              "inclusive_ms": 123.60556700000234,
+              "max_ms": 24.648239000000103
+            },
+            "workflow.request_hash": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 0.47642000000087137,
+              "max_ms": 0.115034000000378
+            },
+            "workflow.references": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 11.67733699999917,
+              "max_ms": 3.913587999999436
+            },
+            "workflow.legacy_hydrate": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 0.7583149999991292,
+              "max_ms": 0.1200410000001284
+            },
+            "workflow.scans": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 7.392659000001004,
+              "max_ms": 1.9532280000003084
+            },
+            "workflow.reconcile": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 16.17047999999886,
+              "max_ms": 3.930202999999892
+            },
+            "workflow.engine": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 138.50639200000114,
+              "max_ms": 28.384530000001178
+            },
+            "workflow.persist_sql": {
+              "count": 15,
+              "failed_count": 0,
+              "inclusive_ms": 21.875464000000648,
+              "max_ms": 2.7342479999988427
+            },
+            "workflow.persist_json": {
+              "count": 15,
+              "failed_count": 0,
+              "inclusive_ms": 56.86359399999856,
+              "max_ms": 13.926625000000058
+            },
+            "workflow.snapshot_clone": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 1.6260849999998754,
+              "max_ms": 0.29736899999988964
+            },
+            "workflow.snapshot_sql": {
+              "count": 10,
+              "failed_count": 0,
+              "inclusive_ms": 12.078984000003402,
+              "max_ms": 1.2753950000005716
+            },
+            "workflow.snapshot_reconcile": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 12.162740000003396,
+              "max_ms": 2.873698000001241
+            },
+            "workflow.snapshot": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 37.28416500000094,
+              "max_ms": 8.427913000001354
+            },
+            "integration.status_sql": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 3.3137320000005275,
+              "max_ms": 0.7336279999999533
+            },
+            "integration.event": {
+              "count": 5,
+              "failed_count": 0,
+              "inclusive_ms": 717.4857060000013,
+              "max_ms": 151.66369099999974
+            },
+            "integration.batch": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 727.603489000001,
+              "max_ms": 727.603489000001
+            },
+            "http.json_response": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.3355169999995269,
+              "max_ms": 0.3355169999995269
+            },
+            "request.handler": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 730.6555759999992,
+              "max_ms": 730.6555759999992
+            },
+            "telemetry.pool_acquire": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.03697600000123202,
+              "max_ms": 0.03697600000123202
+            },
+            "telemetry.begin": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.3929729999999836,
+              "max_ms": 0.3929729999999836
+            },
+            "telemetry.context": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.4020970000001398,
+              "max_ms": 0.4020970000001398
+            },
+            "telemetry.insert": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.9928689999997005,
+              "max_ms": 0.9928689999997005
+            },
+            "telemetry.commit": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.40800599999965925,
+              "max_ms": 0.40800599999965925
+            },
+            "telemetry.connection_held": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 2.222063999999591,
+              "max_ms": 2.222063999999591
+            },
+            "request.telemetry": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 2.2730809999993653,
+              "max_ms": 2.2730809999993653
+            }
+          },
+          "counts": {
+            "integration.events": {
+              "samples": 5,
+              "total": 5,
+              "max": 1
+            },
+            "state.stock_rows": {
+              "samples": 10,
+              "total": 3240,
+              "max": 324
+            },
+            "state.orders": {
+              "samples": 10,
+              "total": 10789,
+              "max": 1081
+            },
+            "state.receipts": {
+              "samples": 10,
+              "total": 4079,
+              "max": 408
+            },
+            "state.returns": {
+              "samples": 10,
+              "total": 0,
+              "max": 0
+            },
+            "state.tasks": {
+              "samples": 10,
+              "total": 0,
+              "max": 0
+            },
+            "state.packages": {
+              "samples": 10,
+              "total": 9670,
+              "max": 967
+            },
+            "state.shipments": {
+              "samples": 10,
+              "total": 9640,
+              "max": 964
+            },
+            "integration.applied": {
+              "samples": 5,
+              "total": 5,
+              "max": 1
+            },
+            "http.status": {
+              "samples": 1,
+              "total": 200,
+              "max": 200
+            },
+            "http.error_responses": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            }
+          },
+          "bytes": {
+            "workflow.state_json": {
+              "samples": 5,
+              "total": 7423,
+              "max": 1723
+            }
+          },
+          "pool_counts": {
+            "business": {
+              "samples": 18,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            },
+            "telemetry": {
+              "samples": 3,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            }
+          },
+          "overhead": {
+            "timer_calls": 247,
+            "bookkeeping_ms": 0.3594589999920572,
+            "collector_finalize_ms": 0.11357099999986531,
+            "logging_overhead_measured": false,
+            "extra_db_queries": 0,
+            "extra_business_payload_serializations": 0
+          },
+          "interpretation": "Span times are inclusive and may overlap; do not sum nested spans. Request time ends before diagnostic output and HTTP body transport. Instrumentation overhead is not subtracted."
+        },
+        {
+          "event": "wms_timing_diagnostic",
+          "schema_version": 1,
+          "operation": "v2.integration.process",
+          "request_failed_count": 0,
+          "request_elapsed_ms": 7888.0938320000005,
+          "spans": {
+            "http.body_parse": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.25765899999896646,
+              "max_ms": 0.25765899999896646
+            },
+            "db.pool_acquire": {
+              "count": 51,
+              "failed_count": 0,
+              "inclusive_ms": 2.1203909999894677,
+              "max_ms": 0.13240000000041618
+            },
+            "db.begin": {
+              "count": 51,
+              "failed_count": 0,
+              "inclusive_ms": 11.599055000004228,
+              "max_ms": 2.656114000001253
+            },
+            "db.context": {
+              "count": 51,
+              "failed_count": 0,
+              "inclusive_ms": 36.721649000010075,
+              "max_ms": 3.018201000002591
+            },
+            "db.operation": {
+              "count": 51,
+              "failed_count": 0,
+              "inclusive_ms": 7776.664255000016,
+              "max_ms": 195.9905370000015
+            },
+            "db.commit": {
+              "count": 51,
+              "failed_count": 0,
+              "inclusive_ms": 50.34268100000372,
+              "max_ms": 1.8999980000007781
+            },
+            "db.connection_held": {
+              "count": 51,
+              "failed_count": 0,
+              "inclusive_ms": 7878.602180000018,
+              "max_ms": 198.7003130000012
+            },
+            "integration.queue_sql": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 34.4104160000079,
+              "max_ms": 0.9315659999992931
+            },
+            "integration.entity_sql": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 18.308654000007664,
+              "max_ms": 0.5229099999996834
+            },
+            "integration.entity_lock": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 16.14298300000337,
+              "max_ms": 1.3956969999999274
+            },
+            "integration.source_authorization": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 34.197507000009864,
+              "max_ms": 1.4891980000011245
+            },
+            "integration.resolve": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 0.5449940000053175,
+              "max_ms": 0.03462199999921722
+            },
+            "workflow.request_lock": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 14.861275000006572,
+              "max_ms": 2.3599770000000717
+            },
+            "workflow.warehouse_lock": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 50.95833799999309,
+              "max_ms": 1.5053329999973357
+            },
+            "workflow.state_initialize": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 52.11462500000562,
+              "max_ms": 3.7792650000010326
+            },
+            "workflow.state_lock_read": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 2501.3192510000044,
+              "max_ms": 72.92895600000338
+            },
+            "workflow.state_compare_baseline": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 788.4851829999989,
+              "max_ms": 21.42405200000212
+            },
+            "workflow.stock_read": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 399.83304899999894,
+              "max_ms": 15.290782000000036
+            },
+            "workflow.aggregate_match": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 426.2576799999988,
+              "max_ms": 15.790125999999873
+            },
+            "workflow.state_clone": {
+              "count": 150,
+              "failed_count": 0,
+              "inclusive_ms": 1356.5727420000148,
+              "max_ms": 39.836802000001626
+            },
+            "workflow.request_hash": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 4.706860999998753,
+              "max_ms": 0.18249599999762722
+            },
+            "workflow.references": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 111.67788000000292,
+              "max_ms": 5.951686000000336
+            },
+            "workflow.legacy_hydrate": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 8.737460000002102,
+              "max_ms": 0.20396799999798532
+            },
+            "workflow.scans": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 70.11084800000936,
+              "max_ms": 3.641648000000714
+            },
+            "workflow.reconcile": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 192.52374600000257,
+              "max_ms": 5.172437999997783
+            },
+            "workflow.engine": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 1541.4961789999816,
+              "max_ms": 48.066790999997465
+            },
+            "workflow.persist_sql": {
+              "count": 150,
+              "failed_count": 0,
+              "inclusive_ms": 314.8289359999835,
+              "max_ms": 21.45488800000021
+            },
+            "workflow.persist_json": {
+              "count": 150,
+              "failed_count": 0,
+              "inclusive_ms": 626.6127910000068,
+              "max_ms": 20.584068000000116
+            },
+            "workflow.snapshot_clone": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 17.216108000007807,
+              "max_ms": 0.5048430000024382
+            },
+            "workflow.snapshot_sql": {
+              "count": 100,
+              "failed_count": 0,
+              "inclusive_ms": 138.9955849999933,
+              "max_ms": 3.5841099999997823
+            },
+            "workflow.snapshot_reconcile": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 140.41491099999257,
+              "max_ms": 4.591161000000284
+            },
+            "workflow.snapshot": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 415.224712000012,
+              "max_ms": 13.378665999996883
+            },
+            "integration.status_sql": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 44.26064800000859,
+              "max_ms": 4.563589999999749
+            },
+            "integration.event": {
+              "count": 50,
+              "failed_count": 0,
+              "inclusive_ms": 7775.749421999995,
+              "max_ms": 195.98495900000125
+            },
+            "integration.batch": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 7880.900773000001,
+              "max_ms": 7880.900773000001
+            },
+            "http.json_response": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.0006809999977122,
+              "max_ms": 1.0006809999977122
+            },
+            "request.handler": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 7884.2553339999995,
+              "max_ms": 7884.2553339999995
+            },
+            "telemetry.pool_acquire": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.07355099999767845,
+              "max_ms": 0.07355099999767845
+            },
+            "telemetry.begin": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.24133500000243657,
+              "max_ms": 0.24133500000243657
+            },
+            "telemetry.context": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.5579720000023372,
+              "max_ms": 0.5579720000023372
+            },
+            "telemetry.insert": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.5374960000008286,
+              "max_ms": 1.5374960000008286
+            },
+            "telemetry.commit": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.9036440000018047,
+              "max_ms": 0.9036440000018047
+            },
+            "telemetry.connection_held": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.2923250000021653,
+              "max_ms": 3.2923250000021653
+            },
+            "request.telemetry": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.43939699999828,
+              "max_ms": 3.43939699999828
+            }
+          },
+          "counts": {
+            "integration.events": {
+              "samples": 50,
+              "total": 50,
+              "max": 1
+            },
+            "state.stock_rows": {
+              "samples": 100,
+              "total": 32400,
+              "max": 324
+            },
+            "state.orders": {
+              "samples": 100,
+              "total": 109865,
+              "max": 1116
+            },
+            "state.receipts": {
+              "samples": 100,
+              "total": 41300,
+              "max": 418
+            },
+            "state.returns": {
+              "samples": 100,
+              "total": 0,
+              "max": 0
+            },
+            "state.tasks": {
+              "samples": 100,
+              "total": 0,
+              "max": 0
+            },
+            "state.packages": {
+              "samples": 100,
+              "total": 96700,
+              "max": 967
+            },
+            "state.shipments": {
+              "samples": 100,
+              "total": 96400,
+              "max": 964
+            },
+            "integration.applied": {
+              "samples": 50,
+              "total": 50,
+              "max": 1
+            },
+            "http.status": {
+              "samples": 1,
+              "total": 200,
+              "max": 200
+            },
+            "http.error_responses": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            }
+          },
+          "bytes": {
+            "workflow.state_json": {
+              "samples": 50,
+              "total": 67468,
+              "max": 1723
+            }
+          },
+          "pool_counts": {
+            "business": {
+              "samples": 153,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            },
+            "telemetry": {
+              "samples": 3,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            }
+          },
+          "overhead": {
+            "timer_calls": 2317,
+            "bookkeeping_ms": 5.122845999894707,
+            "collector_finalize_ms": 0.1157149999999092,
+            "logging_overhead_measured": false,
+            "extra_db_queries": 0,
+            "extra_business_payload_serializations": 0
+          },
+          "interpretation": "Span times are inclusive and may overlap; do not sum nested spans. Request time ends before diagnostic output and HTTP body transport. Instrumentation overhead is not subtracted."
+        },
+        {
+          "event": "wms_timing_diagnostic",
+          "schema_version": 1,
+          "operation": "v2.workflow.read",
+          "request_failed_count": 0,
+          "request_elapsed_ms": 143.879068000002,
+          "spans": {
+            "db.pool_acquire": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 0.11297000000195112,
+              "max_ms": 0.0455679999977292
+            },
+            "db.begin": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 1.3986709999990126,
+              "max_ms": 0.7961309999991499
+            },
+            "db.context": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 2.8841929999980493,
+              "max_ms": 1.041121000002022
+            },
+            "db.operation": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 119.59507000000303,
+              "max_ms": 116.86537000000317
+            },
+            "db.commit": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 1.5085269999981392,
+              "max_ms": 0.9647970000005444
+            },
+            "db.connection_held": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 125.53791100000308,
+              "max_ms": 118.27312399999937
+            },
+            "workflow.state_lock_read": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 69.94761300000027,
+              "max_ms": 68.84766200000013
+            },
+            "workflow.snapshot_clone": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 27.7505310000015,
+              "max_ms": 27.446952999998757
+            },
+            "workflow.legacy_hydrate": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.08951499999966472,
+              "max_ms": 0.08951499999966472
+            },
+            "workflow.snapshot_sql": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 3.5942959999993036,
+              "max_ms": 2.1841070000009495
+            },
+            "workflow.snapshot_reconcile": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.8324050000010175,
+              "max_ms": 3.8324050000010175
+            },
+            "workflow.stock_read": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.6776630000022124,
+              "max_ms": 1.6776630000022124
+            },
+            "workflow.aggregate_match": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.931045000001177,
+              "max_ms": 1.931045000001177
+            },
+            "workflow.persisted_reconcile": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 7.099388000002364,
+              "max_ms": 7.099388000002364
+            },
+            "workflow.actor_names": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.5997360000001208,
+              "max_ms": 1.5997360000001208
+            },
+            "workflow.snapshot": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 46.60428300000058,
+              "max_ms": 46.60428300000058
+            },
+            "http.json_response": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 13.476983999997174,
+              "max_ms": 13.476983999997174
+            },
+            "request.handler": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 139.5675599999995,
+              "max_ms": 139.5675599999995
+            },
+            "telemetry.pool_acquire": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.06284500000037951,
+              "max_ms": 0.06284500000037951
+            },
+            "telemetry.begin": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.385602000002109,
+              "max_ms": 0.385602000002109
+            },
+            "telemetry.context": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.7254759999996168,
+              "max_ms": 0.7254759999996168
+            },
+            "telemetry.insert": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 1.6454140000023472,
+              "max_ms": 1.6454140000023472
+            },
+            "telemetry.commit": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 0.9757629999985511,
+              "max_ms": 0.9757629999985511
+            },
+            "telemetry.connection_held": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.771272999998473,
+              "max_ms": 3.771272999998473
+            },
+            "request.telemetry": {
+              "count": 1,
+              "failed_count": 0,
+              "inclusive_ms": 3.856601999999839,
+              "max_ms": 3.856601999999839
+            }
+          },
+          "counts": {
+            "state.stock_rows": {
+              "samples": 1,
+              "total": 324,
+              "max": 324
+            },
+            "state.orders": {
+              "samples": 1,
+              "total": 1116,
+              "max": 1116
+            },
+            "state.receipts": {
+              "samples": 1,
+              "total": 418,
+              "max": 418
+            },
+            "state.returns": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            },
+            "state.tasks": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            },
+            "state.packages": {
+              "samples": 1,
+              "total": 967,
+              "max": 967
+            },
+            "state.shipments": {
+              "samples": 1,
+              "total": 964,
+              "max": 964
+            },
+            "http.status": {
+              "samples": 1,
+              "total": 200,
+              "max": 200
+            },
+            "http.error_responses": {
+              "samples": 1,
+              "total": 0,
+              "max": 0
+            }
+          },
+          "bytes": {},
+          "pool_counts": {
+            "business": {
+              "samples": 12,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            },
+            "telemetry": {
+              "samples": 3,
+              "max_total": 1,
+              "max_idle": 1,
+              "max_waiting": 1
+            }
+          },
+          "overhead": {
+            "timer_calls": 46,
+            "bookkeeping_ms": 0.08870899999601534,
+            "collector_finalize_ms": 0.05521299999963958,
+            "logging_overhead_measured": false,
+            "extra_db_queries": 0,
+            "extra_business_payload_serializations": 0
+          },
+          "interpretation": "Span times are inclusive and may overlap; do not sum nested spans. Request time ends before diagnostic output and HTTP body transport. Instrumentation overhead is not subtracted."
+        }
+      ],
+      "operation_aggregates": {
+        "other": {
+          "requests": 2,
+          "request_elapsed_total_ms": 33.06692800000019,
+          "request_elapsed_max_ms": 28.752755999999863,
+          "spans": {
+            "db.pool_acquire": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 12.04525300000023,
+              "max_ms": 11.877340000000004
+            },
+            "db.begin": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 1.8511549999998351,
+              "max_ms": 0.930735000000368
+            },
+            "db.context": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 4.730561999998372,
+              "max_ms": 2.4132730000001175
+            },
+            "db.operation": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 9.197513999999956,
+              "max_ms": 3.8692110000001776
+            },
+            "db.commit": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 1.0377470000016729,
+              "max_ms": 0.39524600000004284
+            },
+            "db.connection_held": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 17.24190900000076,
+              "max_ms": 7.823410999999851
+            },
+            "http.json_response": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 1.5856229999999414,
+              "max_ms": 1.4271639999997205
+            },
+            "request.handler": {
+              "count": 2,
+              "failed_count": 0,
+              "inclusive_ms": 32.264826999999514,
+              "max_ms": 28.096565000000282
+            }
+          },
+          "pool_max_waiting": 1,
+          "overhead": {
+            "timer_calls": 28,
+            "bookkeeping_ms": 0.142719000001307,
+            "collector_finalize_ms": 0.06048099999907208,
+            "logging_overhead_measured": false
+          }
+        },
+        "v2.integration.process": {
+          "requests": 6,
+          "request_elapsed_total_ms": 17735.660807,
+          "request_elapsed_max_ms": 7900.613881,
+          "spans": {
+            "http.body_parse": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 4.911652999998296,
+              "max_ms": 1.9048549999997704
+            },
+            "db.pool_acquire": {
+              "count": 118,
+              "failed_count": 0,
+              "inclusive_ms": 5.118098999989343,
+              "max_ms": 0.26950699999997596
+            },
+            "db.begin": {
+              "count": 118,
+              "failed_count": 0,
+              "inclusive_ms": 25.92319100000259,
+              "max_ms": 2.656114000001253
+            },
+            "db.context": {
+              "count": 118,
+              "failed_count": 0,
+              "inclusive_ms": 89.07843100001173,
+              "max_ms": 3.018201000002591
+            },
+            "db.operation": {
+              "count": 118,
+              "failed_count": 0,
+              "inclusive_ms": 17459.90197500001,
+              "max_ms": 205.62069599999995
+            },
+            "db.commit": {
+              "count": 118,
+              "failed_count": 0,
+              "inclusive_ms": 115.11638200000743,
+              "max_ms": 2.23348199999964
+            },
+            "db.connection_held": {
+              "count": 118,
+              "failed_count": 0,
+              "inclusive_ms": 17697.399072000015,
+              "max_ms": 208.0694629999998
+            },
+            "integration.queue_sql": {
+              "count": 224,
+              "failed_count": 0,
+              "inclusive_ms": 81.02325700000802,
+              "max_ms": 1.749431000000186
+            },
+            "integration.entity_sql": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 42.85267700001714,
+              "max_ms": 0.7400969999998779
+            },
+            "integration.entity_lock": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 38.93672300000071,
+              "max_ms": 3.0699549999999363
+            },
+            "integration.source_authorization": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 79.9289380000173,
+              "max_ms": 2.5624539999998888
+            },
+            "integration.resolve": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 1.2953830000060407,
+              "max_ms": 0.09023600000000442
+            },
+            "workflow.request_lock": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 30.468973000004553,
+              "max_ms": 2.3599770000000717
+            },
+            "workflow.warehouse_lock": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 118.46665100000155,
+              "max_ms": 2.6242120000006253
+            },
+            "workflow.state_initialize": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 113.18643000000156,
+              "max_ms": 3.7792650000010326
+            },
+            "workflow.state_lock_read": {
+              "count": 224,
+              "failed_count": 0,
+              "inclusive_ms": 5685.635771000003,
+              "max_ms": 72.92895600000338
+            },
+            "workflow.state_compare_baseline": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 1764.609872000001,
+              "max_ms": 27.3808939999999
+            },
+            "workflow.stock_read": {
+              "count": 224,
+              "failed_count": 0,
+              "inclusive_ms": 829.6411389999985,
+              "max_ms": 15.290782000000036
+            },
+            "workflow.aggregate_match": {
+              "count": 224,
+              "failed_count": 0,
+              "inclusive_ms": 891.4121239999977,
+              "max_ms": 15.790125999999873
+            },
+            "workflow.state_clone": {
+              "count": 336,
+              "failed_count": 0,
+              "inclusive_ms": 3022.1766510000407,
+              "max_ms": 43.61618300000009
+            },
+            "workflow.request_hash": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 10.728209999998398,
+              "max_ms": 0.36862699999983306
+            },
+            "workflow.references": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 244.57671400000527,
+              "max_ms": 5.951686000000336
+            },
+            "workflow.legacy_hydrate": {
+              "count": 224,
+              "failed_count": 0,
+              "inclusive_ms": 19.780713000004653,
+              "max_ms": 0.20396799999798532
+            },
+            "workflow.scans": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 155.76918900001237,
+              "max_ms": 3.641648000000714
+            },
+            "workflow.reconcile": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 428.8034119999993,
+              "max_ms": 6.1853269999992335
+            },
+            "workflow.engine": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 3431.5129889999844,
+              "max_ms": 51.9151609999999
+            },
+            "workflow.persist_sql": {
+              "count": 336,
+              "failed_count": 0,
+              "inclusive_ms": 749.9629009999799,
+              "max_ms": 21.45488800000021
+            },
+            "workflow.persist_json": {
+              "count": 336,
+              "failed_count": 0,
+              "inclusive_ms": 1393.939041000007,
+              "max_ms": 20.584068000000116
+            },
+            "workflow.snapshot_clone": {
+              "count": 224,
+              "failed_count": 0,
+              "inclusive_ms": 38.32283400000324,
+              "max_ms": 0.5048430000024382
+            },
+            "workflow.snapshot_sql": {
+              "count": 224,
+              "failed_count": 0,
+              "inclusive_ms": 310.53666299999986,
+              "max_ms": 3.5841099999997823
+            },
+            "workflow.snapshot_reconcile": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 319.741098999988,
+              "max_ms": 4.682158999999956
+            },
+            "workflow.snapshot": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 937.682868000009,
+              "max_ms": 13.378665999996883
+            },
+            "integration.status_sql": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 94.82129700000587,
+              "max_ms": 4.563589999999749
+            },
+            "integration.event": {
+              "count": 112,
+              "failed_count": 0,
+              "inclusive_ms": 17452.907117999996,
+              "max_ms": 205.40654300000006
+            },
+            "integration.batch": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 17690.672881,
+              "max_ms": 7893.226669
+            },
+            "http.json_response": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 3.4492079999972702,
+              "max_ms": 1.256217000000106
+            },
+            "request.handler": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 17716.671455999996,
+              "max_ms": 7897.083291000001
+            },
+            "telemetry.pool_acquire": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 0.42853699999795936,
+              "max_ms": 0.15748700000040117
+            },
+            "telemetry.begin": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 1.877650000003996,
+              "max_ms": 0.4358780000002298
+            },
+            "telemetry.context": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 2.637947000002896,
+              "max_ms": 0.6352289999995264
+            },
+            "telemetry.insert": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 7.6599490000016885,
+              "max_ms": 1.5374960000008286
+            },
+            "telemetry.commit": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 3.9342910000013944,
+              "max_ms": 0.9036440000018047
+            },
+            "telemetry.connection_held": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 16.40418900000259,
+              "max_ms": 3.2923250000021653
+            },
+            "request.telemetry": {
+              "count": 6,
+              "failed_count": 0,
+              "inclusive_ms": 16.996962999998686,
+              "max_ms": 3.43939699999828
+            }
+          },
+          "pool_max_waiting": 1,
+          "overhead": {
+            "timer_calls": 5254,
+            "bookkeeping_ms": 11.125756999929763,
+            "collector_finalize_ms": 0.42652499999985594,
+            "logging_overhead_measured": false
+          }
+        },
+        "v2.workflow.read": {
+          "requests": 4,
+          "request_elapsed_total_ms": 613.5517500000024,
+          "request_elapsed_max_ms": 173.82579299999998,
+          "spans": {
+            "db.pool_acquire": {
+              "count": 16,
+              "failed_count": 0,
+              "inclusive_ms": 0.574416000002202,
+              "max_ms": 0.11742699999967954
+            },
+            "db.begin": {
+              "count": 16,
+              "failed_count": 0,
+              "inclusive_ms": 4.443863999996665,
+              "max_ms": 0.8535190000002331
+            },
+            "db.context": {
+              "count": 16,
+              "failed_count": 0,
+              "inclusive_ms": 10.287428999998156,
+              "max_ms": 1.188593999999739
+            },
+            "db.operation": {
+              "count": 16,
+              "failed_count": 0,
+              "inclusive_ms": 498.48297800000046,
+              "max_ms": 138.0482219999999
+            },
+            "db.commit": {
+              "count": 16,
+              "failed_count": 0,
+              "inclusive_ms": 8.290961999995034,
+              "max_ms": 2.8342130000000907
+            },
+            "db.connection_held": {
+              "count": 16,
+              "failed_count": 0,
+              "inclusive_ms": 522.2322510000035,
+              "max_ms": 140.23454300000003
+            },
+            "workflow.state_lock_read": {
+              "count": 8,
+              "failed_count": 0,
+              "inclusive_ms": 234.94400299999825,
+              "max_ms": 70.991939
+            },
+            "workflow.snapshot_clone": {
+              "count": 8,
+              "failed_count": 0,
+              "inclusive_ms": 114.91176000000132,
+              "max_ms": 31.781476999999995
+            },
+            "workflow.legacy_hydrate": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 0.7547299999991992,
+              "max_ms": 0.5046619999998256
+            },
+            "workflow.snapshot_sql": {
+              "count": 8,
+              "failed_count": 0,
+              "inclusive_ms": 50.42710200000147,
+              "max_ms": 34.252001999999266
+            },
+            "workflow.snapshot_reconcile": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 19.253355000000738,
+              "max_ms": 6.571509999999762
+            },
+            "workflow.stock_read": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 16.76792300000261,
+              "max_ms": 8.94559400000071
+            },
+            "workflow.aggregate_match": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 18.41089500000271,
+              "max_ms": 9.185207000000446
+            },
+            "workflow.persisted_reconcile": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 34.48034300000063,
+              "max_ms": 9.372709999999643
+            },
+            "workflow.actor_names": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 5.664141000001564,
+              "max_ms": 1.9414309999997386
+            },
+            "workflow.snapshot": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 247.6382280000007,
+              "max_ms": 82.34255099999973
+            },
+            "http.json_response": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 69.23582999999644,
+              "max_ms": 22.0746139999992
+            },
+            "request.handler": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 593.8429340000002,
+              "max_ms": 166.33527099999992
+            },
+            "telemetry.pool_acquire": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 0.35801999999921463,
+              "max_ms": 0.1631560000000718
+            },
+            "telemetry.begin": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 1.734068000001571,
+              "max_ms": 0.5188039999993634
+            },
+            "telemetry.context": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 2.646967000001041,
+              "max_ms": 0.7254759999996168
+            },
+            "telemetry.insert": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 8.924689000002672,
+              "max_ms": 3.9643300000002455
+            },
+            "telemetry.commit": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 3.735980999999356,
+              "max_ms": 1.0827150000000074
+            },
+            "telemetry.connection_held": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 17.2390190000001,
+              "max_ms": 6.290821000000051
+            },
+            "request.telemetry": {
+              "count": 4,
+              "failed_count": 0,
+              "inclusive_ms": 17.93269599999985,
+              "max_ms": 6.727990999999747
+            }
+          },
+          "pool_max_waiting": 1,
+          "overhead": {
+            "timer_calls": 184,
+            "bookkeeping_ms": 0.49768300000323507,
+            "collector_finalize_ms": 0.7029109999980392,
+            "logging_overhead_measured": false
+          }
+        }
+      }
+    },
+    "off": {
+      "client": {
+        "diagnostic_only": true,
+        "qualification": false,
+        "status": "completed",
+        "reason_category": null,
+        "build_id": "2rKXP8Qbi54h8gu6e8KB5",
+        "instrumentation": "off",
+        "schema_version": 20,
+        "generated_at": "2026-10-21T00:13:21.686Z",
+        "request_bound": 12,
+        "processing_selection_bound": 112,
+        "results": [
+          {
+            "target_index": 0,
+            "label": "connection",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 153.64989200000002
+          },
+          {
+            "target_index": 0,
+            "label": "workflow_before",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 211.48962300000002
+          },
+          {
+            "target_index": 0,
+            "label": "process_limit_1",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 231.97307899999998,
+            "event_status_counts": {
+              "applied": 1,
+              "business_rejected": 0,
+              "dependency_wait": 0,
+              "retry_wait": 0,
+              "quarantined": 0,
+              "received": 0
+            }
+          },
+          {
+            "target_index": 0,
+            "label": "process_limit_5",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 911.8109350000001,
+            "event_status_counts": {
+              "applied": 5,
+              "business_rejected": 0,
+              "dependency_wait": 0,
+              "retry_wait": 0,
+              "quarantined": 0,
+              "received": 0
+            }
+          },
+          {
+            "target_index": 0,
+            "label": "process_limit_50",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 7484.683864999999,
+            "event_status_counts": {
+              "applied": 50,
+              "business_rejected": 0,
+              "dependency_wait": 0,
+              "retry_wait": 0,
+              "quarantined": 0,
+              "received": 0
+            }
+          },
+          {
+            "target_index": 0,
+            "label": "workflow_after",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 185.26936999999998
+          },
+          {
+            "target_index": 1,
+            "label": "connection",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 10.115310000001045
+          },
+          {
+            "target_index": 1,
+            "label": "workflow_before",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 145.3996019999995
+          },
+          {
+            "target_index": 1,
+            "label": "process_limit_1",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 180.8611149999997,
+            "event_status_counts": {
+              "applied": 1,
+              "business_rejected": 0,
+              "dependency_wait": 0,
+              "retry_wait": 0,
+              "quarantined": 0,
+              "received": 0
+            }
+          },
+          {
+            "target_index": 1,
+            "label": "process_limit_5",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 773.9787560000004,
+            "event_status_counts": {
+              "applied": 5,
+              "business_rejected": 0,
+              "dependency_wait": 0,
+              "retry_wait": 0,
+              "quarantined": 0,
+              "received": 0
+            }
+          },
+          {
+            "target_index": 1,
+            "label": "process_limit_50",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 7680.776168,
+            "event_status_counts": {
+              "applied": 50,
+              "business_rejected": 0,
+              "dependency_wait": 0,
+              "retry_wait": 0,
+              "quarantined": 0,
+              "received": 0
+            }
+          },
+          {
+            "target_index": 1,
+            "label": "workflow_after",
+            "status": 200,
+            "body_complete": true,
+            "elapsed_ms": 171.1419730000016
+          }
+        ],
+        "limitations": [
+          "Sequential tiny batches do not qualify congestion performance.",
+          "Limit is a maximum; dependency/retry eligibility can produce fewer events.",
+          "Client elapsed includes complete response JSON decoding.",
+          "Sequential on/off runs change backlog; overhead comparison needs equivalent restored copies and matching build/configuration.",
+          "Inclusive nested server spans must not be summed or subtracted as overhead.",
+          "Failures stop without retries; partial completed-request evidence is preserved."
+        ]
+      },
+      "safe_server_records": [],
+      "operation_aggregates": {}
+    }
+  },
+  "limitations": [
+    "One sequential ON then OFF pair; order/cache noise prevents attributing elapsed differences solely to instrumentation.",
+    "Equivalent fresh initial business state and identical request order; both copies now contain bounded processing writes.",
+    "Nested inclusive server spans overlap; SQL awaits include execution, lock, network, JSON parsing and event-loop delay.",
+    "Client complete-body JSON times differ from server request elapsed boundary.",
+    "Small batch observation does not qualify official congestion performance or change original failure.",
+    "Prior schema19 comparison uses different build and no paired baseline; descriptive only."
+  ]
+}

@@ -1,61 +1,1279 @@
 "use client";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { Ledger, OriginPicker } from "./ledger-ui";
-import {approvalActorExcluded,approvalAssigneeEligible} from "@/server/v2/workflow/approval-eligibility";
+import { approvalActorExcluded, approvalAssigneeEligible } from "@/server/v2/workflow/approval-eligibility";
 import { ActionEditor, Assignment } from "./workflow-ui";
-import { orderGuide, receiptGuide } from "./workflow-guide";
-import {genericHoldOwnership,pendingGenericHold} from "@/server/v2/workflow/hold-ownership";
-import { api, ApiFailure, message, downloadCsv, Field, label, nameOf, personLabel, Note, options, Quantity, Select, Submit, time, type Context } from "./common";
-type Open=(kind:string,id:string)=>void;
-const buckets=['H','S','A','R','P','Q','B'] as const;
-const stockTitles={H:'총실물',S:'정상보관',A:'가용',R:'예약',P:'피킹대기',Q:'검수·적치',B:'보류'};
-const stockPageSize=100;
-function currentAssignee(c:Context,objectId:string){const lot=(c.snapshot.holds??[]).find(lot=>lot.id===objectId);const task=lot?genericHoldOwnership(c.snapshot,lot).task:c.snapshot.tasks.findLast(row=>row.object_id===objectId);if(!task)return '미배정';const name=task.assignee_name||c.people.find(person=>person.userId===task.assignee_id)?.name||'이전 담당자';return `${task.assignee_id.startsWith('machine:')?'자동 작업':'사람'} · ${name}`;}
-export function Queue({c,open}:{c:Context;open:Open}){
- const [events,setEvents]=useState<{id:string;event_id:string;external_entity_id:string;status:string;reason?:string}[]>([]),[eventError,setEventError]=useState(''),[eventTotal,setEventTotal]=useState<number|null>(null);useEffect(()=>{let active=true;setEvents([]);setEventTotal(null);setEventError('');api<{events:typeof events;filtered_count:number}>(`/api/v2/integration/events?warehouse_id=${c.warehouse}&status=dependency_wait,business_rejected,retry_wait,quarantined&limit=100`).then(result=>{if(active){setEvents(result.events);setEventTotal(result.filtered_count);setEventError('');}}).catch(e=>{if(active)setEventError(message(e));});return()=>{active=false;};},[c.warehouse,c.asOf]);const delayed=c.snapshot.receipts.filter(receipt=>receipt.expected_at&&Date.parse(receipt.expected_at)<Date.parse(c.asOf)&&!receipt.closed&&receipt.lines.some(line=>line.quantity>line.received+line.cancelled));const eventProblems=events;
- const s=c.snapshot;const approvals=s.approvals.filter(a=>a.status==='pending');const metrics=[['미수령',s.receipts.filter(r=>r.lines.some(l=>l.quantity>l.received+l.cancelled)).length],['검수 대기',s.receipts.filter(r=>r.lots.some(l=>l.pending>0)).length],['적치 대기',s.receipts.filter(r=>r.lots.some(l=>l.normal>0)).length],['미출하 주문',s.orders.filter(o=>o.lines.some(l=>l.quantity>l.shipped+l.cancelled)).length],['승인 대기',approvals.length],['반품 진행',s.returns.filter(r=>r.lines.some(l=>l.quantity>l.received+l.cancelled)||r.lots.some(l=>l.pending+l.normal+l.hold>0)).length]];
- const active=(rows:Context['items'])=>rows.filter(row=>row.active!==false),kinds=new Set(active(c.locations).map(row=>String(row.kind||'STORAGE')));
- const missing=[[!active(c.items).length,'품목'],[!kinds.has('RECEIVING'),'수령 대기 위치'],[!kinds.has('STORAGE'),'보관 위치'],[!kinds.has('STAGING')&&!kinds.has('SHIPPING'),'포장·출하 대기 위치'],[!active(c.partners).some(row=>row.supplier),'공급처'],[!active(c.partners).some(row=>row.customer),'납품처'],[!active(c.destinations).length,'배송지']].filter(([gap])=>gap).map(([,name])=>String(name));
- const targets:Record<string,string>={'미수령':'receipts','검수 대기':'receipts','적치 대기':'receipts','미출하 주문':'orders','반품 진행':'returns'},writable=c.role!=='viewer';
- const work=[...s.orders.map(row=>({row,kind:'order',title:row.external_id||`주문 ${s.orders.indexOf(row)+1}`,guide:orderGuide(row,s.packages)})).filter(entry=>!entry.guide.done).toSorted((a,b)=>(a.row.due_at||'9999').localeCompare(b.row.due_at||'9999')||a.row.created_at.localeCompare(b.row.created_at)||a.row.id.localeCompare(b.row.id)),...s.receipts.map((row,index)=>({row,kind:'receipt',title:row.external_id||`입고 ${index+1}`,guide:receiptGuide(row)})).filter(entry=>!entry.guide.done),...s.returns.map((row,index)=>({row,kind:'return',title:`반품 ${index+1}`,guide:receiptGuide(row)})).filter(entry=>!entry.guide.done)];
- return <>{writable&&<section className="v2-card v2-start"><h2>무엇을 하시겠어요?</h2><div className="v2-start-grid"><button className="v2-start-in" onClick={()=>open('new','receipt')}><span>입고</span><strong>입고예정 등록</strong><small>들어올 물품 등록 → 수령 → 검수 → 적치</small></button><button className="v2-start-out" onClick={()=>open('new','order')}><span>출고</span><strong>출고 주문 등록</strong><small>주문 등록 → 예약 → 피킹 → 포장 → 출하</small></button></div>{missing.length>0&&<div className="v2-alert"><strong>업무 시작 전 준비가 필요합니다</strong><p>아직 등록되지 않은 기준정보: {missing.join(', ')}. {c.role==='admin'?'기준정보를 먼저 등록해야 입고·출고 화면에서 고를 수 있습니다.':'회사 관리자에게 등록을 요청하세요.'}</p>{c.role==='admin'&&<button onClick={()=>open('tab','masters')}>기준정보·CSV로 이동</button>}</div>}</section>}<div className="v2-metric-strip">{metrics.map(([title,count])=>title==='승인 대기'?<a className="v2-metric" data-hot={Number(count)>0} key={title} href={`/dashboard/v2?warehouse_id=${c.warehouse}&tab=inventory&inventory_view=approval&approval_status=pending`} aria-label={`승인 대기 ${count}건 검토`}><span>{title}</span><strong>{count}</strong><small>눌러서 검토</small></a>:<button className="v2-metric" data-hot={Number(count)>0} key={title} onClick={()=>open('tab',targets[String(title)])}><span>{title}</span><strong>{count}</strong><small>눌러서 목록 열기</small></button>)}</div><section className="v2-card"><h2>지금 처리할 작업 · {work.length}건</h2><Note>출고는 납기가 빠른 순서입니다. 업무를 누르면 해야 할 단계가 바로 열립니다. 전체 등록 업무 {s.receipts.length+s.orders.length+s.returns.length}건.</Note><div className="v2-list v2-worklist">{work.map(({row,kind,title,guide})=><button key={row.id} className="v2-job" data-kind={kind} onClick={()=>open(kind,row.id)}>{title} · {kind==='order'?'출고 작업':kind==='receipt'?'입고 작업':'반품 작업'}<small className="v2-job-next">▶ {guide.title}</small><small>{'due_at' in row&&row.due_at?`납기 ${time(row.due_at)} · `:'expected_at' in row&&row.expected_at?`예정 ${time(row.expected_at)} · `:''}담당 {currentAssignee(c,row.id)}</small></button>)}</div>{!work.length&&<p className="v2-empty">{s.receipts.length+s.orders.length+s.returns.length?'지금 처리할 업무가 없습니다. 모든 업무가 완료되었습니다.':'등록된 업무가 없습니다. 위의 「입고예정 등록」 또는 「출고 주문 등록」으로 시작하세요.'}</p>}</section><div className="v2-grid"><section className="v2-card"><h2>입고 지연 · {delayed.length}건</h2><Note>{time(c.asOf)} 기준 예정 시각이 지났고 미수령 잔량이 있는 업무입니다.</Note><div className="v2-list">{delayed.map(receipt=><button key={receipt.id} onClick={()=>open('receipt',receipt.id)}>{receipt.external_id||`입고 ${s.receipts.indexOf(receipt)+1}`}<small>예정 {time(receipt.expected_at!)} · 미수령 {receipt.lines.reduce((sum,line)=>sum+Math.max(0,line.quantity-line.received-line.cancelled),0)} EA</small></button>)}</div>{!delayed.length&&<Note>지연된 미수령 업무가 없습니다.</Note>}</section><section className="v2-card"><h2>연계 오류·대기 · {eventTotal??'확인 중'}건</h2><Note>외부 시스템에서 들어온 업무 중 거절·재처리·대기·격리된 건입니다. 최대 100건을 먼저 표시합니다.</Note>{eventError&&<p role="alert">{eventError}</p>}<div className="v2-list">{eventProblems.map(event=><a className="v2-badge" key={event.id} href={`/dashboard/v2?warehouse_id=${c.warehouse}&tab=integration&event_id=${event.event_id}`}>{event.external_entity_id} · {({dependency_wait:'의존성 대기',business_rejected:'업무 거절',retry_wait:'재처리 대기',quarantined:'격리'} as Record<string,string>)[event.status]}<small>{event.reason}</small></a>)}</div><div className="v2-actions"><a className="v2-badge" href={`/dashboard/v2?warehouse_id=${c.warehouse}&tab=integration&status=problems`}>연계 오류·대기 전체 목록·조치</a><button onClick={()=>open('integration','')}>연계 전체 목록·조치</button></div></section></div></>;
+import { orderGuide, receiptGuide } from "@/server/v2/insights/guide";
+import { genericHoldOwnership, pendingGenericHold } from "@/server/v2/workflow/hold-ownership";
+import {
+  api,
+  ApiFailure,
+  message,
+  downloadCsv,
+  Field,
+  label,
+  nameOf,
+  personLabel,
+  Note,
+  options,
+  Quantity,
+  Select,
+  Submit,
+  time,
+  type Context,
+} from "./common";
+type Open = (kind: string, id: string) => void;
+const buckets = ["H", "S", "A", "R", "P", "Q", "B"] as const;
+const stockTitles = { H: "총실물", S: "정상보관", A: "가용", R: "예약", P: "피킹대기", Q: "검수·적치", B: "보류" };
+const stockPageSize = 100;
+function currentAssignee(c: Context, objectId: string) {
+  const lot = (c.snapshot.holds ?? []).find((lot) => lot.id === objectId);
+  const task = lot
+    ? genericHoldOwnership(c.snapshot, lot).task
+    : c.snapshot.tasks.findLast((row) => row.object_id === objectId);
+  if (!task) return "미배정";
+  const name =
+    task.assignee_name || c.people.find((person) => person.userId === task.assignee_id)?.name || "이전 담당자";
+  return `${task.assignee_id.startsWith("machine:") ? "자동 작업" : "사람"} · ${name}`;
 }
-export function Inventory({c,shift=false,open}:{c:Context;shift?:boolean;open?:Open}){
- const [view,setView]=useState('stock'),[item,setItem]=useState(''),[location,setLocation]=useState(''),[reason,setReason]=useState(''),[linked,setLinked]=useState<{item:string;location:string}|null>(null),[trace,setTrace]=useState<{item:string;location:string}|null>(null);const s=c.snapshot;
- const [approvalStatus,setApprovalStatus]=useState('all');
- useEffect(()=>{const route=new URLSearchParams(window.location.search);if(route.get('warehouse_id')===c.warehouse&&route.get('tab')==='inventory'&&route.get('inventory_view')==='approval'){setView('approval');setApprovalStatus(route.get('approval_status')==='pending'?'pending':'all');}},[c.warehouse]);
- const visibleApprovals=s.approvals.filter(approval=>approvalStatus==='all'||approval.status===approvalStatus);
- const itemNames=useMemo(()=>new Map(c.items.map(row=>[row.id,label(row)])),[c.items]);
- const locationIndex=useMemo(()=>new Map(c.locations.map(row=>[row.id,{row,name:label(row)}])),[c.locations]);
- const itemOptions=useMemo(()=>options(c.items),[c.items]),locationOptions=useMemo(()=>options(c.locations),[c.locations]);
- const stocks=useMemo(()=>s.stock.filter(row=>(!item||row.item_id===item)&&(!location||row.location_id===location)),[s.stock,item,location]);
- const stockScope=`${c.warehouse}:${item}:${location}`,stockPages=Math.max(1,Math.ceil(stocks.length/stockPageSize));
- const [stockPage,setStockPage]=useState(()=>({scope:stockScope,index:0})),stockRangeId=useId();
- const stockPageIndex=stockPage.scope===stockScope?Math.min(stockPage.index,stockPages-1):0;
- const stockStart=stockPageIndex*stockPageSize,visibleStocks=useMemo(()=>stocks.slice(stockStart,stockStart+stockPageSize),[stocks,stockStart]);
- useEffect(()=>{setStockPage(previous=>previous.scope!==stockScope?{scope:stockScope,index:0}:previous.index>=stockPages?{...previous,index:stockPages-1}:previous);},[stockScope,stockPages]);
- const changeStockPage=(index:number)=>setStockPage({scope:stockScope,index:Math.min(Math.max(0,index),stockPages-1)});
- const stockTotals=useMemo(()=>{const totals={H:0,S:0,A:0,R:0,P:0,Q:0,B:0};for(const row of stocks)for(const bucket of buckets)totals[bucket]+=Number(row[bucket]??0);return totals;},[stocks]);
- const stockRows=useMemo(()=>view==='move'?stocks.filter(row=>row.S-row.R>0).map(row=>({id:`${row.item_id}:${row.location_id}`,item_id:row.item_id,location_id:row.location_id,available:row.S-row.R})):[],[stocks,view]);const writable=c.role!=='viewer';
- if(shift)return <Shift c={c}/>;
- const holds=s.holds||[];
- return <><div className="v2-steps">{[['stock','재고 7지표'],['move','이동·보충·보류'],['count','위치 실사'],['approval','승인'],['ledger','원장·정정']].map(([key,title])=><button key={key} aria-selected={view===key} onClick={()=>setView(key)}>{title}</button>)}</div>{view==='stock'&&<><div className="v2-card v2-grid"><Select label="재고 품목" value={item} onChange={setItem} options={itemOptions}/><Select label="재고 위치" value={location} onChange={setLocation} options={locationOptions}/></div><div className="v2-metrics">{buckets.map(bucket=><div className="v2-metric" key={bucket} data-stock-metric={bucket}><span>{stockTitles[bucket]} {bucket}</span><strong>{stockTotals[bucket]}</strong><small>EA</small></div>)}</div><section className="v2-card"><div className="v2-toolbar"><h2>위치·품목별 재고</h2><button onClick={()=>downloadCsv('wms-v2-stock.csv',[['회사',c.company,'창고코드',c.warehouseCode,'창고명',c.warehouseName,'창고ID',c.warehouse,'품목필터',item?itemNames.get(item)||'선택 항목':'전체','위치필터',location?locationIndex.get(location)?.name||'선택 항목':'전체','조회시각',new Date().toISOString(),'버전',s.version,'단위','EA','총행수',stocks.length],['품목','위치',...buckets,'잠금'],...stocks.map(row=>[itemNames.get(row.item_id)||'선택 항목',locationIndex.get(row.location_id)?.name||'선택 항목',...buckets.map(b=>row[b]),row.locked?'실사 잠금':''])])}>현재 필터 재고 CSV</button></div><Note>H=S+P+Q+B · R은 S에 포함 · A는 S−R, 잠긴 위치는 0입니다.</Note><p id={stockRangeId} className="v2-note" role="status">전체 {stocks.length.toLocaleString()}행 · 현재 {stocks.length?stockStart+1:0}–{Math.min(stockStart+stockPageSize,stocks.length)}행 · {stockPageIndex+1} / {stockPages}페이지 · 페이지당 {stockPageSize}행. 재고 합계와 CSV는 현재 필터의 전체 행 기준입니다.</p><StockPages page={stockPageIndex} pages={stockPages} change={changeStockPage} description={stockRangeId} position="top"/><div className="v2-table"><table className="v2-stock-table" id={`${stockRangeId}-table`} aria-label="위치·품목별 재고 목록" aria-describedby={stockRangeId} data-stock-total={stocks.length} data-stock-page-index={stockPageIndex} data-stock-page-size={stockPageSize}><colgroup><col className="v2-stock-item"/><col className="v2-stock-location"/>{buckets.map(bucket=><col className="v2-stock-quantity" key={bucket}/>)}<col className="v2-stock-reason"/><col className="v2-stock-trace"/></colgroup><thead><tr><th>품목</th><th>위치</th>{buckets.map(b=><th key={b}>{b} EA</th>)}<th>가용 제외 사유</th><th>연결 조회</th></tr></thead><tbody>{visibleStocks.map(row=>{const position=locationIndex.get(row.location_id);return <tr key={`${row.item_id}:${row.location_id}`} data-item-id={row.item_id} data-location-id={row.location_id}><td>{itemNames.get(row.item_id)||'선택 항목'}</td><td>{position?.name||'선택 항목'}</td>{buckets.map(b=><td key={b}>{row[b]}</td>)}<td>{row.locked?'실사 잠금':position?.row?.reservation_blocked?'점검·예약 차단':position?.row?.active===false?'비활성 위치':position?.row?.kind!=='STORAGE'?'예약 대상 외 위치':row.B?'품질 보류':row.Q?'검수·적치 대기':''}</td><td><div className="v2-actions"><button onClick={()=>setLinked({item:row.item_id,location:row.location_id})}>연결 주문</button><button onClick={()=>{setTrace({item:row.item_id,location:row.location_id});setView('ledger');}}>원장 추적</button></div></td></tr>;})}</tbody></table></div><StockPages page={stockPageIndex} pages={stockPages} change={changeStockPage} description={stockRangeId} position="bottom"/></section>{linked&&<section className="v2-card"><div className="v2-toolbar"><h2>{nameOf(c.items,linked.item)} · {nameOf(c.locations,linked.location)} 연결 주문</h2><button onClick={()=>setLinked(null)}>연결 조회 닫기</button></div><Note>현재 위치의 미피킹 예약과 유효 피킹 점유를 연결합니다.</Note><div className="v2-list">{s.orders.filter(order=>order.reservations.some(r=>r.item_id===linked.item&&r.location_id===linked.location&&r.quantity>0)||order.picks.some(p=>p.item_id===linked.item&&p.location_id===linked.location&&p.active>0)).map(order=><button key={order.id} onClick={()=>open?.('order',order.id)}>{order.external_id||`주문 ${s.orders.indexOf(order)+1}`}<small>이 위치 예약 {order.reservations.filter(r=>r.item_id===linked.item&&r.location_id===linked.location).reduce((sum,r)=>sum+r.quantity,0)} EA · 유효 피킹 {order.picks.filter(p=>p.item_id===linked.item&&p.location_id===linked.location).reduce((sum,p)=>sum+p.active,0)} EA</small></button>)}</div></section>}</>}{view==='move'&&<><div className="v2-card"><div className="v2-grid"><Select label="이동 대상 품목" value={item} onChange={setItem} options={options(c.items)}/><Select label="출발 보관 위치" value={location} onChange={setLocation} options={options(c.locations.filter(l=>l.kind==='STORAGE'))}/></div></div>{writable&&<><div className="v2-card"><ActionEditor c={c} title="동일 창고 이동·보충" command="stock.move" base={{}} rows={stockRows} idKey="item_id" locationKinds={['STORAGE']} sourceScan reasonRequired/></div><div className="v2-card"><ActionEditor c={c} title="정상 재고 보류 전환" command="stock.hold" base={{}} rows={stockRows} idKey="item_id" locationKinds={['HOLD']} sourceScan reasonRequired/></div>{holds.filter(pendingGenericHold).map(lot=><div className="v2-card" key={`hold-owner-${lot.id}`}><h3>일반 보류 후속 · {nameOf(c.items,lot.item_id)}</h3><Note>보류 {lot.hold} · 검수 대기 {lot.pending} · 적치 대기 {lot.normal} EA. 완료 전까지 담당자와 사유를 인계합니다.</Note>{genericHoldOwnership(c.snapshot,lot).requiresAssignment&&<Note>기존 원주문 연결을 확인하고 책임자가 후속 담당자를 배정해야 합니다.</Note>}<Assignment c={c} objectType="hold" objectId={lot.id} inheritedTask={genericHoldOwnership(c.snapshot,lot).task}/></div>)}{holds.filter(l=>l.hold>0).map((lot,index)=><div className="v2-card" key={lot.id}><ActionEditor c={c} title={`일반 보류 ${index+1} 해제 · 검수 대기 이동`} command="hold.release" base={{}} rows={[{id:lot.id,item_id:lot.item_id,available:lot.hold}]} idKey="lot_id" locationKinds={['RECEIVING']} reasonRequired/></div>)}<div className="v2-card"><ActionEditor c={c} title="보류 해제분 검수" command="stock.inspect" base={{}} rows={holds.filter(l=>l.pending>0).map(l=>({id:l.id,item_id:l.item_id,location_id:l.location_id,available:l.pending}))} idKey="lot_id" outcome sourceScan/></div><div className="v2-card"><ActionEditor c={c} title="보류 해제분 정상 적치" command="stock.putaway" base={{}} rows={holds.filter(l=>l.normal>0).map(l=>({id:l.id,item_id:l.item_id,available:l.normal}))} idKey="lot_id" locationKinds={['STORAGE']}/></div></>}</>}{view==='count'&&<Counts c={c}/>} {view==='approval'&&<div className="v2-card"><h2>다른 책임자의 승인</h2><Field label="승인 상태"><select value={approvalStatus} onChange={event=>setApprovalStatus(event.target.value)}><option value="all">전체</option><option value="pending">승인 대기</option><option value="approved">승인 완료</option><option value="rejected">반려</option></select></Field><Field label="승인·반려 사유"><input value={reason} onChange={e=>setReason(e.target.value)}/></Field>{visibleApprovals.map((approval)=><div className="v2-card" key={approval.id}><h3>승인 {s.approvals.indexOf(approval)+1} · {({'overage':'과납 인수','receipt.close':'예정 잔량 마감',count:'실사 차이 조정',correction:'재고 정정'})[approval.type]}</h3><p>요청자 {approval.requester_name||c.people.find(p=>p.userId===approval.requester_id)?.name||'이전 요청자'} · {approval.quantity} EA · {approval.status}</p><p>요청 사유: {approval.reason}</p>{approval.decider_id&&<p>처리자 {approval.decider_name||c.people.find(person=>person.userId===approval.decider_id)?.name||'이전 승인자'}{approval.decided_at?` · ${time(approval.decided_at)}`:''}{approval.decision_reason?` · ${approval.decision_reason}`:''}</p>}{Array.isArray(approval.data.lines)&&<div className="v2-table"><table><thead><tr><th>품목</th><th>위치</th><th>상태</th><th>조정 EA</th></tr></thead><tbody>{(approval.data.lines as {item_id:string;location_id:string;bucket:string;quantity:number}[]).map((line,i)=><tr key={i}><td>{nameOf(c.items,line.item_id)}</td><td>{nameOf(c.locations,line.location_id)}</td><td>{line.bucket}</td><td>{line.quantity}</td></tr>)}</tbody></table></div>}{approval.status==='pending'&&['admin','supervisor'].includes(c.role)&&<div className="v2-actions"><button disabled={c.busy||!reason||approvalActorExcluded(s,approval,c.userId)} onClick={()=>void c.run('approval.decide',{approval_id:approval.id,approve:true,reason})}>검토 후 승인</button><button disabled={c.busy||!reason||approvalActorExcluded(s,approval,c.userId)} onClick={()=>void c.run('approval.decide',{approval_id:approval.id,approve:false,reason})}>사유 남기고 반려</button>{approvalActorExcluded(s,approval,c.userId)&&<Note>요청자와 원실적자·계수자는 승인할 수 없습니다. 다른 승인권자가 처리해야 합니다.</Note>}</div>}</div>)}{!visibleApprovals.length&&<p className="v2-empty">선택한 상태의 승인 요청이 없습니다.</p>}</div>} {view==='ledger'&&<><Ledger key={`${trace?.item||''}:${trace?.location||''}`} c={c} initialItem={trace?.item||''} initialLocation={trace?.location||''}/><div className="v2-card"><h2>원장과 예약 대사</h2><p>{s.reconciliation?.ok?'현재 재고·원장·예약 일치':'대사 결과 확인 필요'} · 업무 버전 {s.version}</p><Note>위 전체 원장에서 조회 필터와 처리경계를 확인하세요. 재고 조정과 실사 장부 차이는 별도 검토합니다.</Note></div>{writable&&<Correction c={c}/>}</>}</>;
+export function Queue({ c, open }: { c: Context; open: Open }) {
+  const [events, setEvents] = useState<
+      { id: string; event_id: string; external_entity_id: string; status: string; reason?: string }[]
+    >([]),
+    [eventError, setEventError] = useState(""),
+    [eventTotal, setEventTotal] = useState<number | null>(null);
+  useEffect(() => {
+    let active = true;
+    setEvents([]);
+    setEventTotal(null);
+    setEventError("");
+    api<{ events: typeof events; filtered_count: number }>(
+      `/api/v2/integration/events?warehouse_id=${c.warehouse}&status=dependency_wait,business_rejected,retry_wait,quarantined&limit=100`,
+    )
+      .then((result) => {
+        if (active) {
+          setEvents(result.events);
+          setEventTotal(result.filtered_count);
+          setEventError("");
+        }
+      })
+      .catch((e) => {
+        if (active) setEventError(message(e));
+      });
+    return () => {
+      active = false;
+    };
+  }, [c.warehouse, c.asOf]);
+  const delayed = c.snapshot.receipts.filter(
+    (receipt) =>
+      receipt.expected_at &&
+      Date.parse(receipt.expected_at) < Date.parse(c.asOf) &&
+      !receipt.closed &&
+      receipt.lines.some((line) => line.quantity > line.received + line.cancelled),
+  );
+  const eventProblems = events;
+  const s = c.snapshot;
+  const approvals = s.approvals.filter((a) => a.status === "pending");
+  const metrics = [
+    ["미수령", s.receipts.filter((r) => r.lines.some((l) => l.quantity > l.received + l.cancelled)).length],
+    ["검수 대기", s.receipts.filter((r) => r.lots.some((l) => l.pending > 0)).length],
+    ["적치 대기", s.receipts.filter((r) => r.lots.some((l) => l.normal > 0)).length],
+    ["미출하 주문", s.orders.filter((o) => o.lines.some((l) => l.quantity > l.shipped + l.cancelled)).length],
+    ["승인 대기", approvals.length],
+    [
+      "반품 진행",
+      s.returns.filter(
+        (r) =>
+          r.lines.some((l) => l.quantity > l.received + l.cancelled) ||
+          r.lots.some((l) => l.pending + l.normal + l.hold > 0),
+      ).length,
+    ],
+  ];
+  const active = (rows: Context["items"]) => rows.filter((row) => row.active !== false),
+    kinds = new Set(active(c.locations).map((row) => String(row.kind || "STORAGE")));
+  const missing = [
+    [!active(c.items).length, "품목"],
+    [!kinds.has("RECEIVING"), "수령 대기 위치"],
+    [!kinds.has("STORAGE"), "보관 위치"],
+    [!kinds.has("STAGING") && !kinds.has("SHIPPING"), "포장·출하 대기 위치"],
+    [!active(c.partners).some((row) => row.supplier), "공급처"],
+    [!active(c.partners).some((row) => row.customer), "납품처"],
+    [!active(c.destinations).length, "배송지"],
+  ]
+    .filter(([gap]) => gap)
+    .map(([, name]) => String(name));
+  const targets: Record<string, string> = {
+      미수령: "receipts",
+      "검수 대기": "receipts",
+      "적치 대기": "receipts",
+      "미출하 주문": "orders",
+      "반품 진행": "returns",
+    },
+    writable = c.role !== "viewer";
+  const work = [
+    ...s.orders
+      .map((row) => ({
+        row,
+        kind: "order",
+        title: row.external_id || `주문 ${s.orders.indexOf(row) + 1}`,
+        guide: orderGuide(row, s.packages),
+      }))
+      .filter((entry) => !entry.guide.done)
+      .toSorted(
+        (a, b) =>
+          (a.row.due_at || "9999").localeCompare(b.row.due_at || "9999") ||
+          a.row.created_at.localeCompare(b.row.created_at) ||
+          a.row.id.localeCompare(b.row.id),
+      ),
+    ...s.receipts
+      .map((row, index) => ({
+        row,
+        kind: "receipt",
+        title: row.external_id || `입고 ${index + 1}`,
+        guide: receiptGuide(row),
+      }))
+      .filter((entry) => !entry.guide.done),
+    ...s.returns
+      .map((row, index) => ({ row, kind: "return", title: `반품 ${index + 1}`, guide: receiptGuide(row) }))
+      .filter((entry) => !entry.guide.done),
+  ];
+  return (
+    <>
+      {writable && (
+        <section className="v2-card v2-start">
+          <h2>무엇을 하시겠어요?</h2>
+          <div className="v2-start-grid">
+            <button className="v2-start-in" onClick={() => open("new", "receipt")}>
+              <span>입고</span>
+              <strong>입고예정 등록</strong>
+              <small>들어올 물품 등록 → 수령 → 검수 → 적치</small>
+            </button>
+            <button className="v2-start-out" onClick={() => open("new", "order")}>
+              <span>출고</span>
+              <strong>출고 주문 등록</strong>
+              <small>주문 등록 → 예약 → 피킹 → 포장 → 출하</small>
+            </button>
+          </div>
+          {missing.length > 0 && (
+            <div className="v2-alert">
+              <strong>업무 시작 전 준비가 필요합니다</strong>
+              <p>
+                아직 등록되지 않은 기준정보: {missing.join(", ")}.{" "}
+                {c.role === "admin"
+                  ? "기준정보를 먼저 등록해야 입고·출고 화면에서 고를 수 있습니다."
+                  : "회사 관리자에게 등록을 요청하세요."}
+              </p>
+              {c.role === "admin" && <button onClick={() => open("tab", "masters")}>기준정보·CSV로 이동</button>}
+            </div>
+          )}
+        </section>
+      )}
+      <div className="v2-metric-strip">
+        {metrics.map(([title, count]) =>
+          title === "승인 대기" ? (
+            <a
+              className="v2-metric"
+              data-hot={Number(count) > 0}
+              key={title}
+              href={`/dashboard/v2?warehouse_id=${c.warehouse}&tab=inventory&inventory_view=approval&approval_status=pending`}
+              aria-label={`승인 대기 ${count}건 검토`}
+            >
+              <span>{title}</span>
+              <strong>{count}</strong>
+              <small>눌러서 검토</small>
+            </a>
+          ) : (
+            <button
+              className="v2-metric"
+              data-hot={Number(count) > 0}
+              key={title}
+              onClick={() => open("tab", targets[String(title)])}
+            >
+              <span>{title}</span>
+              <strong>{count}</strong>
+              <small>눌러서 목록 열기</small>
+            </button>
+          ),
+        )}
+      </div>
+      <section className="v2-card">
+        <h2>지금 처리할 작업 · {work.length}건</h2>
+        <Note>
+          출고는 납기가 빠른 순서입니다. 업무를 누르면 해야 할 단계가 바로 열립니다. 전체 등록 업무{" "}
+          {s.receipts.length + s.orders.length + s.returns.length}건.
+        </Note>
+        <div className="v2-list v2-worklist">
+          {work.map(({ row, kind, title, guide }) => (
+            <button key={row.id} className="v2-job" data-kind={kind} onClick={() => open(kind, row.id)}>
+              {title} · {kind === "order" ? "출고 작업" : kind === "receipt" ? "입고 작업" : "반품 작업"}
+              <small className="v2-job-next">▶ {guide.title}</small>
+              <small>
+                {"due_at" in row && row.due_at
+                  ? `납기 ${time(row.due_at)} · `
+                  : "expected_at" in row && row.expected_at
+                    ? `예정 ${time(row.expected_at)} · `
+                    : ""}
+                담당 {currentAssignee(c, row.id)}
+              </small>
+            </button>
+          ))}
+        </div>
+        {!work.length && (
+          <p className="v2-empty">
+            {s.receipts.length + s.orders.length + s.returns.length
+              ? "지금 처리할 업무가 없습니다. 모든 업무가 완료되었습니다."
+              : "등록된 업무가 없습니다. 위의 「입고예정 등록」 또는 「출고 주문 등록」으로 시작하세요."}
+          </p>
+        )}
+      </section>
+      <div className="v2-grid">
+        <section className="v2-card">
+          <h2>입고 지연 · {delayed.length}건</h2>
+          <Note>{time(c.asOf)} 기준 예정 시각이 지났고 미수령 잔량이 있는 업무입니다.</Note>
+          <div className="v2-list">
+            {delayed.map((receipt) => (
+              <button key={receipt.id} onClick={() => open("receipt", receipt.id)}>
+                {receipt.external_id || `입고 ${s.receipts.indexOf(receipt) + 1}`}
+                <small>
+                  예정 {time(receipt.expected_at!)} · 미수령{" "}
+                  {receipt.lines.reduce(
+                    (sum, line) => sum + Math.max(0, line.quantity - line.received - line.cancelled),
+                    0,
+                  )}{" "}
+                  EA
+                </small>
+              </button>
+            ))}
+          </div>
+          {!delayed.length && <Note>지연된 미수령 업무가 없습니다.</Note>}
+        </section>
+        <section className="v2-card">
+          <h2>연계 오류·대기 · {eventTotal ?? "확인 중"}건</h2>
+          <Note>외부 시스템에서 들어온 업무 중 거절·재처리·대기·격리된 건입니다. 최대 100건을 먼저 표시합니다.</Note>
+          {eventError && <p role="alert">{eventError}</p>}
+          <div className="v2-list">
+            {eventProblems.map((event) => (
+              <a
+                className="v2-badge"
+                key={event.id}
+                href={`/dashboard/v2?warehouse_id=${c.warehouse}&tab=integration&event_id=${event.event_id}`}
+              >
+                {event.external_entity_id} ·{" "}
+                {
+                  (
+                    {
+                      dependency_wait: "의존성 대기",
+                      business_rejected: "업무 거절",
+                      retry_wait: "재처리 대기",
+                      quarantined: "격리",
+                    } as Record<string, string>
+                  )[event.status]
+                }
+                <small>{event.reason}</small>
+              </a>
+            ))}
+          </div>
+          <div className="v2-actions">
+            <a className="v2-badge" href={`/dashboard/v2?warehouse_id=${c.warehouse}&tab=integration&status=problems`}>
+              연계 오류·대기 전체 목록·조치
+            </a>
+            <button onClick={() => open("integration", "")}>연계 전체 목록·조치</button>
+          </div>
+        </section>
+      </div>
+    </>
+  );
 }
-function StockPages({page,pages,change,description,position}:{page:number;pages:number;change:(index:number)=>void;description:string;position:'top'|'bottom'}){
- const bottom=position==='bottom';
- return <nav className="v2-stock-pagination" aria-label={bottom?'재고 목록 하단 페이지 이동':'재고 목록 페이지 이동'} aria-describedby={description}><button type="button" disabled={page===0} aria-controls={`${description}-table`} onClick={()=>change(page-1)}>이전 재고 페이지</button><Field label={bottom?'재고 목록 하단 페이지':'재고 목록 페이지'}><select aria-label={bottom?'재고 목록 하단 페이지':'재고 목록 페이지'} value={page} aria-controls={`${description}-table`} onChange={event=>change(Number(event.target.value))}>{Array.from({length:pages},(_,index)=><option key={index} value={index}>{index+1} / {pages}페이지</option>)}</select></Field><button type="button" disabled={page>=pages-1} aria-controls={`${description}-table`} onClick={()=>change(page+1)}>다음 재고 페이지</button></nav>;
+export function Inventory({ c, shift = false, open }: { c: Context; shift?: boolean; open?: Open }) {
+  const [view, setView] = useState("stock"),
+    [item, setItem] = useState(""),
+    [location, setLocation] = useState(""),
+    [reason, setReason] = useState(""),
+    [linked, setLinked] = useState<{ item: string; location: string } | null>(null),
+    [trace, setTrace] = useState<{ item: string; location: string } | null>(null);
+  const s = c.snapshot;
+  const [approvalStatus, setApprovalStatus] = useState("all");
+  useEffect(() => {
+    const route = new URLSearchParams(window.location.search);
+    if (
+      route.get("warehouse_id") === c.warehouse &&
+      route.get("tab") === "inventory" &&
+      route.get("inventory_view") === "approval"
+    ) {
+      setView("approval");
+      setApprovalStatus(route.get("approval_status") === "pending" ? "pending" : "all");
+    }
+  }, [c.warehouse]);
+  const visibleApprovals = s.approvals.filter(
+    (approval) => approvalStatus === "all" || approval.status === approvalStatus,
+  );
+  const itemNames = useMemo(() => new Map(c.items.map((row) => [row.id, label(row)])), [c.items]);
+  const locationIndex = useMemo(
+    () => new Map(c.locations.map((row) => [row.id, { row, name: label(row) }])),
+    [c.locations],
+  );
+  const itemOptions = useMemo(() => options(c.items), [c.items]),
+    locationOptions = useMemo(() => options(c.locations), [c.locations]);
+  const stocks = useMemo(
+    () => s.stock.filter((row) => (!item || row.item_id === item) && (!location || row.location_id === location)),
+    [s.stock, item, location],
+  );
+  const stockScope = `${c.warehouse}:${item}:${location}`,
+    stockPages = Math.max(1, Math.ceil(stocks.length / stockPageSize));
+  const [stockPage, setStockPage] = useState(() => ({ scope: stockScope, index: 0 })),
+    stockRangeId = useId();
+  const stockPageIndex = stockPage.scope === stockScope ? Math.min(stockPage.index, stockPages - 1) : 0;
+  const stockStart = stockPageIndex * stockPageSize,
+    visibleStocks = useMemo(() => stocks.slice(stockStart, stockStart + stockPageSize), [stocks, stockStart]);
+  useEffect(() => {
+    setStockPage((previous) =>
+      previous.scope !== stockScope
+        ? { scope: stockScope, index: 0 }
+        : previous.index >= stockPages
+          ? { ...previous, index: stockPages - 1 }
+          : previous,
+    );
+  }, [stockScope, stockPages]);
+  const changeStockPage = (index: number) =>
+    setStockPage({ scope: stockScope, index: Math.min(Math.max(0, index), stockPages - 1) });
+  const stockTotals = useMemo(() => {
+    const totals = { H: 0, S: 0, A: 0, R: 0, P: 0, Q: 0, B: 0 };
+    for (const row of stocks) for (const bucket of buckets) totals[bucket] += Number(row[bucket] ?? 0);
+    return totals;
+  }, [stocks]);
+  const stockRows = useMemo(
+    () =>
+      view === "move"
+        ? stocks
+            .filter((row) => row.S - row.R > 0)
+            .map((row) => ({
+              id: `${row.item_id}:${row.location_id}`,
+              item_id: row.item_id,
+              location_id: row.location_id,
+              available: row.S - row.R,
+            }))
+        : [],
+    [stocks, view],
+  );
+  const writable = c.role !== "viewer";
+  if (shift) return <Shift c={c} />;
+  const holds = s.holds || [];
+  return (
+    <>
+      <div className="v2-steps">
+        {[
+          ["stock", "재고 7지표"],
+          ["move", "이동·보충·보류"],
+          ["count", "위치 실사"],
+          ["approval", "승인"],
+          ["ledger", "원장·정정"],
+        ].map(([key, title]) => (
+          <button key={key} aria-selected={view === key} onClick={() => setView(key)}>
+            {title}
+          </button>
+        ))}
+      </div>
+      {view === "stock" && (
+        <>
+          <div className="v2-card v2-grid">
+            <Select label="재고 품목" value={item} onChange={setItem} options={itemOptions} />
+            <Select label="재고 위치" value={location} onChange={setLocation} options={locationOptions} />
+          </div>
+          <div className="v2-metrics">
+            {buckets.map((bucket) => (
+              <div className="v2-metric" key={bucket} data-stock-metric={bucket}>
+                <span>
+                  {stockTitles[bucket]} {bucket}
+                </span>
+                <strong>{stockTotals[bucket]}</strong>
+                <small>EA</small>
+              </div>
+            ))}
+          </div>
+          <section className="v2-card">
+            <div className="v2-toolbar">
+              <h2>위치·품목별 재고</h2>
+              <button
+                onClick={() =>
+                  downloadCsv("wms-v2-stock.csv", [
+                    [
+                      "회사",
+                      c.company,
+                      "창고코드",
+                      c.warehouseCode,
+                      "창고명",
+                      c.warehouseName,
+                      "창고ID",
+                      c.warehouse,
+                      "품목필터",
+                      item ? itemNames.get(item) || "선택 항목" : "전체",
+                      "위치필터",
+                      location ? locationIndex.get(location)?.name || "선택 항목" : "전체",
+                      "조회시각",
+                      new Date().toISOString(),
+                      "버전",
+                      s.version,
+                      "단위",
+                      "EA",
+                      "총행수",
+                      stocks.length,
+                    ],
+                    ["품목", "위치", ...buckets, "잠금"],
+                    ...stocks.map((row) => [
+                      itemNames.get(row.item_id) || "선택 항목",
+                      locationIndex.get(row.location_id)?.name || "선택 항목",
+                      ...buckets.map((b) => row[b]),
+                      row.locked ? "실사 잠금" : "",
+                    ]),
+                  ])
+                }
+              >
+                현재 필터 재고 CSV
+              </button>
+            </div>
+            <Note>H=S+P+Q+B · R은 S에 포함 · A는 S−R, 잠긴 위치는 0입니다.</Note>
+            <p id={stockRangeId} className="v2-note" role="status">
+              전체 {stocks.length.toLocaleString()}행 · 현재 {stocks.length ? stockStart + 1 : 0}–
+              {Math.min(stockStart + stockPageSize, stocks.length)}행 · {stockPageIndex + 1} / {stockPages}페이지 ·
+              페이지당 {stockPageSize}행. 재고 합계와 CSV는 현재 필터의 전체 행 기준입니다.
+            </p>
+            <StockPages
+              page={stockPageIndex}
+              pages={stockPages}
+              change={changeStockPage}
+              description={stockRangeId}
+              position="top"
+            />
+            <div className="v2-table">
+              <table
+                className="v2-stock-table"
+                id={`${stockRangeId}-table`}
+                aria-label="위치·품목별 재고 목록"
+                aria-describedby={stockRangeId}
+                data-stock-total={stocks.length}
+                data-stock-page-index={stockPageIndex}
+                data-stock-page-size={stockPageSize}
+              >
+                <colgroup>
+                  <col className="v2-stock-item" />
+                  <col className="v2-stock-location" />
+                  {buckets.map((bucket) => (
+                    <col className="v2-stock-quantity" key={bucket} />
+                  ))}
+                  <col className="v2-stock-reason" />
+                  <col className="v2-stock-trace" />
+                </colgroup>
+                <thead>
+                  <tr>
+                    <th>품목</th>
+                    <th>위치</th>
+                    {buckets.map((b) => (
+                      <th key={b}>{b} EA</th>
+                    ))}
+                    <th>가용 제외 사유</th>
+                    <th>연결 조회</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleStocks.map((row) => {
+                    const position = locationIndex.get(row.location_id);
+                    return (
+                      <tr
+                        key={`${row.item_id}:${row.location_id}`}
+                        data-item-id={row.item_id}
+                        data-location-id={row.location_id}
+                      >
+                        <td>{itemNames.get(row.item_id) || "선택 항목"}</td>
+                        <td>{position?.name || "선택 항목"}</td>
+                        {buckets.map((b) => (
+                          <td key={b}>{row[b]}</td>
+                        ))}
+                        <td>
+                          {row.locked
+                            ? "실사 잠금"
+                            : position?.row?.reservation_blocked
+                              ? "점검·예약 차단"
+                              : position?.row?.active === false
+                                ? "비활성 위치"
+                                : position?.row?.kind !== "STORAGE"
+                                  ? "예약 대상 외 위치"
+                                  : row.B
+                                    ? "품질 보류"
+                                    : row.Q
+                                      ? "검수·적치 대기"
+                                      : ""}
+                        </td>
+                        <td>
+                          <div className="v2-actions">
+                            <button onClick={() => setLinked({ item: row.item_id, location: row.location_id })}>
+                              연결 주문
+                            </button>
+                            <button
+                              onClick={() => {
+                                setTrace({ item: row.item_id, location: row.location_id });
+                                setView("ledger");
+                              }}
+                            >
+                              원장 추적
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+            <StockPages
+              page={stockPageIndex}
+              pages={stockPages}
+              change={changeStockPage}
+              description={stockRangeId}
+              position="bottom"
+            />
+          </section>
+          {linked && (
+            <section className="v2-card">
+              <div className="v2-toolbar">
+                <h2>
+                  {nameOf(c.items, linked.item)} · {nameOf(c.locations, linked.location)} 연결 주문
+                </h2>
+                <button onClick={() => setLinked(null)}>연결 조회 닫기</button>
+              </div>
+              <Note>현재 위치의 미피킹 예약과 유효 피킹 점유를 연결합니다.</Note>
+              <div className="v2-list">
+                {s.orders
+                  .filter(
+                    (order) =>
+                      order.reservations.some(
+                        (r) => r.item_id === linked.item && r.location_id === linked.location && r.quantity > 0,
+                      ) ||
+                      order.picks.some(
+                        (p) => p.item_id === linked.item && p.location_id === linked.location && p.active > 0,
+                      ),
+                  )
+                  .map((order) => (
+                    <button key={order.id} onClick={() => open?.("order", order.id)}>
+                      {order.external_id || `주문 ${s.orders.indexOf(order) + 1}`}
+                      <small>
+                        이 위치 예약{" "}
+                        {order.reservations
+                          .filter((r) => r.item_id === linked.item && r.location_id === linked.location)
+                          .reduce((sum, r) => sum + r.quantity, 0)}{" "}
+                        EA · 유효 피킹{" "}
+                        {order.picks
+                          .filter((p) => p.item_id === linked.item && p.location_id === linked.location)
+                          .reduce((sum, p) => sum + p.active, 0)}{" "}
+                        EA
+                      </small>
+                    </button>
+                  ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+      {view === "move" && (
+        <>
+          <div className="v2-card">
+            <div className="v2-grid">
+              <Select label="이동 대상 품목" value={item} onChange={setItem} options={options(c.items)} />
+              <Select
+                label="출발 보관 위치"
+                value={location}
+                onChange={setLocation}
+                options={options(c.locations.filter((l) => l.kind === "STORAGE"))}
+              />
+            </div>
+          </div>
+          {writable && (
+            <>
+              <div className="v2-card">
+                <ActionEditor
+                  c={c}
+                  title="동일 창고 이동·보충"
+                  command="stock.move"
+                  base={{}}
+                  rows={stockRows}
+                  idKey="item_id"
+                  locationKinds={["STORAGE"]}
+                  sourceScan
+                  reasonRequired
+                />
+              </div>
+              <div className="v2-card">
+                <ActionEditor
+                  c={c}
+                  title="정상 재고 보류 전환"
+                  command="stock.hold"
+                  base={{}}
+                  rows={stockRows}
+                  idKey="item_id"
+                  locationKinds={["HOLD"]}
+                  sourceScan
+                  reasonRequired
+                />
+              </div>
+              {holds.filter(pendingGenericHold).map((lot) => (
+                <div className="v2-card" key={`hold-owner-${lot.id}`}>
+                  <h3>일반 보류 후속 · {nameOf(c.items, lot.item_id)}</h3>
+                  <Note>
+                    보류 {lot.hold} · 검수 대기 {lot.pending} · 적치 대기 {lot.normal} EA. 완료 전까지 담당자와 사유를
+                    인계합니다.
+                  </Note>
+                  {genericHoldOwnership(c.snapshot, lot).requiresAssignment && (
+                    <Note>기존 원주문 연결을 확인하고 책임자가 후속 담당자를 배정해야 합니다.</Note>
+                  )}
+                  <Assignment
+                    c={c}
+                    objectType="hold"
+                    objectId={lot.id}
+                    inheritedTask={genericHoldOwnership(c.snapshot, lot).task}
+                  />
+                </div>
+              ))}
+              {holds
+                .filter((l) => l.hold > 0)
+                .map((lot, index) => (
+                  <div className="v2-card" key={lot.id}>
+                    <ActionEditor
+                      c={c}
+                      title={`일반 보류 ${index + 1} 해제 · 검수 대기 이동`}
+                      command="hold.release"
+                      base={{}}
+                      rows={[{ id: lot.id, item_id: lot.item_id, available: lot.hold }]}
+                      idKey="lot_id"
+                      locationKinds={["RECEIVING"]}
+                      reasonRequired
+                    />
+                  </div>
+                ))}
+              <div className="v2-card">
+                <ActionEditor
+                  c={c}
+                  title="보류 해제분 검수"
+                  command="stock.inspect"
+                  base={{}}
+                  rows={holds
+                    .filter((l) => l.pending > 0)
+                    .map((l) => ({ id: l.id, item_id: l.item_id, location_id: l.location_id, available: l.pending }))}
+                  idKey="lot_id"
+                  outcome
+                  sourceScan
+                />
+              </div>
+              <div className="v2-card">
+                <ActionEditor
+                  c={c}
+                  title="보류 해제분 정상 적치"
+                  command="stock.putaway"
+                  base={{}}
+                  rows={holds
+                    .filter((l) => l.normal > 0)
+                    .map((l) => ({ id: l.id, item_id: l.item_id, available: l.normal }))}
+                  idKey="lot_id"
+                  locationKinds={["STORAGE"]}
+                />
+              </div>
+            </>
+          )}
+        </>
+      )}
+      {view === "count" && <Counts c={c} />}{" "}
+      {view === "approval" && (
+        <div className="v2-card">
+          <h2>다른 책임자의 승인</h2>
+          <Field label="승인 상태">
+            <select value={approvalStatus} onChange={(event) => setApprovalStatus(event.target.value)}>
+              <option value="all">전체</option>
+              <option value="pending">승인 대기</option>
+              <option value="approved">승인 완료</option>
+              <option value="rejected">반려</option>
+            </select>
+          </Field>
+          <Field label="승인·반려 사유">
+            <input value={reason} onChange={(e) => setReason(e.target.value)} />
+          </Field>
+          {visibleApprovals.map((approval) => (
+            <div className="v2-card" key={approval.id}>
+              <h3>
+                승인 {s.approvals.indexOf(approval) + 1} ·{" "}
+                {
+                  {
+                    overage: "과납 인수",
+                    "receipt.close": "예정 잔량 마감",
+                    count: "실사 차이 조정",
+                    correction: "재고 정정",
+                  }[approval.type]
+                }
+              </h3>
+              <p>
+                요청자{" "}
+                {approval.requester_name ||
+                  c.people.find((p) => p.userId === approval.requester_id)?.name ||
+                  "이전 요청자"}{" "}
+                · {approval.quantity} EA · {approval.status}
+              </p>
+              <p>요청 사유: {approval.reason}</p>
+              {approval.decider_id && (
+                <p>
+                  처리자{" "}
+                  {approval.decider_name ||
+                    c.people.find((person) => person.userId === approval.decider_id)?.name ||
+                    "이전 승인자"}
+                  {approval.decided_at ? ` · ${time(approval.decided_at)}` : ""}
+                  {approval.decision_reason ? ` · ${approval.decision_reason}` : ""}
+                </p>
+              )}
+              {Array.isArray(approval.data.lines) && (
+                <div className="v2-table">
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>품목</th>
+                        <th>위치</th>
+                        <th>상태</th>
+                        <th>조정 EA</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(
+                        approval.data.lines as {
+                          item_id: string;
+                          location_id: string;
+                          bucket: string;
+                          quantity: number;
+                        }[]
+                      ).map((line, i) => (
+                        <tr key={i}>
+                          <td>{nameOf(c.items, line.item_id)}</td>
+                          <td>{nameOf(c.locations, line.location_id)}</td>
+                          <td>{line.bucket}</td>
+                          <td>{line.quantity}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+              {approval.status === "pending" && ["admin", "supervisor"].includes(c.role) && (
+                <div className="v2-actions">
+                  <button
+                    disabled={c.busy || !reason || approvalActorExcluded(s, approval, c.userId)}
+                    onClick={() => void c.run("approval.decide", { approval_id: approval.id, approve: true, reason })}
+                  >
+                    검토 후 승인
+                  </button>
+                  <button
+                    disabled={c.busy || !reason || approvalActorExcluded(s, approval, c.userId)}
+                    onClick={() => void c.run("approval.decide", { approval_id: approval.id, approve: false, reason })}
+                  >
+                    사유 남기고 반려
+                  </button>
+                  {approvalActorExcluded(s, approval, c.userId) && (
+                    <Note>요청자와 원실적자·계수자는 승인할 수 없습니다. 다른 승인권자가 처리해야 합니다.</Note>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
+          {!visibleApprovals.length && <p className="v2-empty">선택한 상태의 승인 요청이 없습니다.</p>}
+        </div>
+      )}{" "}
+      {view === "ledger" && (
+        <>
+          <Ledger
+            key={`${trace?.item || ""}:${trace?.location || ""}`}
+            c={c}
+            initialItem={trace?.item || ""}
+            initialLocation={trace?.location || ""}
+          />
+          <div className="v2-card">
+            <h2>원장과 예약 대사</h2>
+            <p>
+              {s.reconciliation?.ok ? "현재 재고·원장·예약 일치" : "대사 결과 확인 필요"} · 업무 버전 {s.version}
+            </p>
+            <Note>
+              위 전체 원장에서 조회 필터와 처리경계를 확인하세요. 재고 조정과 실사 장부 차이는 별도 검토합니다.
+            </Note>
+          </div>
+          {writable && <Correction c={c} />}
+        </>
+      )}
+    </>
+  );
+}
+function StockPages({
+  page,
+  pages,
+  change,
+  description,
+  position,
+}: {
+  page: number;
+  pages: number;
+  change: (index: number) => void;
+  description: string;
+  position: "top" | "bottom";
+}) {
+  const bottom = position === "bottom";
+  return (
+    <nav
+      className="v2-stock-pagination"
+      aria-label={bottom ? "재고 목록 하단 페이지 이동" : "재고 목록 페이지 이동"}
+      aria-describedby={description}
+    >
+      <button
+        type="button"
+        disabled={page === 0}
+        aria-controls={`${description}-table`}
+        onClick={() => change(page - 1)}
+      >
+        이전 재고 페이지
+      </button>
+      <Field label={bottom ? "재고 목록 하단 페이지" : "재고 목록 페이지"}>
+        <select
+          aria-label={bottom ? "재고 목록 하단 페이지" : "재고 목록 페이지"}
+          value={page}
+          aria-controls={`${description}-table`}
+          onChange={(event) => change(Number(event.target.value))}
+        >
+          {Array.from({ length: pages }, (_, index) => (
+            <option key={index} value={index}>
+              {index + 1} / {pages}페이지
+            </option>
+          ))}
+        </select>
+      </Field>
+      <button
+        type="button"
+        disabled={page >= pages - 1}
+        aria-controls={`${description}-table`}
+        onClick={() => change(page + 1)}
+      >
+        다음 재고 페이지
+      </button>
+    </nav>
+  );
 }
 
-function Counts({c}:{c:Context}){
- const [location,setLocation]=useState(''),[current,setCurrent]=useState(''),[reason,setReason]=useState(''),[recount,setRecount]=useState(false),[lines,setLines]=useState([{item_id:'',bucket:'S',quantity:0}]);const selected=c.snapshot.counts.find(count=>count.id===current);
- return <><section className="v2-card"><h2>위치 실사 · 장부를 보지 않고 계수</h2><Note>미완료 피킹·이동과 예약을 먼저 해소하세요. 잠금 중에는 해당 위치만 작업이 차단됩니다. P 위치는 정기 실사에서 제외합니다.</Note><Select label="실사할 위치" value={location} onChange={setLocation} options={options(c.locations.filter(l=>['STORAGE','RECEIVING','HOLD'].includes(String(l.kind))))}/><button disabled={c.busy||!location||c.role==='viewer'} onClick={()=>void c.run('count.start',{location_id:location}).then(result=>{if(result?.id)setCurrent(String(result.id));})}>조건 확인·위치 잠금·실사 시작</button><Select label="진행 중인 실사" value={current} onChange={id=>{setCurrent(id);setLines([{item_id:'',bucket:'S',quantity:0}]);}} options={c.snapshot.counts.map((count,index)=>({id:count.id,label:`실사 ${index+1} · ${nameOf(c.locations,count.location_id)} · ${count.status}`}))}/></section>{selected&&<section className="v2-card"><h3>{nameOf(c.locations,selected.location_id)} · {selected.status}</h3>{selected.status==='counting'&&<Assignment c={c} objectType="count" objectId={selected.id}/>}{selected.status==='counting'&&c.role!=='viewer'&&<form onSubmit={e=>{e.preventDefault();void c.run('count.record',{count_id:current,lines,recount,reason});}}>{lines.map((line,index)=><div className="v2-grid" key={index}><Select label={`계수 품목 ${index+1}`} value={line.item_id} onChange={item_id=>setLines(rows=>rows.map((row,i)=>i===index?{...row,item_id}:row))} options={options(c.items)} required/><Field label="실물 상태"><select value={line.bucket} onChange={e=>setLines(rows=>rows.map((row,i)=>i===index?{...row,bucket:e.target.value}:row))}><option value="S">정상 보관</option><option value="Q">검수·적치 대기</option><option value="B">보류</option></select></Field><Quantity label="실물 계수 EA" value={line.quantity} min={0} onChange={quantity=>setLines(rows=>rows.map((row,i)=>i===index?{...row,quantity}:row))}/></div>)}<button type="button" disabled={lines.length>=20} onClick={()=>setLines(rows=>[...rows,{item_id:'',bucket:'S',quantity:0}])}>계수 품목 추가</button><label className="v2-checkbox"><input type="checkbox" checked={recount} onChange={e=>setRecount(e.target.checked)}/>차이 확인 후 재계수 완료</label><Field label="계수·차이 사유"><input value={reason} onChange={e=>setReason(e.target.value)} required/></Field><Submit disabled={c.busy}>계수 기록</Submit><button type="button" disabled={c.busy||!reason||!selected.lines.length} onClick={()=>void c.run('count.submit',{count_id:current,reason})}>다른 책임자에게 조정 승인 요청</button></form>}{['admin','supervisor'].includes(c.role)&&['counting','submitted'].includes(selected.status)&&<><Field label="강제 잠금 해제 사유"><input value={reason} onChange={e=>setReason(e.target.value)}/></Field><button disabled={c.busy||!reason} onClick={()=>void c.run('count.unlock',{count_id:current,reason})}>실사 무효화·잠금 해제</button><Note>강제 해제하면 기존 계수는 승인할 수 없습니다. 새 실사에서 재계수해야 합니다.</Note></>}</section>}</>;
+function Counts({ c }: { c: Context }) {
+  const [location, setLocation] = useState(""),
+    [current, setCurrent] = useState(""),
+    [reason, setReason] = useState(""),
+    [recount, setRecount] = useState(false),
+    [lines, setLines] = useState([{ item_id: "", bucket: "S", quantity: 0 }]);
+  const selected = c.snapshot.counts.find((count) => count.id === current);
+  return (
+    <>
+      <section className="v2-card">
+        <h2>위치 실사 · 장부를 보지 않고 계수</h2>
+        <Note>
+          미완료 피킹·이동과 예약을 먼저 해소하세요. 잠금 중에는 해당 위치만 작업이 차단됩니다. P 위치는 정기 실사에서
+          제외합니다.
+        </Note>
+        <Select
+          label="실사할 위치"
+          value={location}
+          onChange={setLocation}
+          options={options(c.locations.filter((l) => ["STORAGE", "RECEIVING", "HOLD"].includes(String(l.kind))))}
+        />
+        <button
+          disabled={c.busy || !location || c.role === "viewer"}
+          onClick={() =>
+            void c.run("count.start", { location_id: location }).then((result) => {
+              if (result?.id) setCurrent(String(result.id));
+            })
+          }
+        >
+          조건 확인·위치 잠금·실사 시작
+        </button>
+        <Select
+          label="진행 중인 실사"
+          value={current}
+          onChange={(id) => {
+            setCurrent(id);
+            setLines([{ item_id: "", bucket: "S", quantity: 0 }]);
+          }}
+          options={c.snapshot.counts.map((count, index) => ({
+            id: count.id,
+            label: `실사 ${index + 1} · ${nameOf(c.locations, count.location_id)} · ${count.status}`,
+          }))}
+        />
+      </section>
+      {selected && (
+        <section className="v2-card">
+          <h3>
+            {nameOf(c.locations, selected.location_id)} · {selected.status}
+          </h3>
+          {selected.status === "counting" && <Assignment c={c} objectType="count" objectId={selected.id} />}
+          {selected.status === "counting" && c.role !== "viewer" && (
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void c.run("count.record", { count_id: current, lines, recount, reason });
+              }}
+            >
+              {lines.map((line, index) => (
+                <div className="v2-grid" key={index}>
+                  <Select
+                    label={`계수 품목 ${index + 1}`}
+                    value={line.item_id}
+                    onChange={(item_id) =>
+                      setLines((rows) => rows.map((row, i) => (i === index ? { ...row, item_id } : row)))
+                    }
+                    options={options(c.items)}
+                    required
+                  />
+                  <Field label="실물 상태">
+                    <select
+                      value={line.bucket}
+                      onChange={(e) =>
+                        setLines((rows) =>
+                          rows.map((row, i) => (i === index ? { ...row, bucket: e.target.value } : row)),
+                        )
+                      }
+                    >
+                      <option value="S">정상 보관</option>
+                      <option value="Q">검수·적치 대기</option>
+                      <option value="B">보류</option>
+                    </select>
+                  </Field>
+                  <Quantity
+                    label="실물 계수 EA"
+                    value={line.quantity}
+                    min={0}
+                    onChange={(quantity) =>
+                      setLines((rows) => rows.map((row, i) => (i === index ? { ...row, quantity } : row)))
+                    }
+                  />
+                </div>
+              ))}
+              <button
+                type="button"
+                disabled={lines.length >= 20}
+                onClick={() => setLines((rows) => [...rows, { item_id: "", bucket: "S", quantity: 0 }])}
+              >
+                계수 품목 추가
+              </button>
+              <label className="v2-checkbox">
+                <input type="checkbox" checked={recount} onChange={(e) => setRecount(e.target.checked)} />
+                차이 확인 후 재계수 완료
+              </label>
+              <Field label="계수·차이 사유">
+                <input value={reason} onChange={(e) => setReason(e.target.value)} required />
+              </Field>
+              <Submit disabled={c.busy}>계수 기록</Submit>
+              <button
+                type="button"
+                disabled={c.busy || !reason || !selected.lines.length}
+                onClick={() => void c.run("count.submit", { count_id: current, reason })}
+              >
+                다른 책임자에게 조정 승인 요청
+              </button>
+            </form>
+          )}
+          {["admin", "supervisor"].includes(c.role) && ["counting", "submitted"].includes(selected.status) && (
+            <>
+              <Field label="강제 잠금 해제 사유">
+                <input value={reason} onChange={(e) => setReason(e.target.value)} />
+              </Field>
+              <button
+                disabled={c.busy || !reason}
+                onClick={() => void c.run("count.unlock", { count_id: current, reason })}
+              >
+                실사 무효화·잠금 해제
+              </button>
+              <Note>강제 해제하면 기존 계수는 승인할 수 없습니다. 새 실사에서 재계수해야 합니다.</Note>
+            </>
+          )}
+        </section>
+      )}
+    </>
+  );
 }
-function Correction({c}:{c:Context}){const [filter,setFilter]=useState(''),[lines,setLines]=useState([{item_id:'',location_id:'',bucket:'S',quantity:0}]),[reason,setReason]=useState(''),[original,setOriginal]=useState(''),[sourceBusy,setSourceBusy]=useState(false),[blocked,setBlocked]=useState('');const sourceRevision=useRef(0);async function chooseOriginal(id:string){setOriginal(id);if(!id)return;const revision=++sourceRevision.current;setSourceBusy(true);setBlocked('');try{const result=await api<{lines:typeof lines;blocked_reason:string|null}>(`/api/v2/workflow/correction-source?warehouse_id=${c.warehouse}&original_id=${id}`);if(revision!==sourceRevision.current)return;setLines(result.lines);if(result.blocked_reason)setBlocked(new ApiFailure(409,result.blocked_reason).message);}catch(e){if(revision===sourceRevision.current)setBlocked(message(e));}finally{if(revision===sourceRevision.current)setSourceBusy(false);}}function change(index:number,patch:Partial<typeof lines[number]>){setLines(rows=>rows.map((row,i)=>i===index?{...row,...patch}:row));}return <section className="v2-card"><form onSubmit={e=>{e.preventDefault();void c.run('correction.request',{lines,reason,original_id:original});}}><h3>연결된 재고 정정 요청</h3><Note>실제 원본 실적의 반대 수량만 보상합니다. 이동·적치처럼 양쪽 효과가 있는 원본은 출발·도착 명세를 함께 같은 비율로 되돌립니다. 예약·피킹 등 후속 작업이 있으면 선행 작업을 해소해야 합니다. 다른 승인자가 검토한 뒤 새 원장 실적으로 처리합니다.</Note><Select label="원본 실적 품목 좁히기" value={filter} onChange={id=>{setFilter(id);setOriginal('');}} options={options(c.items)}/><OriginPicker c={c} item={filter} value={original} onChange={id=>void chooseOriginal(id)}/>{sourceBusy&&<p role="status">원본과 연결된 반대 효과·남은 보상 가능량을 확인합니다…</p>}{blocked&&<p role="alert" className="v2-alert">{blocked}</p>}{lines.map((line,index)=><div key={index} className="v2-card"><h3>정정 명세 {index+1}</h3><div className="v2-grid"><Select label={`정정 품목 ${index+1}`} value={line.item_id} onChange={item_id=>change(index,{item_id})} options={options(c.items)} required/><Select label={`정정 위치 ${index+1}`} value={line.location_id} onChange={location_id=>change(index,{location_id})} options={options(c.locations)} required/><Field label={`정정 상태 ${index+1}`}><select value={line.bucket} onChange={e=>change(index,{bucket:e.target.value})}><option value="S">정상보관</option><option value="Q">검수·적치대기</option><option value="B">보류</option></select></Field><Field label={`조정 증감 EA ${index+1} (감소는 음수)`}><input type="number" step="1" value={line.quantity} onChange={e=>change(index,{quantity:Number(e.target.value)})} required/></Field></div>{lines.length>1&&<button type="button" onClick={()=>setLines(rows=>rows.filter((_,i)=>i!==index))}>정정 명세 {index+1} 삭제</button>}</div>)}<button type="button" disabled={lines.length>=20} onClick={()=>setLines(rows=>[...rows,{item_id:'',location_id:'',bucket:'S',quantity:0}])}>연결된 반대 효과 명세 추가 ({lines.length}/20)</button><Field label="정정 근거·사유"><textarea value={reason} onChange={e=>setReason(e.target.value)} required/></Field><Submit disabled={c.busy||sourceBusy||Boolean(blocked)||!lines.length||lines.some(line=>line.quantity===0)||!original}>다른 책임자에게 정정 승인 요청</Submit></form></section>;}
-function Shift({c}:{c:Context}){
- const s=c.snapshot;const pending=[...s.receipts.filter(r=>r.lines.some(l=>l.quantity>l.received+l.cancelled)||r.lots.some(l=>l.pending+l.normal+l.hold>0)).map((r,index)=>({type:'receipt',id:r.id,title:r.external_id||`입고 ${index+1}`})),...s.orders.filter(o=>o.lines.some(l=>l.quantity>l.cancelled+l.shipped)).map((o,index)=>({type:'order',id:o.id,title:o.external_id||`주문 ${index+1}`})),...s.approvals.filter(a=>a.status==='pending').map((a,index)=>({type:'approval',id:a.id,title:`승인 대기 ${index+1}`})),...s.counts.filter(count=>count.status==='counting').map(count=>({type:'count',id:count.id,title:`실사 ${s.counts.indexOf(count)+1} · ${nameOf(c.locations,count.location_id)}`})),...(s.holds??[]).filter(pendingGenericHold).map(lot=>({type:'hold',id:lot.id,title:`일반 보류 후속 ${s.holds.indexOf(lot)+1} · ${nameOf(c.items,lot.item_id)}`})),...s.returns.filter(r=>!r.closed||r.lots.some(l=>l.pending+l.normal+l.hold>0)).map((r,index)=>({type:'return',id:r.id,title:`반품 ${index+1}`}))];const [assignments,setAssignments]=useState<Record<string,{assignee_id:string;reason:string}>>({});
- const peopleFor=(row:{type:string;id:string})=>{
-  const approval=row.type==='approval'?s.approvals.find(approval=>approval.id===row.id):undefined;
-  return c.people.filter(person=>row.type==='approval'?!!approval&&approvalAssigneeEligible(s,approval,person,c.warehouse):person.status==='active'&&person.role!=='viewer'&&person.warehouseIds.includes(c.warehouse));
- };
- return <><section className="v2-card"><h2>교대 인수인계 · 일일 마감</h2><Note>미수령·미적치·미피킹·미출하·승인 대기를 다음 담당자에게 연결합니다. 결과 미확인 요청은 먼저 복구해야 합니다. 마감은 업무를 자동 완료하지 않습니다.</Note><p>재고↔원장 대사 {s.reconciliation?.ok?'일치':'확인 필요'} · 미완료 {pending.length}건 · 조회 버전 {s.version}</p><form onSubmit={e=>{e.preventDefault();void c.run('shift.close',{handover:pending.map(row=>({object_type:row.type,object_id:row.id,...assignments[row.id]})),unconfirmed_request_ids:[]});}}>{pending.map(row=><div className="v2-card" key={row.id}><h3>{row.title}</h3><Note>현재 담당 {currentAssignee(c,row.id)}</Note>{row.type==='approval'&&<Note>승인 대기는 요청자·원실적자·모든 계수자를 제외한 이 창고의 승인권자에게 인계합니다. 후보가 없으면 다른 승인권자의 계정·창고 권한을 먼저 확인하세요. 저장할 때 현재 권한과 보존 이력을 다시 확인합니다.</Note>}<div className="v2-grid"><Select label={`${row.title} 다음 담당자`} value={assignments[row.id]?.assignee_id||''} onChange={assignee_id=>setAssignments(value=>({...value,[row.id]:{reason:value[row.id]?.reason||'',assignee_id}}))} options={peopleFor(row).map(p=>({id:p.userId,label:personLabel(p)}))} required/><Field label="남은 작업·사유"><input required value={assignments[row.id]?.reason||''} onChange={e=>setAssignments(value=>({...value,[row.id]:{assignee_id:value[row.id]?.assignee_id||'',reason:e.target.value}}))}/></Field></div></div>)}<label className="v2-checkbox"><input type="checkbox" required/>미확인 요청 결과를 해소하고 실물과 미처리 잔량을 확인했습니다. 자동 작업과 사람 사이의 인계가 있으면 진행 중인 자동 명령을 정리하고 다음 담당자 전환을 확인했습니다.</label><Submit disabled={c.busy||!['admin','supervisor'].includes(c.role)||!s.reconciliation?.ok}>기준 시각 마감·인계 보고서 생성</Submit></form></section><section className="v2-card"><h2>마감 보고서</h2>{s.shifts.map((report,index)=><div className="v2-badge" key={index}>{String(report.business_day)} · {time(String(report.closed_at))} · 버전 {String(report.version)} · 마감자 {typeof report.actor_name==='string'?report.actor_name:c.people.find(person=>person.userId===report.actor_id)?.name||'이전 마감자'}<button onClick={()=>downloadCsv(`wms-shift-${index+1}.csv`,[['회사',c.company,'업무일',report.business_day,'기준시각',report.closed_at,'버전',report.version,'마감자',typeof report.actor_name==='string'?report.actor_name:c.people.find(person=>person.userId===report.actor_id)?.name||'이전 마감자'],['업무','다음 담당자','사유'],...(Array.isArray(report.handover)?report.handover:[]).map((row:{object_type:string;assignee_id:string;assignee_name?:string;reason:string})=>[row.object_type,row.assignee_name||c.people.find(person=>person.userId===row.assignee_id)?.name||'이전 담당자',row.reason])])}>보고서 CSV</button></div>)}{!s.shifts.length&&<p className="v2-empty">생성된 마감 보고서가 없습니다.</p>}</section></>;
+function Correction({ c }: { c: Context }) {
+  const [filter, setFilter] = useState(""),
+    [lines, setLines] = useState([{ item_id: "", location_id: "", bucket: "S", quantity: 0 }]),
+    [reason, setReason] = useState(""),
+    [original, setOriginal] = useState(""),
+    [sourceBusy, setSourceBusy] = useState(false),
+    [blocked, setBlocked] = useState("");
+  const sourceRevision = useRef(0);
+  async function chooseOriginal(id: string) {
+    setOriginal(id);
+    if (!id) return;
+    const revision = ++sourceRevision.current;
+    setSourceBusy(true);
+    setBlocked("");
+    try {
+      const result = await api<{ lines: typeof lines; blocked_reason: string | null }>(
+        `/api/v2/workflow/correction-source?warehouse_id=${c.warehouse}&original_id=${id}`,
+      );
+      if (revision !== sourceRevision.current) return;
+      setLines(result.lines);
+      if (result.blocked_reason) setBlocked(new ApiFailure(409, result.blocked_reason).message);
+    } catch (e) {
+      if (revision === sourceRevision.current) setBlocked(message(e));
+    } finally {
+      if (revision === sourceRevision.current) setSourceBusy(false);
+    }
+  }
+  function change(index: number, patch: Partial<(typeof lines)[number]>) {
+    setLines((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  }
+  return (
+    <section className="v2-card">
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void c.run("correction.request", { lines, reason, original_id: original });
+        }}
+      >
+        <h3>연결된 재고 정정 요청</h3>
+        <Note>
+          실제 원본 실적의 반대 수량만 보상합니다. 이동·적치처럼 양쪽 효과가 있는 원본은 출발·도착 명세를 함께 같은
+          비율로 되돌립니다. 예약·피킹 등 후속 작업이 있으면 선행 작업을 해소해야 합니다. 다른 승인자가 검토한 뒤 새
+          원장 실적으로 처리합니다.
+        </Note>
+        <Select
+          label="원본 실적 품목 좁히기"
+          value={filter}
+          onChange={(id) => {
+            setFilter(id);
+            setOriginal("");
+          }}
+          options={options(c.items)}
+        />
+        <OriginPicker c={c} item={filter} value={original} onChange={(id) => void chooseOriginal(id)} />
+        {sourceBusy && <p role="status">원본과 연결된 반대 효과·남은 보상 가능량을 확인합니다…</p>}
+        {blocked && (
+          <p role="alert" className="v2-alert">
+            {blocked}
+          </p>
+        )}
+        {lines.map((line, index) => (
+          <div key={index} className="v2-card">
+            <h3>정정 명세 {index + 1}</h3>
+            <div className="v2-grid">
+              <Select
+                label={`정정 품목 ${index + 1}`}
+                value={line.item_id}
+                onChange={(item_id) => change(index, { item_id })}
+                options={options(c.items)}
+                required
+              />
+              <Select
+                label={`정정 위치 ${index + 1}`}
+                value={line.location_id}
+                onChange={(location_id) => change(index, { location_id })}
+                options={options(c.locations)}
+                required
+              />
+              <Field label={`정정 상태 ${index + 1}`}>
+                <select value={line.bucket} onChange={(e) => change(index, { bucket: e.target.value })}>
+                  <option value="S">정상보관</option>
+                  <option value="Q">검수·적치대기</option>
+                  <option value="B">보류</option>
+                </select>
+              </Field>
+              <Field label={`조정 증감 EA ${index + 1} (감소는 음수)`}>
+                <input
+                  type="number"
+                  step="1"
+                  value={line.quantity}
+                  onChange={(e) => change(index, { quantity: Number(e.target.value) })}
+                  required
+                />
+              </Field>
+            </div>
+            {lines.length > 1 && (
+              <button type="button" onClick={() => setLines((rows) => rows.filter((_, i) => i !== index))}>
+                정정 명세 {index + 1} 삭제
+              </button>
+            )}
+          </div>
+        ))}
+        <button
+          type="button"
+          disabled={lines.length >= 20}
+          onClick={() => setLines((rows) => [...rows, { item_id: "", location_id: "", bucket: "S", quantity: 0 }])}
+        >
+          연결된 반대 효과 명세 추가 ({lines.length}/20)
+        </button>
+        <Field label="정정 근거·사유">
+          <textarea value={reason} onChange={(e) => setReason(e.target.value)} required />
+        </Field>
+        <Submit
+          disabled={
+            c.busy ||
+            sourceBusy ||
+            Boolean(blocked) ||
+            !lines.length ||
+            lines.some((line) => line.quantity === 0) ||
+            !original
+          }
+        >
+          다른 책임자에게 정정 승인 요청
+        </Submit>
+      </form>
+    </section>
+  );
+}
+function Shift({ c }: { c: Context }) {
+  const s = c.snapshot;
+  const pending = [
+    ...s.receipts
+      .filter(
+        (r) =>
+          r.lines.some((l) => l.quantity > l.received + l.cancelled) ||
+          r.lots.some((l) => l.pending + l.normal + l.hold > 0),
+      )
+      .map((r, index) => ({ type: "receipt", id: r.id, title: r.external_id || `입고 ${index + 1}` })),
+    ...s.orders
+      .filter((o) => o.lines.some((l) => l.quantity > l.cancelled + l.shipped))
+      .map((o, index) => ({ type: "order", id: o.id, title: o.external_id || `주문 ${index + 1}` })),
+    ...s.approvals
+      .filter((a) => a.status === "pending")
+      .map((a, index) => ({ type: "approval", id: a.id, title: `승인 대기 ${index + 1}` })),
+    ...s.counts
+      .filter((count) => count.status === "counting")
+      .map((count) => ({
+        type: "count",
+        id: count.id,
+        title: `실사 ${s.counts.indexOf(count) + 1} · ${nameOf(c.locations, count.location_id)}`,
+      })),
+    ...(s.holds ?? []).filter(pendingGenericHold).map((lot) => ({
+      type: "hold",
+      id: lot.id,
+      title: `일반 보류 후속 ${s.holds.indexOf(lot) + 1} · ${nameOf(c.items, lot.item_id)}`,
+    })),
+    ...s.returns
+      .filter((r) => !r.closed || r.lots.some((l) => l.pending + l.normal + l.hold > 0))
+      .map((r, index) => ({ type: "return", id: r.id, title: `반품 ${index + 1}` })),
+  ];
+  const [assignments, setAssignments] = useState<Record<string, { assignee_id: string; reason: string }>>({});
+  const peopleFor = (row: { type: string; id: string }) => {
+    const approval = row.type === "approval" ? s.approvals.find((approval) => approval.id === row.id) : undefined;
+    return c.people.filter((person) =>
+      row.type === "approval"
+        ? !!approval && approvalAssigneeEligible(s, approval, person, c.warehouse)
+        : person.status === "active" && person.role !== "viewer" && person.warehouseIds.includes(c.warehouse),
+    );
+  };
+  return (
+    <>
+      <section className="v2-card">
+        <h2>교대 인수인계 · 일일 마감</h2>
+        <Note>
+          미수령·미적치·미피킹·미출하·승인 대기를 다음 담당자에게 연결합니다. 결과 미확인 요청은 먼저 복구해야 합니다.
+          마감은 업무를 자동 완료하지 않습니다.
+        </Note>
+        <p>
+          재고↔원장 대사 {s.reconciliation?.ok ? "일치" : "확인 필요"} · 미완료 {pending.length}건 · 조회 버전{" "}
+          {s.version}
+        </p>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void c.run("shift.close", {
+              handover: pending.map((row) => ({ object_type: row.type, object_id: row.id, ...assignments[row.id] })),
+              unconfirmed_request_ids: [],
+            });
+          }}
+        >
+          {pending.map((row) => (
+            <div className="v2-card" key={row.id}>
+              <h3>{row.title}</h3>
+              <Note>현재 담당 {currentAssignee(c, row.id)}</Note>
+              {row.type === "approval" && (
+                <Note>
+                  승인 대기는 요청자·원실적자·모든 계수자를 제외한 이 창고의 승인권자에게 인계합니다. 후보가 없으면 다른
+                  승인권자의 계정·창고 권한을 먼저 확인하세요. 저장할 때 현재 권한과 보존 이력을 다시 확인합니다.
+                </Note>
+              )}
+              <div className="v2-grid">
+                <Select
+                  label={`${row.title} 다음 담당자`}
+                  value={assignments[row.id]?.assignee_id || ""}
+                  onChange={(assignee_id) =>
+                    setAssignments((value) => ({
+                      ...value,
+                      [row.id]: { reason: value[row.id]?.reason || "", assignee_id },
+                    }))
+                  }
+                  options={peopleFor(row).map((p) => ({ id: p.userId, label: personLabel(p) }))}
+                  required
+                />
+                <Field label="남은 작업·사유">
+                  <input
+                    required
+                    value={assignments[row.id]?.reason || ""}
+                    onChange={(e) =>
+                      setAssignments((value) => ({
+                        ...value,
+                        [row.id]: { assignee_id: value[row.id]?.assignee_id || "", reason: e.target.value },
+                      }))
+                    }
+                  />
+                </Field>
+              </div>
+            </div>
+          ))}
+          <label className="v2-checkbox">
+            <input type="checkbox" required />
+            미확인 요청 결과를 해소하고 실물과 미처리 잔량을 확인했습니다. 자동 작업과 사람 사이의 인계가 있으면 진행
+            중인 자동 명령을 정리하고 다음 담당자 전환을 확인했습니다.
+          </label>
+          <Submit disabled={c.busy || !["admin", "supervisor"].includes(c.role) || !s.reconciliation?.ok}>
+            기준 시각 마감·인계 보고서 생성
+          </Submit>
+        </form>
+      </section>
+      <section className="v2-card">
+        <h2>마감 보고서</h2>
+        {s.shifts.map((report, index) => (
+          <div className="v2-badge" key={index}>
+            {String(report.business_day)} · {time(String(report.closed_at))} · 버전 {String(report.version)} · 마감자{" "}
+            {typeof report.actor_name === "string"
+              ? report.actor_name
+              : c.people.find((person) => person.userId === report.actor_id)?.name || "이전 마감자"}
+            <button
+              onClick={() =>
+                downloadCsv(`wms-shift-${index + 1}.csv`, [
+                  [
+                    "회사",
+                    c.company,
+                    "업무일",
+                    report.business_day,
+                    "기준시각",
+                    report.closed_at,
+                    "버전",
+                    report.version,
+                    "마감자",
+                    typeof report.actor_name === "string"
+                      ? report.actor_name
+                      : c.people.find((person) => person.userId === report.actor_id)?.name || "이전 마감자",
+                  ],
+                  ["업무", "다음 담당자", "사유"],
+                  ...(Array.isArray(report.handover) ? report.handover : []).map(
+                    (row: { object_type: string; assignee_id: string; assignee_name?: string; reason: string }) => [
+                      row.object_type,
+                      row.assignee_name ||
+                        c.people.find((person) => person.userId === row.assignee_id)?.name ||
+                        "이전 담당자",
+                      row.reason,
+                    ],
+                  ),
+                ])
+              }
+            >
+              보고서 CSV
+            </button>
+          </div>
+        ))}
+        {!s.shifts.length && <p className="v2-empty">생성된 마감 보고서가 없습니다.</p>}
+      </section>
+    </>
+  );
 }

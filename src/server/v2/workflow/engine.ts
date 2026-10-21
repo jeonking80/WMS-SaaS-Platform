@@ -1,143 +1,1429 @@
-import { DomainError } from '../../api';
-import {takeOwnedWorkflowState,type OwnedWorkflowState} from './owned-state';
-import type { Approval, Bucket, Count, Line, Lot, Order, Pick, Receipt, Return, Stock, WorkflowContext, WorkflowState } from './types';
-import {firstPositions} from './position-index';
-import {refreshStockLocations} from './location-projection';
-import {approvalActorExcluded,approvalRoleAllowed} from './approval-eligibility';
-import {genericHoldOwnership,pendingGenericHold} from './hold-ownership';
-import {timeSync} from '../../timing-diagnostics';
+import { DomainError } from "../../api";
+import { takeOwnedWorkflowState, type OwnedWorkflowState } from "./owned-state";
+import type {
+  Approval,
+  Bucket,
+  Count,
+  Line,
+  Lot,
+  Order,
+  Pick,
+  Receipt,
+  Return,
+  Stock,
+  WorkflowContext,
+  WorkflowState,
+} from "./types";
+import { firstPositions } from "./position-index";
+import { refreshStockLocations } from "./location-projection";
+import { approvalActorExcluded, approvalRoleAllowed } from "./approval-eligibility";
+import { genericHoldOwnership, pendingGenericHold } from "./hold-ownership";
+import { timeSync } from "../../timing-diagnostics";
 
-export function fail(code:string, status=409):never { throw new DomainError(status,code); }
-export function object(value:unknown):Record<string,unknown> { if(!value||typeof value!=='object'||Array.isArray(value)) fail('INVALID_INPUT',400); return value as Record<string,unknown>; }
-export function text(value:unknown):string { if(typeof value!=='string'||!value.trim()||value.length>1000) fail('INVALID_INPUT',400); return value.trim(); }
-export function uuid(value:unknown):string { const v=text(value); if(!/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(v)) fail('INVALID_INPUT',400); return v; }
-export function integer(value:unknown,zero=false,signed=false):number { if(typeof value!=='number'||!Number.isSafeInteger(value)||Math.abs(value)>1_000_000_000||(!signed&&value<(zero?0:1))) fail('INVALID_QUANTITY',400); return value; }
-function rows(value:unknown,max=20):Record<string,unknown>[] { if(!Array.isArray(value)||value.length<1||value.length>max) fail(value instanceof Array&&value.length>max?'SPLIT_REQUIRED':'INVALID_INPUT',400); return value.map(object); }
-function find<T extends {id:string}>(list:T[],id:unknown):T { const v=list.find(x=>x.id===id); if(!v) fail('NOT_FOUND',404); return v; }
-function sum<T>(list:T[],fn:(x:T)=>number) { return list.reduce((a,x)=>a+fn(x),0); }
-function manager(ctx:WorkflowContext) { if(!approvalRoleAllowed(ctx.actor.role)) fail('APPROVAL_FORBIDDEN',403); }
-function requiredReason(p:Record<string,unknown>) { return text(p.reason); }
-function mutableVersion(target:{version:number},p:Record<string,unknown>) { if(p.expected_version!==undefined&&integer(p.expected_version,true)!==target.version) fail('VERSION_CONFLICT'); }
-function makeLine(p:Record<string,unknown>,ctx:WorkflowContext):Line { const item=uuid(p.item_id); if(!ctx.items.some(i=>i.id===item&&i.active)) fail('ITEM_UNAVAILABLE');return{id:p.id===undefined?ctx.id():uuid(p.id),item_id:item,quantity:integer(p.quantity),received:0,cancelled:0,shipped:0}; }
-function uniqueIds(list:{id:string}[]) { if(new Set(list.map(x=>x.id)).size!==list.length) fail('DUPLICATE_LINE',400); }
-function stock(s:WorkflowState,item:string,loc:string):Stock { let row=s.stock.find(x=>x.item_id===item&&x.location_id===loc);if(!row){row={item_id:item,location_id:loc,S:0,R:0,P:0,Q:0,B:0};s.stock.push(row);}return row; }
-function locked(s:WorkflowState,loc:string) { return s.counts.some(c=>c.location_id===loc&&['counting','submitted'].includes(c.status)); }
-function location(s:WorkflowState,ctx:WorkflowContext,id:unknown,kinds?:string[]):string { const loc=uuid(id);const ref=ctx.locations.find(x=>x.id===loc&&x.active);if(!ref)fail('LOCATION_UNAVAILABLE');if(locked(s,loc))fail('LOCATION_LOCKED');if(kinds&&ref.kind&&!kinds.includes(ref.kind))fail('LOCATION_TYPE_FORBIDDEN');return loc; }
-function change(s:WorkflowState,ctx:WorkflowContext,item:string,loc:string,bucket:Bucket,delta:number,p:Record<string,unknown>) { if(!delta)return;if(!ctx.items.some(i=>i.id===item&&i.active))fail('ITEM_UNAVAILABLE'); const r=stock(s,item,loc);r[bucket]+=delta;if(!Number.isSafeInteger(r[bucket])||r[bucket]<0||r.R>r.S)fail('INSUFFICIENT_STOCK');s.ledger.push({id:ctx.id(),item_id:item,location_id:loc,bucket,delta,request_id:ctx.request_id,actor_id:ctx.actor.id,command:ctx.command,reason:typeof p.reason==='string'?p.reason:'',...(typeof p.original_id==='string'?{original_id:p.original_id}:{}),created_at:ctx.now}); }
-function lots(s:WorkflowState):Lot[] { return [...s.receipts,...s.returns].flatMap(x=>x.lots).concat(s.holds??[]); }
-function addLot(s:WorkflowState,ctx:WorkflowContext,parent:Receipt|Return,line:Line,quantity:number,loc:string,overage=false,p:Record<string,unknown>={}) { const lot:Lot={id:ctx.id(),line_id:line.id,item_id:line.item_id,location_id:loc,quantity,pending:overage?0:quantity,normal:0,hold:overage?quantity:0,putaway:0,overage,approved:0,released:0,quality_hold:0,received_by:ctx.actor.id};parent.lots.push(lot);change(s,ctx,line.item_id,loc,overage?'B':'Q',quantity,p); return lot; }
-function orderNeed(o:Order,line:Line) { return line.quantity-line.cancelled-line.shipped-sum(o.reservations.filter(r=>r.line_id===line.id),r=>r.quantity)-sum(o.picks.filter(x=>x.line_id===line.id),x=>x.active); }
-function receivedPending(l:Line) { return Math.max(0,l.quantity-l.received-l.cancelled); }
+export function fail(code: string, status = 409): never {
+  throw new DomainError(status, code);
+}
+export function object(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) fail("INVALID_INPUT", 400);
+  return value as Record<string, unknown>;
+}
+export function text(value: unknown): string {
+  if (typeof value !== "string" || !value.trim() || value.length > 1000) fail("INVALID_INPUT", 400);
+  return value.trim();
+}
+export function uuid(value: unknown): string {
+  const v = text(value);
+  if (!/^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i.test(v)) fail("INVALID_INPUT", 400);
+  return v;
+}
+export function integer(value: unknown, zero = false, signed = false): number {
+  if (
+    typeof value !== "number" ||
+    !Number.isSafeInteger(value) ||
+    Math.abs(value) > 1_000_000_000 ||
+    (!signed && value < (zero ? 0 : 1))
+  )
+    fail("INVALID_QUANTITY", 400);
+  return value;
+}
+function rows(value: unknown, max = 20): Record<string, unknown>[] {
+  if (!Array.isArray(value) || value.length < 1 || value.length > max)
+    fail(value instanceof Array && value.length > max ? "SPLIT_REQUIRED" : "INVALID_INPUT", 400);
+  return value.map(object);
+}
+function find<T extends { id: string }>(list: T[], id: unknown): T {
+  const v = list.find((x) => x.id === id);
+  if (!v) fail("NOT_FOUND", 404);
+  return v;
+}
+function sum<T>(list: T[], fn: (x: T) => number) {
+  return list.reduce((a, x) => a + fn(x), 0);
+}
+function manager(ctx: WorkflowContext) {
+  if (!approvalRoleAllowed(ctx.actor.role)) fail("APPROVAL_FORBIDDEN", 403);
+}
+function requiredReason(p: Record<string, unknown>) {
+  return text(p.reason);
+}
+function mutableVersion(target: { version: number }, p: Record<string, unknown>) {
+  if (p.expected_version !== undefined && integer(p.expected_version, true) !== target.version)
+    fail("VERSION_CONFLICT");
+}
+function makeLine(p: Record<string, unknown>, ctx: WorkflowContext): Line {
+  const item = uuid(p.item_id);
+  if (!ctx.items.some((i) => i.id === item && i.active)) fail("ITEM_UNAVAILABLE");
+  return {
+    id: p.id === undefined ? ctx.id() : uuid(p.id),
+    item_id: item,
+    quantity: integer(p.quantity),
+    received: 0,
+    cancelled: 0,
+    shipped: 0,
+  };
+}
+function uniqueIds(list: { id: string }[]) {
+  if (new Set(list.map((x) => x.id)).size !== list.length) fail("DUPLICATE_LINE", 400);
+}
+function stock(s: WorkflowState, item: string, loc: string): Stock {
+  let row = s.stock.find((x) => x.item_id === item && x.location_id === loc);
+  if (!row) {
+    row = { item_id: item, location_id: loc, S: 0, R: 0, P: 0, Q: 0, B: 0 };
+    s.stock.push(row);
+  }
+  return row;
+}
+function locked(s: WorkflowState, loc: string) {
+  return s.counts.some((c) => c.location_id === loc && ["counting", "submitted"].includes(c.status));
+}
+function location(s: WorkflowState, ctx: WorkflowContext, id: unknown, kinds?: string[]): string {
+  const loc = uuid(id);
+  const ref = ctx.locations.find((x) => x.id === loc && x.active);
+  if (!ref) fail("LOCATION_UNAVAILABLE");
+  if (locked(s, loc)) fail("LOCATION_LOCKED");
+  if (kinds && ref.kind && !kinds.includes(ref.kind)) fail("LOCATION_TYPE_FORBIDDEN");
+  return loc;
+}
+function change(
+  s: WorkflowState,
+  ctx: WorkflowContext,
+  item: string,
+  loc: string,
+  bucket: Bucket,
+  delta: number,
+  p: Record<string, unknown>,
+) {
+  if (!delta) return;
+  if (!ctx.items.some((i) => i.id === item && i.active)) fail("ITEM_UNAVAILABLE");
+  const r = stock(s, item, loc);
+  r[bucket] += delta;
+  if (!Number.isSafeInteger(r[bucket]) || r[bucket] < 0 || r.R > r.S) fail("INSUFFICIENT_STOCK");
+  s.ledger.push({
+    id: ctx.id(),
+    item_id: item,
+    location_id: loc,
+    bucket,
+    delta,
+    request_id: ctx.request_id,
+    actor_id: ctx.actor.id,
+    command: ctx.command,
+    reason: typeof p.reason === "string" ? p.reason : "",
+    ...(typeof p.original_id === "string" ? { original_id: p.original_id } : {}),
+    created_at: ctx.now,
+  });
+}
+function lots(s: WorkflowState): Lot[] {
+  return [...s.receipts, ...s.returns].flatMap((x) => x.lots).concat(s.holds ?? []);
+}
+function addLot(
+  s: WorkflowState,
+  ctx: WorkflowContext,
+  parent: Receipt | Return,
+  line: Line,
+  quantity: number,
+  loc: string,
+  overage = false,
+  p: Record<string, unknown> = {},
+) {
+  const lot: Lot = {
+    id: ctx.id(),
+    line_id: line.id,
+    item_id: line.item_id,
+    location_id: loc,
+    quantity,
+    pending: overage ? 0 : quantity,
+    normal: 0,
+    hold: overage ? quantity : 0,
+    putaway: 0,
+    overage,
+    approved: 0,
+    released: 0,
+    quality_hold: 0,
+    received_by: ctx.actor.id,
+  };
+  parent.lots.push(lot);
+  change(s, ctx, line.item_id, loc, overage ? "B" : "Q", quantity, p);
+  return lot;
+}
+function orderNeed(o: Order, line: Line) {
+  return (
+    line.quantity -
+    line.cancelled -
+    line.shipped -
+    sum(
+      o.reservations.filter((r) => r.line_id === line.id),
+      (r) => r.quantity,
+    ) -
+    sum(
+      o.picks.filter((x) => x.line_id === line.id),
+      (x) => x.active,
+    )
+  );
+}
+function receivedPending(l: Line) {
+  return Math.max(0, l.quantity - l.received - l.cancelled);
+}
 // Acquisition approval is consumed once; later quality holds cannot create new excess arrivals.
-function overageCapacity(lot:Lot) { return Math.min(lot.quantity,lot.hold-(lot.quality_hold??0)+lot.released); }
-function approval(s:WorkflowState,ctx:WorkflowContext,type:Approval['type'],target_id:string,target_version:number,quantity:number,data:Record<string,unknown>,reason:string):Approval { const a:Approval={id:ctx.id(),type,target_id,target_version,quantity,data,reason,requester_id:ctx.actor.id,request_id:ctx.request_id,requested_at:ctx.now,origin_actor_ids:[],status:'pending'};s.approvals.push(a);return a; }
-function inspect(s:WorkflowState,ctx:WorkflowContext,parent:{lots:Lot[]},p:Record<string,unknown>) { for(const x of rows(p.lines)){const lot=find(parent.lots,x.lot_id);const q=integer(x.quantity);if(lot.pending<q)fail('EXCEEDS_PENDING');location(s,ctx,lot.location_id);if(x.outcome==='normal'){lot.pending-=q;lot.normal+=q;}else if(x.outcome==='hold'){lot.pending-=q;lot.hold+=q;if(lot.overage)lot.quality_hold=(lot.quality_hold??0)+q;change(s,ctx,lot.item_id,lot.location_id,'Q',-q,p);change(s,ctx,lot.item_id,lot.location_id,'B',q,p);}else fail('INVALID_OUTCOME',400);} }
-function putaway(s:WorkflowState,ctx:WorkflowContext,parent:{lots:Lot[]},p:Record<string,unknown>) { for(const x of rows(p.lines)){const lot=find(parent.lots,x.lot_id);const q=integer(x.quantity);if(lot.normal<q)fail('INSPECTION_REQUIRED');location(s,ctx,lot.location_id);const to=location(s,ctx,x.location_id,['STORAGE']);lot.normal-=q;lot.putaway+=q;change(s,ctx,lot.item_id,lot.location_id,'Q',-q,p);change(s,ctx,lot.item_id,to,'S',q,p);} }
-function releaseReservation(s:WorkflowState,ctx:WorkflowContext,o:Order,id:unknown,q:number,p:Record<string,unknown>) {const r=find(o.reservations,id);if(q>r.quantity)fail('EXCEEDS_RESERVED');location(s,ctx,r.location_id);r.quantity-=q;change(s,ctx,r.item_id,r.location_id,'R',-q,p);}
-function countChanges(s:WorkflowState,c:Count):Record<string,unknown>[] {return c.lines.map(x=>{const before=c.baseline.find(b=>b.item_id===x.item_id);return{item_id:x.item_id,location_id:c.location_id,bucket:x.bucket,quantity:x.quantity-(before?.[x.bucket]??0)};}).filter(x=>x.quantity!==0);}
+function overageCapacity(lot: Lot) {
+  return Math.min(lot.quantity, lot.hold - (lot.quality_hold ?? 0) + lot.released);
+}
+function approval(
+  s: WorkflowState,
+  ctx: WorkflowContext,
+  type: Approval["type"],
+  target_id: string,
+  target_version: number,
+  quantity: number,
+  data: Record<string, unknown>,
+  reason: string,
+): Approval {
+  const a: Approval = {
+    id: ctx.id(),
+    type,
+    target_id,
+    target_version,
+    quantity,
+    data,
+    reason,
+    requester_id: ctx.actor.id,
+    request_id: ctx.request_id,
+    requested_at: ctx.now,
+    origin_actor_ids: [],
+    status: "pending",
+  };
+  s.approvals.push(a);
+  return a;
+}
+function inspect(s: WorkflowState, ctx: WorkflowContext, parent: { lots: Lot[] }, p: Record<string, unknown>) {
+  for (const x of rows(p.lines)) {
+    const lot = find(parent.lots, x.lot_id);
+    const q = integer(x.quantity);
+    if (lot.pending < q) fail("EXCEEDS_PENDING");
+    location(s, ctx, lot.location_id);
+    if (x.outcome === "normal") {
+      lot.pending -= q;
+      lot.normal += q;
+    } else if (x.outcome === "hold") {
+      lot.pending -= q;
+      lot.hold += q;
+      if (lot.overage) lot.quality_hold = (lot.quality_hold ?? 0) + q;
+      change(s, ctx, lot.item_id, lot.location_id, "Q", -q, p);
+      change(s, ctx, lot.item_id, lot.location_id, "B", q, p);
+    } else fail("INVALID_OUTCOME", 400);
+  }
+}
+function putaway(s: WorkflowState, ctx: WorkflowContext, parent: { lots: Lot[] }, p: Record<string, unknown>) {
+  for (const x of rows(p.lines)) {
+    const lot = find(parent.lots, x.lot_id);
+    const q = integer(x.quantity);
+    if (lot.normal < q) fail("INSPECTION_REQUIRED");
+    location(s, ctx, lot.location_id);
+    const to = location(s, ctx, x.location_id, ["STORAGE"]);
+    lot.normal -= q;
+    lot.putaway += q;
+    change(s, ctx, lot.item_id, lot.location_id, "Q", -q, p);
+    change(s, ctx, lot.item_id, to, "S", q, p);
+  }
+}
+function releaseReservation(
+  s: WorkflowState,
+  ctx: WorkflowContext,
+  o: Order,
+  id: unknown,
+  q: number,
+  p: Record<string, unknown>,
+) {
+  const r = find(o.reservations, id);
+  if (q > r.quantity) fail("EXCEEDS_RESERVED");
+  location(s, ctx, r.location_id);
+  r.quantity -= q;
+  change(s, ctx, r.item_id, r.location_id, "R", -q, p);
+}
+function countChanges(s: WorkflowState, c: Count): Record<string, unknown>[] {
+  return c.lines
+    .map((x) => {
+      const before = c.baseline.find((b) => b.item_id === x.item_id);
+      return {
+        item_id: x.item_id,
+        location_id: c.location_id,
+        bucket: x.bucket,
+        quantity: x.quantity - (before?.[x.bucket] ?? 0),
+      };
+    })
+    .filter((x) => x.quantity !== 0);
+}
 // A shift report stores the exact workflow version immediately before its neutral
 // handover. Every intervening version must be accounted for; gaps stay stale.
-function correctionVersionCurrent(s:WorkflowState,a:Approval) {
- let expected=a.target_version+1;
- const shifts=new Set(s.shifts.map(report=>report.version).filter((version):version is number=>Number.isSafeInteger(version)));
- while(expected<s.version&&shifts.has(expected))expected++;
- return expected===s.version;
+function correctionVersionCurrent(s: WorkflowState, a: Approval) {
+  let expected = a.target_version + 1;
+  const shifts = new Set(
+    s.shifts.map((report) => report.version).filter((version): version is number => Number.isSafeInteger(version)),
+  );
+  while (expected < s.version && shifts.has(expected)) expected++;
+  return expected === s.version;
 }
-function applyAdjustment(s:WorkflowState,ctx:WorkflowContext,entries:Record<string,unknown>[],p:Record<string,unknown>,count?:Count) { for(const x of entries){const item=uuid(x.item_id);const loc=count?count.location_id:location(s,ctx,x.location_id);if(!ctx.items.some(i=>i.id===item&&i.active))fail('ITEM_UNAVAILABLE');if(!['S','Q','B'].includes(String(x.bucket)))fail('INVALID_BUCKET',400);const b=x.bucket as 'S'|'Q'|'B';const q=integer(x.quantity,true,true);if(q<0&&b==='S'&&stock(s,item,loc).S-stock(s,item,loc).R < -q)fail('STOCK_OCCUPIED');change(s,ctx,item,loc,b,q,p);if(q>0&&b!=='S'){s.holds.push({id:ctx.id(),line_id:ctx.id(),item_id:item,location_id:loc,quantity:q,pending:b==='Q'?q:0,normal:0,hold:b==='B'?q:0,putaway:0,overage:false,approved:0,released:0});}else if(q<0&&b!=='S'){let remaining=-q;for(const lot of lots(s).filter(x=>x.item_id===item&&x.location_id===loc)){const fields=b==='B'?['hold'] as const:['pending','normal'] as const;for(const field of fields){const n=Math.min(remaining,lot[field]);lot[field]-=n;if(field==='hold'&&lot.quality_hold!==undefined)lot.quality_hold-=Math.min(n,lot.quality_hold);remaining-=n;}if(!remaining)break;}}} }
+function applyAdjustment(
+  s: WorkflowState,
+  ctx: WorkflowContext,
+  entries: Record<string, unknown>[],
+  p: Record<string, unknown>,
+  count?: Count,
+) {
+  for (const x of entries) {
+    const item = uuid(x.item_id);
+    const loc = count ? count.location_id : location(s, ctx, x.location_id);
+    if (!ctx.items.some((i) => i.id === item && i.active)) fail("ITEM_UNAVAILABLE");
+    if (!["S", "Q", "B"].includes(String(x.bucket))) fail("INVALID_BUCKET", 400);
+    const b = x.bucket as "S" | "Q" | "B";
+    const q = integer(x.quantity, true, true);
+    if (q < 0 && b === "S" && stock(s, item, loc).S - stock(s, item, loc).R < -q) fail("STOCK_OCCUPIED");
+    change(s, ctx, item, loc, b, q, p);
+    if (q > 0 && b !== "S") {
+      s.holds.push({
+        id: ctx.id(),
+        line_id: ctx.id(),
+        item_id: item,
+        location_id: loc,
+        quantity: q,
+        pending: b === "Q" ? q : 0,
+        normal: 0,
+        hold: b === "B" ? q : 0,
+        putaway: 0,
+        overage: false,
+        approved: 0,
+        released: 0,
+      });
+    } else if (q < 0 && b !== "S") {
+      let remaining = -q;
+      for (const lot of lots(s).filter((x) => x.item_id === item && x.location_id === loc)) {
+        const fields = b === "B" ? (["hold"] as const) : (["pending", "normal"] as const);
+        for (const field of fields) {
+          const n = Math.min(remaining, lot[field]);
+          lot[field] -= n;
+          if (field === "hold" && lot.quality_hold !== undefined) lot.quality_hold -= Math.min(n, lot.quality_hold);
+          remaining -= n;
+        }
+        if (!remaining) break;
+      }
+    }
+  }
+}
 
 /** Produces a new aggregate only; persistence commits this with stock, ledger and request atomically. */
-export function applyCommand(original:WorkflowState,command:string,p:Record<string,unknown>,ctx:WorkflowContext):{state:WorkflowState;result:Record<string,unknown>} {
- const draft=timeSync('workflow.state_clone',()=>structuredClone(original));
- return applyDraft(draft,command,p,ctx,original);
+export function applyCommand(
+  original: WorkflowState,
+  command: string,
+  p: Record<string, unknown>,
+  ctx: WorkflowContext,
+): { state: WorkflowState; result: Record<string, unknown> } {
+  const draft = timeSync("workflow.state_clone", () => structuredClone(original));
+  return applyDraft(draft, command, p, ctx, original);
 }
 /** Internal consuming path; not re-exported by the public workflow facade.
  * Caller discards the owned graph after any failure and retains storage provenance. */
-export function applyOwnedCommand(ownership:OwnedWorkflowState,command:string,p:Record<string,unknown>,ctx:WorkflowContext) {
- const {state,previousStock,accounting}=takeOwnedWorkflowState(ownership);
- return {...applyDraft(state,command,p,ctx,accounting),previousStock};
+export function applyOwnedCommand(
+  ownership: OwnedWorkflowState,
+  command: string,
+  p: Record<string, unknown>,
+  ctx: WorkflowContext,
+) {
+  const { state, previousStock, accounting } = takeOwnedWorkflowState(ownership);
+  return { ...applyDraft(state, command, p, ctx, accounting), previousStock };
 }
-function applyDraft(s:WorkflowState,command:string,p:Record<string,unknown>,ctx:WorkflowContext,original:{ledger_count?:number;ledger:{length:number}}):{state:WorkflowState;result:Record<string,unknown>} {
- s.holds??=[];s.location_blocks??=[];const result:Record<string,unknown>={};ctx={...ctx,command};
- switch(command){
- case 'receipt.create': {
- const ls=rows(p.lines,100).map(x=>makeLine(x,ctx));uniqueIds(ls);if(p.external_id&&s.receipts.some(r=>r.external_id===p.external_id))fail('EXTERNAL_ID_CONFLICT');const r:Receipt={id:ctx.id(),...(p.external_id?{external_id:text(p.external_id)}:{}),version:1,lines:ls,lots:[],closed:false,created_at:ctx.now,...(p.expected_at?{expected_at:text(p.expected_at)}:{}),...(p.supplier_id?{supplier_id:uuid(p.supplier_id),supplier:p.supplier??{}}:{})};s.receipts.push(r);result.id=r.id;break;}
- case 'receipt.update': {const r=find(s.receipts,p.receipt_id);mutableVersion(r,p);if(r.closed)fail('RECEIPT_CLOSED');if(p.expected_at!==undefined)r.expected_at=text(p.expected_at);const lines=rows(p.lines,100).map(x=>{const old=find(r.lines,x.id);if(old.item_id!==x.item_id)fail('IMMUTABLE_ITEM');const quantity=integer(x.quantity);if(quantity<Math.min(old.received,old.quantity)+old.cancelled)fail('BELOW_RECEIVED');return{...old,quantity};});uniqueIds(lines);if(lines.length!==r.lines.length)fail('IMMUTABLE_LINES');r.lines=lines;r.version++;result.id=r.id;break;}
- case 'receipt.receive': { const r=find(s.receipts,p.receipt_id);mutableVersion(r,p);if(r.closed)fail('RECEIPT_CLOSED');const receiving=uuid(p.receiving_id??ctx.request_id);if(s.receiving_ids.includes(receiving))fail('RECEIVING_ALREADY_CONFIRMED');const ids:string[]=[];for(const x of rows(p.lines)){const line=find(r.lines,x.line_id);const q=integer(x.quantity);const loc=location(s,ctx,x.location_id,['RECEIVING']);const normal=Math.min(q,receivedPending(line));if(normal)ids.push(addLot(s,ctx,r,line,normal,loc,false,p).id);if(q>normal){requiredReason(p);const suggested=ctx.locations.filter(l=>l.active&&l.kind==='HOLD').sort((a,b)=>(a.priority??100)-(b.priority??100)||(a.code??a.id).localeCompare(b.code??b.id))[0];const holdLocation=location(s,ctx,x.hold_location_id??suggested?.id??loc,['HOLD']);ids.push(addLot(s,ctx,r,line,q-normal,holdLocation,true,p).id);}line.received+=q;}r.version++;s.receiving_ids.push(receiving);result.id=r.id;result.lot_ids=ids;break;}
- case 'receipt.inspect': {const r=find(s.receipts,p.receipt_id);inspect(s,ctx,r,p);r.version++;result.id=r.id;break;}
- case 'receipt.putaway': {const r=find(s.receipts,p.receipt_id);putaway(s,ctx,r,p);r.version++;result.id=r.id;break;}
- case 'receipt.cancel': {const r=find(s.receipts,p.receipt_id);if(r.lines.some(l=>l.received>0))fail('CLOSE_APPROVAL_REQUIRED');requiredReason(p);mutableVersion(r,p);for(const l of r.lines)l.cancelled+=receivedPending(l);r.closed=true;r.version++;result.id=r.id;break;}
- case 'receipt.close.request': {const r=find(s.receipts,p.receipt_id);if(r.closed)fail('RECEIPT_CLOSED');const a=approval(s,ctx,'receipt.close',r.id,r.version,sum(r.lines,receivedPending),{},requiredReason(p));a.origin_actor_ids=[...new Set(r.lots.map(l=>l.received_by).filter((id):id is string=>!!id))];result.id=a.id;break;}
- case 'overage.request': {const lot=find(lots(s),p.lot_id);const q=integer(p.quantity);if(!lot.overage||lot.approved+q>overageCapacity(lot)||s.approvals.some(a=>a.type==='overage'&&a.target_id===lot.id&&a.status==='pending'))fail('INVALID_OVERAGE');const a=approval(s,ctx,'overage',lot.id,lot.approved,q,{},requiredReason(p));a.origin_actor_ids=lot.received_by?[lot.received_by]:[];result.id=a.id;break;}
- case 'hold.release': {
-  requiredReason(p);const lot=find(lots(s),p.lot_id);const q=integer(p.quantity);
-  const quality=lot.overage?Math.min(q,lot.quality_hold??0):0,acquisition=q-quality;
-  if(lot.hold<q||(lot.overage&&lot.approved-lot.released<acquisition))fail('OVERAGE_APPROVAL_REQUIRED');
-  location(s,ctx,lot.location_id);const to=location(s,ctx,p.location_id,['RECEIVING']);
-  change(s,ctx,lot.item_id,lot.location_id,'B',-q,p);change(s,ctx,lot.item_id,to,'Q',q,p);
-  lot.hold-=q;lot.released+=lot.overage?acquisition:q;if(lot.overage)lot.quality_hold=(lot.quality_hold??0)-quality;
-  if(to===lot.location_id)lot.pending+=q;
-  else if(lot.hold===0&&lot.pending===0&&lot.normal===0){lot.location_id=to;lot.pending=q;}
-  else{const parent=[...s.receipts,...s.returns].find(r=>r.lots.some(x=>x.id===lot.id))??{lots:s.holds};const child={...lot,id:ctx.id(),location_id:to,quantity:q,pending:q,normal:0,hold:0,putaway:0,overage:false,approved:0,released:0,quality_hold:0};parent.lots.push(child);if(parent.lots===s.holds){const owner=genericHoldOwnership(s,lot).task;if(owner)s.tasks.push({...owner,id:ctx.id(),object_type:'hold',object_id:child.id,assigned_at:ctx.now});}}
-  result.id=lot.id;break;
- }
- case 'order.create': {if(p.original_order_id)find(s.orders,p.original_order_id);if(p.original_return_id)find(s.returns,p.original_return_id);const lines=rows(p.lines,100).map(x=>makeLine(x,ctx));uniqueIds(lines);if(p.external_id&&s.orders.some(o=>o.external_id===p.external_id))fail('EXTERNAL_ID_CONFLICT');const o:Order={id:ctx.id(),...(p.external_id?{external_id:text(p.external_id)}:{}),...(p.original_order_id?{original_order_id:uuid(p.original_order_id)}:{}),...(p.original_return_id?{original_return_id:uuid(p.original_return_id)}:{}),version:1,lines,reservations:[],picks:[],delivery:p.delivery??{},...(p.due_at?{due_at:text(p.due_at)}:{}),created_at:ctx.now};s.orders.push(o);result.id=o.id;break;}
- case 'order.update': {const o=find(s.orders,p.order_id);mutableVersion(o,p);if(p.lines!==undefined){const started=o.reservations.length>0||o.picks.length>0||o.lines.some(l=>l.cancelled>0||l.shipped>0);for(const x of rows(p.lines,100)){const l=find(o.lines,x.id);if(l.item_id!==x.item_id)fail('IMMUTABLE_ITEM');const q=integer(x.quantity);if(started&&q!==l.quantity)fail(q<l.quantity?'USE_CANCELLATION':'CREATE_LINKED_ORDER');l.quantity=q;}}if(p.delivery!==undefined)o.delivery=structuredClone(p.delivery);if(p.due_at!==undefined)o.due_at=text(p.due_at);o.version++;result.id=o.id;break;}
- case 'order.reserve': {const o=find(s.orders,p.order_id);mutableVersion(o,p);if(typeof p.partial!=='boolean')fail('PARTIAL_CHOICE_REQUIRED',400);const requested=p.lines===undefined?undefined:rows(p.lines);let allocated=0;const add=(line:Line,loc:string,q:number)=>{if(q<=0)return;location(s,ctx,loc,['STORAGE']);if(s.location_blocks.some(b=>b.location_id===loc))fail('LOCATION_BLOCKED');const st=stock(s,line.item_id,loc);if(st.S-st.R<q)fail('INSUFFICIENT_STOCK');if(orderNeed(o,line)<q)fail('EXCEEDS_ORDER_REMAINING');const r={id:ctx.id(),line_id:line.id,item_id:line.item_id,location_id:loc,quantity:q,picked:0,reserved_at:ctx.now};o.reservations.push(r);change(s,ctx,line.item_id,loc,'R',q,p);allocated++;};if(requested){for(const x of requested){const l=find(o.lines,x.line_id);const loc=location(s,ctx,x.location_id,['STORAGE']);add(l,loc,integer(x.quantity));}}else{for(const l of o.lines){let need=orderNeed(o,l);for(const st of s.stock.filter(x=>x.item_id===l.item_id).sort((a,b)=>{const ar=ctx.locations.find(x=>x.id===a.location_id);const br=ctx.locations.find(x=>x.id===b.location_id);return (ar?.priority??100)-(br?.priority??100)||(ar?.code??a.location_id).localeCompare(br?.code??b.location_id);})){const ref=ctx.locations.find(x=>x.id===st.location_id);if(locked(s,st.location_id)||s.location_blocks.some(b=>b.location_id===st.location_id)||!ref?.active||(ref.kind&&ref.kind!=='STORAGE'))continue;const q=Math.min(need,st.S-st.R);if(q>0){add(l,st.location_id,q);need-=q;}}if(need>0&&!p.partial)fail('INSUFFICIENT_STOCK');}}if(allocated>20)fail('SPLIT_REQUIRED',400);if(!p.partial&&o.lines.some(l=>orderNeed(o,l)>0))fail('INSUFFICIENT_STOCK');if(!allocated)fail('INSUFFICIENT_STOCK');o.version++;result.id=o.id;break;}
- case 'order.release': {const o=find(s.orders,p.order_id);for(const x of rows(p.lines))releaseReservation(s,ctx,o,x.reservation_id,integer(x.quantity),p);o.version++;result.id=o.id;break;}
- case 'order.shortage': {const o=find(s.orders,p.order_id);requiredReason(p);for(const x of rows(p.lines)){const r=find(o.reservations,x.reservation_id);const q=integer(x.quantity);releaseReservation(s,ctx,o,r.id,q,p);if(!s.location_blocks.some(b=>b.location_id===r.location_id))s.location_blocks.push({location_id:r.location_id,reason:requiredReason(p),blocked_at:ctx.now,request_id:ctx.request_id});}o.version++;result.id=o.id;break;}
- case 'order.pick': {const o=find(s.orders,p.order_id);mutableVersion(o,p);const ids:string[]=[];for(const x of rows(p.lines)){const r=find(o.reservations,x.reservation_id);const q=integer(x.quantity);if(q>r.quantity)fail('EXCEEDS_RESERVED');location(s,ctx,r.location_id);const to=location(s,ctx,x.location_id,['STAGING','SHIPPING']);if(x.scanned_item_id!==undefined&&x.scanned_item_id!==r.item_id)fail('WRONG_ITEM_SCAN');if(x.scanned_location_id!==undefined&&x.scanned_location_id!==r.location_id)fail('WRONG_LOCATION_SCAN');r.quantity-=q;r.picked+=q;change(s,ctx,r.item_id,r.location_id,'R',-q,p);change(s,ctx,r.item_id,r.location_id,'S',-q,p);change(s,ctx,r.item_id,to,'P',q,p);const pick:Pick={id:ctx.id(),reservation_id:r.id,line_id:r.line_id,item_id:r.item_id,location_id:to,quantity:q,active:q,packed:0,shipped:0,damaged:0,returned:0,cancel_pending:0};o.picks.push(pick);ids.push(pick.id);}o.version++;result.id=o.id;result.pick_ids=ids;break;}
- case 'order.cancel': {const o=find(s.orders,p.order_id);requiredReason(p);mutableVersion(o,p);for(const x of rows(p.lines)){const l=find(o.lines,x.line_id);let q=integer(x.quantity);const picks=o.picks.filter(z=>z.line_id===l.id);if(q>l.quantity-l.cancelled-l.shipped-sum(picks,z=>z.cancel_pending))fail('EXCEEDS_CANCELLABLE');let immediate=Math.min(q,Math.max(0,orderNeed(o,l)));l.cancelled+=immediate;q-=immediate;for(const r of o.reservations.filter(z=>z.line_id===l.id)){const n=Math.min(q,r.quantity);if(n){releaseReservation(s,ctx,o,r.id,n,p);l.cancelled+=n;q-=n;}}for(const pick of picks){const n=Math.min(q,pick.active-pick.cancel_pending);pick.cancel_pending+=n;q-=n;}if(q)fail('EXCEEDS_CANCELLABLE');}o.version++;result.id=o.id;break;}
- case 'order.return_picked': {const o=find(s.orders,p.order_id);requiredReason(p);for(const x of rows(p.lines)){const pick=find(o.picks,x.pick_id);const q=integer(x.quantity);if(q>pick.cancel_pending||q>pick.active)fail('CANCELLATION_REQUIRED');if(pick.packed>0)fail('UNPACK_REQUIRED');location(s,ctx,pick.location_id);if(!['normal','hold'].includes(String(x.outcome)))fail('INVALID_OUTCOME',400);const loc=location(s,ctx,x.location_id,x.outcome==='hold'?['HOLD']:['STORAGE']);change(s,ctx,pick.item_id,pick.location_id,'P',-q,p);change(s,ctx,pick.item_id,loc,x.outcome==='hold'?'B':'S',q,p);if(x.outcome==='hold'){const lot:Lot={id:ctx.id(),line_id:pick.line_id,item_id:pick.item_id,location_id:loc,quantity:q,pending:0,normal:0,hold:q,putaway:0,overage:false,approved:0,released:0,received_by:ctx.actor.id,origin_order_id:o.id};s.holds.push(lot);result.lot_ids=[...(result.lot_ids as string[]??[]),lot.id];}pick.active-=q;pick.returned+=q;pick.cancel_pending-=q;find(o.lines,pick.line_id).cancelled+=q;}o.version++;result.id=o.id;break;}
- case 'order.damage': {manager(ctx);const o=find(s.orders,p.order_id);requiredReason(p);for(const x of rows(p.lines)){const pick=find(o.picks,x.pick_id);const q=integer(x.quantity);if(pick.packed>0)fail('UNPACK_REQUIRED');if(q>pick.active-pick.cancel_pending)fail('EXCEEDS_PICKED');location(s,ctx,pick.location_id);const loc=location(s,ctx,x.location_id,['HOLD']);change(s,ctx,pick.item_id,pick.location_id,'P',-q,p);change(s,ctx,pick.item_id,loc,'B',q,p);const lot:Lot={id:ctx.id(),line_id:pick.line_id,item_id:pick.item_id,location_id:loc,quantity:q,pending:0,normal:0,hold:q,putaway:0,overage:false,approved:0,released:0,received_by:ctx.actor.id,origin_order_id:o.id};s.holds.push(lot);result.lot_ids=[...(result.lot_ids as string[]??[]),lot.id];pick.active-=q;pick.damaged+=q;}o.version++;result.id=o.id;break;}
- case 'package.create': {const o=find(s.orders,p.order_id);const grouped=new Map<string,number>();for(const x of rows(p.lines,100)){const id=uuid(x.pick_id);grouped.set(id,(grouped.get(id)??0)+integer(x.quantity));}const ls=[...grouped].map(([pick_id,quantity])=>({pick_id,quantity}));if(ls.length>20)fail('SPLIT_REQUIRED',400);for(const x of ls){const pick=find(o.picks,x.pick_id);if(x.quantity>pick.active-pick.packed-pick.cancel_pending)fail('EXCEEDS_PACKABLE');location(s,ctx,pick.location_id);pick.packed+=x.quantity;}const pack={id:ctx.id(),order_id:o.id,status:'complete' as const,...(p.weight_grams===undefined?{}:{weight_grams:integer(p.weight_grams)}),lines:ls,delivery:p.delivery??structuredClone(o.delivery),created_at:ctx.now};s.packages.push(pack);o.version++;result.id=pack.id;break;}
- case 'package.unpack': {requiredReason(p);const pack=find(s.packages,p.package_id);if(pack.status!=='complete')fail('INVALID_PACKAGE_STATE');const o=find(s.orders,pack.order_id);for(const x of pack.lines)find(o.picks,x.pick_id).packed-=x.quantity;pack.status='unpacked';o.version++;result.id=pack.id;break;}
- case 'shipment.create': {if(!Array.isArray(p.package_ids)||!p.package_ids.length||p.package_ids.length>20||new Set(p.package_ids).size!==p.package_ids.length)fail('INVALID_PACKAGES',400);const packs=p.package_ids.map(x=>find(s.packages,x));if(sum(packs,x=>x.lines.length)>20)fail('SPLIT_REQUIRED',400);const id=ctx.id();const sl=[];for(const pack of packs){if(pack.status!=='complete')fail('INVALID_PACKAGE_STATE');const o=find(s.orders,pack.order_id);for(const x of pack.lines){const pick=find(o.picks,x.pick_id);if(pick.cancel_pending>0)fail('CANCELLATION_PENDING');if(pick.active<x.quantity||pick.packed<x.quantity)fail('EXCEEDS_SHIPPABLE');location(s,ctx,pick.location_id);change(s,ctx,pick.item_id,pick.location_id,'P',-x.quantity,p);pick.active-=x.quantity;pick.packed-=x.quantity;pick.shipped+=x.quantity;find(o.lines,pick.line_id).shipped+=x.quantity;sl.push({id:ctx.id(),order_id:o.id,order_line_id:pick.line_id,pick_id:pick.id,item_id:pick.item_id,quantity:x.quantity});}pack.status='shipped';o.version++;}s.shipments.push({id,package_ids:p.package_ids as string[],lines:sl,status:'handed_over',revision:0,handover_by:text(p.handover_by),carrier:text(p.carrier),handed_over_at:ctx.now,delivery:packs.map(x=>structuredClone(x.delivery)),events:[]});result.id=id;break;}
- case 'shipment.delivery': {const sh=find(s.shipments,p.shipment_id);const revision=integer(p.revision);if(revision!==sh.revision+1)fail(revision<=sh.revision?'STALE_REVISION':'REVISION_DEPENDENCY');const status=text(p.status);if(!['in_transit','delivered','failed','lost'].includes(status))fail('INVALID_DELIVERY_STATUS',400);if(['delivered','lost'].includes(sh.status))fail('TERMINAL_DELIVERY');if(sh.status==='failed'&&status==='in_transit'&&!p.reason)fail('DELIVERY_CORRECTION_REASON_REQUIRED');const previous_status=sh.status,previous_revision=sh.revision;sh.status=status;sh.revision=revision;sh.events.push({status,revision,previous_status,previous_revision,correction:false,operation:'record',actor_id:ctx.actor.id,request_id:ctx.request_id,reason:typeof p.reason==='string'?p.reason:'',at:ctx.now});result.id=sh.id;break;}
- case 'shipment.delivery.correct': {manager(ctx);const sh=find(s.shipments,p.shipment_id);const previous_revision=integer(p.previous_revision,true);const revision=integer(p.revision);if(previous_revision!==sh.revision||revision!==sh.revision+1)fail('VERSION_CONFLICT');const status=text(p.status);if(!['handed_over','in_transit','delivered','failed','lost'].includes(status))fail('INVALID_DELIVERY_STATUS',400);const reason=requiredReason(p);const previous_status=sh.status;sh.status=status;sh.revision=revision;sh.events.push({status,revision,previous_status,previous_revision,correction:true,operation:'correction',actor_id:ctx.actor.id,request_id:ctx.request_id,reason,at:ctx.now});result.id=sh.id;break;}
- case 'return.request': {requiredReason(p);const sh=find(s.shipments,p.shipment_id);const ls=rows(p.lines).map(x=>{const source=find(sh.lines,x.shipment_line_id);const q=integer(x.quantity);const occupied=sum(s.returns.filter(z=>z.shipment_id===sh.id),r=>sum(r.lines.filter(l=>l.shipment_line_id===source.id),l=>l.received+(r.closed?0:l.quantity-l.received-l.cancelled)));if(q>source.quantity-occupied)fail('EXCEEDS_RETURNABLE');return{...makeLine({item_id:source.item_id,quantity:q},ctx),shipment_line_id:source.id};});if(new Set(ls.map(x=>x.shipment_line_id)).size!==ls.length)fail('DUPLICATE_LINE',400);const r:Return={id:ctx.id(),shipment_id:sh.id,lines:ls,lots:[],closed:false,created_at:ctx.now};s.returns.push(r);result.id=r.id;break;}
- case 'return.receive': {const r=find(s.returns,p.return_id);if(r.closed)fail('RETURN_CLOSED');const receiving=uuid(p.receiving_id??ctx.request_id);if(s.receiving_ids.includes(receiving))fail('RECEIVING_ALREADY_CONFIRMED');const ids=[];for(const x of rows(p.lines)){const l=find(r.lines,x.line_id);const q=integer(x.quantity);if(q>receivedPending(l))fail('EXCEEDS_RETURN_APPROVED');const loc=location(s,ctx,x.location_id,['RECEIVING']);l.received+=q;ids.push(addLot(s,ctx,r,l,q,loc,false,p).id);}s.receiving_ids.push(receiving);result.id=r.id;result.lot_ids=ids;break;}
- case 'return.close': {requiredReason(p);const r=find(s.returns,p.return_id);for(const l of r.lines)l.cancelled+=receivedPending(l);r.closed=true;result.id=r.id;break;}
- case 'return.inspect': {const r=find(s.returns,p.return_id);inspect(s,ctx,r,p);result.id=r.id;break;}
- case 'return.putaway': {const r=find(s.returns,p.return_id);putaway(s,ctx,r,p);result.id=r.id;break;}
- case 'stock.inspect': {inspect(s,ctx,{lots:s.holds},p);break;}
- case 'stock.putaway': {putaway(s,ctx,{lots:s.holds},p);break;}
- case 'stock.move': case 'stock.hold': {requiredReason(p);for(const x of rows(p.lines)){const item=uuid(x.item_id);const q=integer(x.quantity);const from=location(s,ctx,x.from_location_id,['STORAGE']);const to=location(s,ctx,x.location_id,command==='stock.hold'?['HOLD']:['STORAGE']);if(from===to)fail('SAME_LOCATION');if(stock(s,item,from).S-stock(s,item,from).R<q)fail('STOCK_OCCUPIED');change(s,ctx,item,from,'S',-q,p);change(s,ctx,item,to,command==='stock.hold'?'B':'S',q,p);if(command==='stock.hold'){const lot:Lot={id:ctx.id(),line_id:ctx.id(),item_id:item,location_id:to,quantity:q,pending:0,normal:0,hold:q,putaway:0,overage:false,approved:0,released:0};s.holds.push(lot);result.lot_ids=[...(result.lot_ids as string[]??[]),lot.id];}}break;}
- case 'count.start': {const loc=location(s,ctx,p.location_id,['STORAGE','RECEIVING','HOLD']);if(s.stock.some(x=>x.location_id===loc&&(x.R>0||x.P>0)))fail('LOCATION_OCCUPIED');const baseline=structuredClone(s.stock.filter(x=>x.location_id===loc));const c:Count={id:ctx.id(),location_id:loc,actor_id:ctx.actor.id,version:1,status:'counting',baseline,lines:[],recount:false,reason:''};s.counts.push(c);result.id=c.id;break;}
- case 'count.record': {const c=find(s.counts,p.count_id);if(c.status!=='counting')fail('INVALID_COUNT_STATE');const ls=rows(p.lines).map(x=>{if(!['S','Q','B'].includes(String(x.bucket)))fail('INVALID_BUCKET',400);return{item_id:uuid(x.item_id),bucket:x.bucket as 'S'|'Q'|'B',quantity:integer(x.quantity,true),recounted:p.recount===true};});if(new Set(ls.map(x=>x.item_id+':'+x.bucket)).size!==ls.length)fail('DUPLICATE_LINE',400);for(const x of ls){const existing=c.lines.findIndex(y=>y.item_id===x.item_id&&y.bucket===x.bucket);if(existing>=0)c.lines[existing]=x;else c.lines.push(x);}c.counter_id=ctx.actor.id;c.counter_ids=[...new Set([...(c.counter_ids??[]),ctx.actor.id])];c.recount=p.recount===true;c.reason=typeof p.reason==='string'?p.reason:'';c.version++;result.id=c.id;break;}
- case 'count.submit': {const c=find(s.counts,p.count_id);if(c.status!=='counting'||!c.lines.length)fail('INVALID_COUNT_STATE');for(const b of c.baseline)for(const bucket of ['S','Q','B'] as const)if(b[bucket]>0&&!c.lines.some(x=>x.item_id===b.item_id&&x.bucket===bucket))fail('INCOMPLETE_COUNT');if(countChanges(s,c).length&&(!p.reason||countChanges(s,c).some(x=>!c.lines.find(l=>l.item_id===x.item_id&&l.bucket===x.bucket)?.recounted)))fail('RECOUNT_REQUIRED');c.status='submitted';c.version++;const a=approval(s,ctx,'count',c.id,c.version,0,{lines:countChanges(s,c)},requiredReason(p));c.submitted_by=ctx.actor.id;a.origin_actor_ids=[...new Set(c.counter_ids??[c.counter_id??c.actor_id])];result.id=a.id;result.count_id=c.id;break;}
- case 'count.unlock': {manager(ctx);requiredReason(p);const c=find(s.counts,p.count_id);if(!['counting','submitted'].includes(c.status))fail('INVALID_COUNT_STATE');c.status='unlocked';c.version++;result.id=c.id;break;}
- case 'correction.request': {const ls=rows(p.lines);for(const x of ls){uuid(x.item_id);location(s,ctx,x.location_id);integer(x.quantity,true,true);if(!['S','Q','B'].includes(String(x.bucket)))fail('INVALID_BUCKET',400);}const a=approval(s,ctx,'correction',uuid(p.original_id),s.version,0,{lines:ls,...(p.original_kind?{original_kind:p.original_kind}:{})},requiredReason(p));a.origin_actor_ids=Array.isArray(p.source_actor_ids)?p.source_actor_ids.filter((id):id is string=>typeof id==='string'):[];result.id=a.id;break;}
- case 'approval.decide': {manager(ctx);const a=find(s.approvals,p.approval_id);if(a.status!=='pending')fail('APPROVAL_ALREADY_DECIDED');if(approvalActorExcluded(s,a,ctx.actor.id))fail('SELF_APPROVAL_FORBIDDEN',403);if(typeof p.approve!=='boolean')fail('INVALID_INPUT',400);a.decision_reason=requiredReason(p);if(p.approve){if(a.type==='overage'){const lot=find(lots(s),a.target_id);if(lot.approved!==a.target_version||overageCapacity(lot)<lot.approved+a.quantity)fail('APPROVAL_STALE');lot.approved+=a.quantity;}else if(a.type==='receipt.close'){const r=find(s.receipts,a.target_id);if(r.version!==a.target_version||r.closed)fail('APPROVAL_STALE');for(const l of r.lines)l.cancelled+=receivedPending(l);r.closed=true;r.version++;}else if(a.type==='count'){const c=find(s.counts,a.target_id);if(c.version!==a.target_version||c.status!=='submitted'||!locked(s,c.location_id))fail('APPROVAL_STALE');applyAdjustment(s,ctx,object(a.data).lines as Record<string,unknown>[],{...p,reason:a.reason,original_id:a.id},c);c.status='completed';c.version++;s.location_blocks=s.location_blocks.filter(x=>x.location_id!==c.location_id);}else{if(!correctionVersionCurrent(s,a))fail('APPROVAL_STALE');applyAdjustment(s,ctx,a.data.lines as Record<string,unknown>[],{...p,reason:a.reason,original_id:a.target_id});}}a.status=p.approve?'approved':'rejected';a.decider_id=ctx.actor.id;a.decided_at=ctx.now;if(!p.approve&&a.type==='count'){const c=find(s.counts,a.target_id);if(c.status==='submitted'&&c.version===a.target_version){c.status='counting';c.version++;}}result.id=a.id;break;}
- case 'task.assign': {if(p.unconfirmed_request_ids!==undefined&&(!Array.isArray(p.unconfirmed_request_ids)||p.unconfirmed_request_ids.length))fail('UNCONFIRMED_RESULTS');const hold=p.object_type==='hold'?s.holds.find(lot=>lot.id===p.object_id):undefined;if(p.object_type==='hold'&&(!hold||!pendingGenericHold(hold)))fail('HOLD_TASK_UNAVAILABLE');const current=hold?genericHoldOwnership(s,hold).task:[...s.tasks].reverse().find(t=>t.object_id===p.object_id);if(ctx.actor.role==='worker'&&(!current||current.assignee_id!==ctx.actor.id))fail('ASSIGNMENT_FORBIDDEN',403);const t={id:ctx.id(),object_type:text(p.object_type),object_id:uuid(p.object_id),assignee_id:text(p.assignee_id),reason:requiredReason(p),assigned_at:ctx.now};const group=t.object_type==='receipt'?s.receipts:t.object_type==='order'?s.orders:t.object_type==='return'?s.returns:t.object_type==='count'?s.counts:t.object_type==='hold'?s.holds:undefined;if(!group||!group.some(x=>x.id===t.object_id))fail('NOT_FOUND',404);s.tasks.push(t);result.id=t.id;break;}
- case 'shift.close': {manager(ctx);if(!Array.isArray(p.unconfirmed_request_ids)||p.unconfirmed_request_ids.length)fail('UNCONFIRMED_RESULTS');const handover=Array.isArray(p.handover)?p.handover.map(object):fail('HANDOVER_REQUIRED',400);const pending=[...s.receipts.filter(r=>r.lines.some(l=>receivedPending(l)>0)||r.lots.some(l=>l.pending+l.normal+l.hold>0)).map(r=>({type:'receipt',id:r.id})),...s.orders.filter(o=>o.lines.some(l=>l.quantity>l.cancelled+l.shipped)).map(o=>({type:'order',id:o.id})),...s.approvals.filter(a=>a.status==='pending').map(a=>({type:'approval',id:a.id})),...s.counts.filter(c=>c.status==='counting').map(c=>({type:'count',id:c.id})),...s.holds.filter(pendingGenericHold).map(lot=>({type:'hold',id:lot.id})),...s.returns.filter(r=>!r.closed||r.lots.some(l=>l.pending+l.normal+l.hold>0)).map(r=>({type:'return',id:r.id}))];for(const x of pending){const h=handover.find(h=>h.object_id===x.id&&h.object_type===x.type);if(!h||!h.assignee_id||!h.reason)fail('HANDOVER_REQUIRED');}for(const h of handover)if(h.object_type==='hold'&&!s.holds.some(lot=>lot.id===h.object_id&&pendingGenericHold(lot)))fail('HOLD_TASK_UNAVAILABLE');for(const h of handover)s.tasks.push({id:ctx.id(),object_type:text(h.object_type),object_id:uuid(h.object_id),assignee_id:text(h.assignee_id),reason:text(h.reason),assigned_at:ctx.now});const report=reconcile(s);if(!report.ok)fail('RECONCILIATION_FAILED');const shift={id:ctx.id(),closed_at:ctx.now,business_day:new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(ctx.now)),actor_id:ctx.actor.id,handover,reconciliation:report,version:s.version};s.shifts.push(shift);result.id=shift.id;break;}
- default: fail('UNKNOWN_COMMAND',400);
- }
- refreshStockLocations(s,ctx.locations);s.ledger_count=(original.ledger_count??original.ledger.length)+s.ledger.length-original.ledger.length;s.version++;const r=timeSync('workflow.reconcile',()=>reconcile(s));if(!r.ok)fail('RECONCILIATION_FAILED');return{state:s,result};
+function applyDraft(
+  s: WorkflowState,
+  command: string,
+  p: Record<string, unknown>,
+  ctx: WorkflowContext,
+  original: { ledger_count?: number; ledger: { length: number } },
+): { state: WorkflowState; result: Record<string, unknown> } {
+  s.holds ??= [];
+  s.location_blocks ??= [];
+  const result: Record<string, unknown> = {};
+  ctx = { ...ctx, command };
+  switch (command) {
+    case "receipt.create": {
+      const ls = rows(p.lines, 100).map((x) => makeLine(x, ctx));
+      uniqueIds(ls);
+      if (p.external_id && s.receipts.some((r) => r.external_id === p.external_id)) fail("EXTERNAL_ID_CONFLICT");
+      const r: Receipt = {
+        id: ctx.id(),
+        ...(p.external_id ? { external_id: text(p.external_id) } : {}),
+        version: 1,
+        lines: ls,
+        lots: [],
+        closed: false,
+        created_at: ctx.now,
+        ...(p.expected_at ? { expected_at: text(p.expected_at) } : {}),
+        ...(p.supplier_id ? { supplier_id: uuid(p.supplier_id), supplier: p.supplier ?? {} } : {}),
+      };
+      s.receipts.push(r);
+      result.id = r.id;
+      break;
+    }
+    case "receipt.update": {
+      const r = find(s.receipts, p.receipt_id);
+      mutableVersion(r, p);
+      if (r.closed) fail("RECEIPT_CLOSED");
+      if (p.expected_at !== undefined) r.expected_at = text(p.expected_at);
+      const lines = rows(p.lines, 100).map((x) => {
+        const old = find(r.lines, x.id);
+        if (old.item_id !== x.item_id) fail("IMMUTABLE_ITEM");
+        const quantity = integer(x.quantity);
+        if (quantity < Math.min(old.received, old.quantity) + old.cancelled) fail("BELOW_RECEIVED");
+        return { ...old, quantity };
+      });
+      uniqueIds(lines);
+      if (lines.length !== r.lines.length) fail("IMMUTABLE_LINES");
+      r.lines = lines;
+      r.version++;
+      result.id = r.id;
+      break;
+    }
+    case "receipt.receive": {
+      const r = find(s.receipts, p.receipt_id);
+      mutableVersion(r, p);
+      if (r.closed) fail("RECEIPT_CLOSED");
+      const receiving = uuid(p.receiving_id ?? ctx.request_id);
+      if (s.receiving_ids.includes(receiving)) fail("RECEIVING_ALREADY_CONFIRMED");
+      const ids: string[] = [];
+      for (const x of rows(p.lines)) {
+        const line = find(r.lines, x.line_id);
+        const q = integer(x.quantity);
+        const loc = location(s, ctx, x.location_id, ["RECEIVING"]);
+        const normal = Math.min(q, receivedPending(line));
+        if (normal) ids.push(addLot(s, ctx, r, line, normal, loc, false, p).id);
+        if (q > normal) {
+          requiredReason(p);
+          const suggested = ctx.locations
+            .filter((l) => l.active && l.kind === "HOLD")
+            .sort(
+              (a, b) => (a.priority ?? 100) - (b.priority ?? 100) || (a.code ?? a.id).localeCompare(b.code ?? b.id),
+            )[0];
+          const holdLocation = location(s, ctx, x.hold_location_id ?? suggested?.id ?? loc, ["HOLD"]);
+          ids.push(addLot(s, ctx, r, line, q - normal, holdLocation, true, p).id);
+        }
+        line.received += q;
+      }
+      r.version++;
+      s.receiving_ids.push(receiving);
+      result.id = r.id;
+      result.lot_ids = ids;
+      break;
+    }
+    case "receipt.inspect": {
+      const r = find(s.receipts, p.receipt_id);
+      inspect(s, ctx, r, p);
+      r.version++;
+      result.id = r.id;
+      break;
+    }
+    case "receipt.putaway": {
+      const r = find(s.receipts, p.receipt_id);
+      putaway(s, ctx, r, p);
+      r.version++;
+      result.id = r.id;
+      break;
+    }
+    case "receipt.cancel": {
+      const r = find(s.receipts, p.receipt_id);
+      if (r.lines.some((l) => l.received > 0)) fail("CLOSE_APPROVAL_REQUIRED");
+      requiredReason(p);
+      mutableVersion(r, p);
+      for (const l of r.lines) l.cancelled += receivedPending(l);
+      r.closed = true;
+      r.version++;
+      result.id = r.id;
+      break;
+    }
+    case "receipt.close.request": {
+      const r = find(s.receipts, p.receipt_id);
+      if (r.closed) fail("RECEIPT_CLOSED");
+      const a = approval(
+        s,
+        ctx,
+        "receipt.close",
+        r.id,
+        r.version,
+        sum(r.lines, receivedPending),
+        {},
+        requiredReason(p),
+      );
+      a.origin_actor_ids = [...new Set(r.lots.map((l) => l.received_by).filter((id): id is string => !!id))];
+      result.id = a.id;
+      break;
+    }
+    case "overage.request": {
+      const lot = find(lots(s), p.lot_id);
+      const q = integer(p.quantity);
+      if (
+        !lot.overage ||
+        lot.approved + q > overageCapacity(lot) ||
+        s.approvals.some((a) => a.type === "overage" && a.target_id === lot.id && a.status === "pending")
+      )
+        fail("INVALID_OVERAGE");
+      const a = approval(s, ctx, "overage", lot.id, lot.approved, q, {}, requiredReason(p));
+      a.origin_actor_ids = lot.received_by ? [lot.received_by] : [];
+      result.id = a.id;
+      break;
+    }
+    case "hold.release": {
+      requiredReason(p);
+      const lot = find(lots(s), p.lot_id);
+      const q = integer(p.quantity);
+      const quality = lot.overage ? Math.min(q, lot.quality_hold ?? 0) : 0,
+        acquisition = q - quality;
+      if (lot.hold < q || (lot.overage && lot.approved - lot.released < acquisition)) fail("OVERAGE_APPROVAL_REQUIRED");
+      location(s, ctx, lot.location_id);
+      const to = location(s, ctx, p.location_id, ["RECEIVING"]);
+      change(s, ctx, lot.item_id, lot.location_id, "B", -q, p);
+      change(s, ctx, lot.item_id, to, "Q", q, p);
+      lot.hold -= q;
+      lot.released += lot.overage ? acquisition : q;
+      if (lot.overage) lot.quality_hold = (lot.quality_hold ?? 0) - quality;
+      if (to === lot.location_id) lot.pending += q;
+      else if (lot.hold === 0 && lot.pending === 0 && lot.normal === 0) {
+        lot.location_id = to;
+        lot.pending = q;
+      } else {
+        const parent = [...s.receipts, ...s.returns].find((r) => r.lots.some((x) => x.id === lot.id)) ?? {
+          lots: s.holds,
+        };
+        const child = {
+          ...lot,
+          id: ctx.id(),
+          location_id: to,
+          quantity: q,
+          pending: q,
+          normal: 0,
+          hold: 0,
+          putaway: 0,
+          overage: false,
+          approved: 0,
+          released: 0,
+          quality_hold: 0,
+        };
+        parent.lots.push(child);
+        if (parent.lots === s.holds) {
+          const owner = genericHoldOwnership(s, lot).task;
+          if (owner)
+            s.tasks.push({ ...owner, id: ctx.id(), object_type: "hold", object_id: child.id, assigned_at: ctx.now });
+        }
+      }
+      result.id = lot.id;
+      break;
+    }
+    case "order.create": {
+      if (p.original_order_id) find(s.orders, p.original_order_id);
+      if (p.original_return_id) find(s.returns, p.original_return_id);
+      const lines = rows(p.lines, 100).map((x) => makeLine(x, ctx));
+      uniqueIds(lines);
+      if (p.external_id && s.orders.some((o) => o.external_id === p.external_id)) fail("EXTERNAL_ID_CONFLICT");
+      const o: Order = {
+        id: ctx.id(),
+        ...(p.external_id ? { external_id: text(p.external_id) } : {}),
+        ...(p.original_order_id ? { original_order_id: uuid(p.original_order_id) } : {}),
+        ...(p.original_return_id ? { original_return_id: uuid(p.original_return_id) } : {}),
+        version: 1,
+        lines,
+        reservations: [],
+        picks: [],
+        delivery: p.delivery ?? {},
+        ...(p.due_at ? { due_at: text(p.due_at) } : {}),
+        created_at: ctx.now,
+      };
+      s.orders.push(o);
+      result.id = o.id;
+      break;
+    }
+    case "order.update": {
+      const o = find(s.orders, p.order_id);
+      mutableVersion(o, p);
+      if (p.lines !== undefined) {
+        const started =
+          o.reservations.length > 0 || o.picks.length > 0 || o.lines.some((l) => l.cancelled > 0 || l.shipped > 0);
+        for (const x of rows(p.lines, 100)) {
+          const l = find(o.lines, x.id);
+          if (l.item_id !== x.item_id) fail("IMMUTABLE_ITEM");
+          const q = integer(x.quantity);
+          if (started && q !== l.quantity) fail(q < l.quantity ? "USE_CANCELLATION" : "CREATE_LINKED_ORDER");
+          l.quantity = q;
+        }
+      }
+      if (p.delivery !== undefined) o.delivery = structuredClone(p.delivery);
+      if (p.due_at !== undefined) o.due_at = text(p.due_at);
+      o.version++;
+      result.id = o.id;
+      break;
+    }
+    case "order.reserve": {
+      const o = find(s.orders, p.order_id);
+      mutableVersion(o, p);
+      if (typeof p.partial !== "boolean") fail("PARTIAL_CHOICE_REQUIRED", 400);
+      const requested = p.lines === undefined ? undefined : rows(p.lines);
+      let allocated = 0;
+      const add = (line: Line, loc: string, q: number) => {
+        if (q <= 0) return;
+        location(s, ctx, loc, ["STORAGE"]);
+        if (s.location_blocks.some((b) => b.location_id === loc)) fail("LOCATION_BLOCKED");
+        const st = stock(s, line.item_id, loc);
+        if (st.S - st.R < q) fail("INSUFFICIENT_STOCK");
+        if (orderNeed(o, line) < q) fail("EXCEEDS_ORDER_REMAINING");
+        const r = {
+          id: ctx.id(),
+          line_id: line.id,
+          item_id: line.item_id,
+          location_id: loc,
+          quantity: q,
+          picked: 0,
+          reserved_at: ctx.now,
+        };
+        o.reservations.push(r);
+        change(s, ctx, line.item_id, loc, "R", q, p);
+        allocated++;
+      };
+      if (requested) {
+        for (const x of requested) {
+          const l = find(o.lines, x.line_id);
+          const loc = location(s, ctx, x.location_id, ["STORAGE"]);
+          add(l, loc, integer(x.quantity));
+        }
+      } else {
+        for (const l of o.lines) {
+          let need = orderNeed(o, l);
+          for (const st of s.stock
+            .filter((x) => x.item_id === l.item_id)
+            .sort((a, b) => {
+              const ar = ctx.locations.find((x) => x.id === a.location_id);
+              const br = ctx.locations.find((x) => x.id === b.location_id);
+              return (
+                (ar?.priority ?? 100) - (br?.priority ?? 100) ||
+                (ar?.code ?? a.location_id).localeCompare(br?.code ?? b.location_id)
+              );
+            })) {
+            const ref = ctx.locations.find((x) => x.id === st.location_id);
+            if (
+              locked(s, st.location_id) ||
+              s.location_blocks.some((b) => b.location_id === st.location_id) ||
+              !ref?.active ||
+              (ref.kind && ref.kind !== "STORAGE")
+            )
+              continue;
+            const q = Math.min(need, st.S - st.R);
+            if (q > 0) {
+              add(l, st.location_id, q);
+              need -= q;
+            }
+          }
+          if (need > 0 && !p.partial) fail("INSUFFICIENT_STOCK");
+        }
+      }
+      if (allocated > 20) fail("SPLIT_REQUIRED", 400);
+      if (!p.partial && o.lines.some((l) => orderNeed(o, l) > 0)) fail("INSUFFICIENT_STOCK");
+      if (!allocated) fail("INSUFFICIENT_STOCK");
+      o.version++;
+      result.id = o.id;
+      break;
+    }
+    case "order.release": {
+      const o = find(s.orders, p.order_id);
+      for (const x of rows(p.lines)) releaseReservation(s, ctx, o, x.reservation_id, integer(x.quantity), p);
+      o.version++;
+      result.id = o.id;
+      break;
+    }
+    case "order.shortage": {
+      const o = find(s.orders, p.order_id);
+      requiredReason(p);
+      for (const x of rows(p.lines)) {
+        const r = find(o.reservations, x.reservation_id);
+        const q = integer(x.quantity);
+        releaseReservation(s, ctx, o, r.id, q, p);
+        if (!s.location_blocks.some((b) => b.location_id === r.location_id))
+          s.location_blocks.push({
+            location_id: r.location_id,
+            reason: requiredReason(p),
+            blocked_at: ctx.now,
+            request_id: ctx.request_id,
+          });
+      }
+      o.version++;
+      result.id = o.id;
+      break;
+    }
+    case "order.pick": {
+      const o = find(s.orders, p.order_id);
+      mutableVersion(o, p);
+      const ids: string[] = [];
+      for (const x of rows(p.lines)) {
+        const r = find(o.reservations, x.reservation_id);
+        const q = integer(x.quantity);
+        if (q > r.quantity) fail("EXCEEDS_RESERVED");
+        location(s, ctx, r.location_id);
+        const to = location(s, ctx, x.location_id, ["STAGING", "SHIPPING"]);
+        if (x.scanned_item_id !== undefined && x.scanned_item_id !== r.item_id) fail("WRONG_ITEM_SCAN");
+        if (x.scanned_location_id !== undefined && x.scanned_location_id !== r.location_id) fail("WRONG_LOCATION_SCAN");
+        r.quantity -= q;
+        r.picked += q;
+        change(s, ctx, r.item_id, r.location_id, "R", -q, p);
+        change(s, ctx, r.item_id, r.location_id, "S", -q, p);
+        change(s, ctx, r.item_id, to, "P", q, p);
+        const pick: Pick = {
+          id: ctx.id(),
+          reservation_id: r.id,
+          line_id: r.line_id,
+          item_id: r.item_id,
+          location_id: to,
+          quantity: q,
+          active: q,
+          packed: 0,
+          shipped: 0,
+          damaged: 0,
+          returned: 0,
+          cancel_pending: 0,
+        };
+        o.picks.push(pick);
+        ids.push(pick.id);
+      }
+      o.version++;
+      result.id = o.id;
+      result.pick_ids = ids;
+      break;
+    }
+    case "order.cancel": {
+      const o = find(s.orders, p.order_id);
+      requiredReason(p);
+      mutableVersion(o, p);
+      for (const x of rows(p.lines)) {
+        const l = find(o.lines, x.line_id);
+        let q = integer(x.quantity);
+        const picks = o.picks.filter((z) => z.line_id === l.id);
+        if (q > l.quantity - l.cancelled - l.shipped - sum(picks, (z) => z.cancel_pending)) fail("EXCEEDS_CANCELLABLE");
+        let immediate = Math.min(q, Math.max(0, orderNeed(o, l)));
+        l.cancelled += immediate;
+        q -= immediate;
+        for (const r of o.reservations.filter((z) => z.line_id === l.id)) {
+          const n = Math.min(q, r.quantity);
+          if (n) {
+            releaseReservation(s, ctx, o, r.id, n, p);
+            l.cancelled += n;
+            q -= n;
+          }
+        }
+        for (const pick of picks) {
+          const n = Math.min(q, pick.active - pick.cancel_pending);
+          pick.cancel_pending += n;
+          q -= n;
+        }
+        if (q) fail("EXCEEDS_CANCELLABLE");
+      }
+      o.version++;
+      result.id = o.id;
+      break;
+    }
+    case "order.return_picked": {
+      const o = find(s.orders, p.order_id);
+      requiredReason(p);
+      for (const x of rows(p.lines)) {
+        const pick = find(o.picks, x.pick_id);
+        const q = integer(x.quantity);
+        if (q > pick.cancel_pending || q > pick.active) fail("CANCELLATION_REQUIRED");
+        if (pick.packed > 0) fail("UNPACK_REQUIRED");
+        location(s, ctx, pick.location_id);
+        if (!["normal", "hold"].includes(String(x.outcome))) fail("INVALID_OUTCOME", 400);
+        const loc = location(s, ctx, x.location_id, x.outcome === "hold" ? ["HOLD"] : ["STORAGE"]);
+        change(s, ctx, pick.item_id, pick.location_id, "P", -q, p);
+        change(s, ctx, pick.item_id, loc, x.outcome === "hold" ? "B" : "S", q, p);
+        if (x.outcome === "hold") {
+          const lot: Lot = {
+            id: ctx.id(),
+            line_id: pick.line_id,
+            item_id: pick.item_id,
+            location_id: loc,
+            quantity: q,
+            pending: 0,
+            normal: 0,
+            hold: q,
+            putaway: 0,
+            overage: false,
+            approved: 0,
+            released: 0,
+            received_by: ctx.actor.id,
+            origin_order_id: o.id,
+          };
+          s.holds.push(lot);
+          result.lot_ids = [...((result.lot_ids as string[]) ?? []), lot.id];
+        }
+        pick.active -= q;
+        pick.returned += q;
+        pick.cancel_pending -= q;
+        find(o.lines, pick.line_id).cancelled += q;
+      }
+      o.version++;
+      result.id = o.id;
+      break;
+    }
+    case "order.damage": {
+      manager(ctx);
+      const o = find(s.orders, p.order_id);
+      requiredReason(p);
+      for (const x of rows(p.lines)) {
+        const pick = find(o.picks, x.pick_id);
+        const q = integer(x.quantity);
+        if (pick.packed > 0) fail("UNPACK_REQUIRED");
+        if (q > pick.active - pick.cancel_pending) fail("EXCEEDS_PICKED");
+        location(s, ctx, pick.location_id);
+        const loc = location(s, ctx, x.location_id, ["HOLD"]);
+        change(s, ctx, pick.item_id, pick.location_id, "P", -q, p);
+        change(s, ctx, pick.item_id, loc, "B", q, p);
+        const lot: Lot = {
+          id: ctx.id(),
+          line_id: pick.line_id,
+          item_id: pick.item_id,
+          location_id: loc,
+          quantity: q,
+          pending: 0,
+          normal: 0,
+          hold: q,
+          putaway: 0,
+          overage: false,
+          approved: 0,
+          released: 0,
+          received_by: ctx.actor.id,
+          origin_order_id: o.id,
+        };
+        s.holds.push(lot);
+        result.lot_ids = [...((result.lot_ids as string[]) ?? []), lot.id];
+        pick.active -= q;
+        pick.damaged += q;
+      }
+      o.version++;
+      result.id = o.id;
+      break;
+    }
+    case "package.create": {
+      const o = find(s.orders, p.order_id);
+      const grouped = new Map<string, number>();
+      for (const x of rows(p.lines, 100)) {
+        const id = uuid(x.pick_id);
+        grouped.set(id, (grouped.get(id) ?? 0) + integer(x.quantity));
+      }
+      const ls = [...grouped].map(([pick_id, quantity]) => ({ pick_id, quantity }));
+      if (ls.length > 20) fail("SPLIT_REQUIRED", 400);
+      for (const x of ls) {
+        const pick = find(o.picks, x.pick_id);
+        if (x.quantity > pick.active - pick.packed - pick.cancel_pending) fail("EXCEEDS_PACKABLE");
+        location(s, ctx, pick.location_id);
+        pick.packed += x.quantity;
+      }
+      const pack = {
+        id: ctx.id(),
+        order_id: o.id,
+        status: "complete" as const,
+        ...(p.weight_grams === undefined ? {} : { weight_grams: integer(p.weight_grams) }),
+        lines: ls,
+        delivery: p.delivery ?? structuredClone(o.delivery),
+        created_at: ctx.now,
+      };
+      s.packages.push(pack);
+      o.version++;
+      result.id = pack.id;
+      break;
+    }
+    case "package.unpack": {
+      requiredReason(p);
+      const pack = find(s.packages, p.package_id);
+      if (pack.status !== "complete") fail("INVALID_PACKAGE_STATE");
+      const o = find(s.orders, pack.order_id);
+      for (const x of pack.lines) find(o.picks, x.pick_id).packed -= x.quantity;
+      pack.status = "unpacked";
+      o.version++;
+      result.id = pack.id;
+      break;
+    }
+    case "shipment.create": {
+      if (
+        !Array.isArray(p.package_ids) ||
+        !p.package_ids.length ||
+        p.package_ids.length > 20 ||
+        new Set(p.package_ids).size !== p.package_ids.length
+      )
+        fail("INVALID_PACKAGES", 400);
+      const packs = p.package_ids.map((x) => find(s.packages, x));
+      if (sum(packs, (x) => x.lines.length) > 20) fail("SPLIT_REQUIRED", 400);
+      const id = ctx.id();
+      const sl = [];
+      for (const pack of packs) {
+        if (pack.status !== "complete") fail("INVALID_PACKAGE_STATE");
+        const o = find(s.orders, pack.order_id);
+        for (const x of pack.lines) {
+          const pick = find(o.picks, x.pick_id);
+          if (pick.cancel_pending > 0) fail("CANCELLATION_PENDING");
+          if (pick.active < x.quantity || pick.packed < x.quantity) fail("EXCEEDS_SHIPPABLE");
+          location(s, ctx, pick.location_id);
+          change(s, ctx, pick.item_id, pick.location_id, "P", -x.quantity, p);
+          pick.active -= x.quantity;
+          pick.packed -= x.quantity;
+          pick.shipped += x.quantity;
+          find(o.lines, pick.line_id).shipped += x.quantity;
+          sl.push({
+            id: ctx.id(),
+            order_id: o.id,
+            order_line_id: pick.line_id,
+            pick_id: pick.id,
+            item_id: pick.item_id,
+            quantity: x.quantity,
+          });
+        }
+        pack.status = "shipped";
+        o.version++;
+      }
+      s.shipments.push({
+        id,
+        package_ids: p.package_ids as string[],
+        lines: sl,
+        status: "handed_over",
+        revision: 0,
+        handover_by: text(p.handover_by),
+        carrier: text(p.carrier),
+        handed_over_at: ctx.now,
+        delivery: packs.map((x) => structuredClone(x.delivery)),
+        events: [],
+      });
+      result.id = id;
+      break;
+    }
+    case "shipment.delivery": {
+      const sh = find(s.shipments, p.shipment_id);
+      const revision = integer(p.revision);
+      if (revision !== sh.revision + 1) fail(revision <= sh.revision ? "STALE_REVISION" : "REVISION_DEPENDENCY");
+      const status = text(p.status);
+      if (!["in_transit", "delivered", "failed", "lost"].includes(status)) fail("INVALID_DELIVERY_STATUS", 400);
+      if (["delivered", "lost"].includes(sh.status)) fail("TERMINAL_DELIVERY");
+      if (sh.status === "failed" && status === "in_transit" && !p.reason) fail("DELIVERY_CORRECTION_REASON_REQUIRED");
+      const previous_status = sh.status,
+        previous_revision = sh.revision;
+      sh.status = status;
+      sh.revision = revision;
+      sh.events.push({
+        status,
+        revision,
+        previous_status,
+        previous_revision,
+        correction: false,
+        operation: "record",
+        actor_id: ctx.actor.id,
+        request_id: ctx.request_id,
+        reason: typeof p.reason === "string" ? p.reason : "",
+        at: ctx.now,
+      });
+      result.id = sh.id;
+      break;
+    }
+    case "shipment.delivery.correct": {
+      manager(ctx);
+      const sh = find(s.shipments, p.shipment_id);
+      const previous_revision = integer(p.previous_revision, true);
+      const revision = integer(p.revision);
+      if (previous_revision !== sh.revision || revision !== sh.revision + 1) fail("VERSION_CONFLICT");
+      const status = text(p.status);
+      if (!["handed_over", "in_transit", "delivered", "failed", "lost"].includes(status))
+        fail("INVALID_DELIVERY_STATUS", 400);
+      const reason = requiredReason(p);
+      const previous_status = sh.status;
+      sh.status = status;
+      sh.revision = revision;
+      sh.events.push({
+        status,
+        revision,
+        previous_status,
+        previous_revision,
+        correction: true,
+        operation: "correction",
+        actor_id: ctx.actor.id,
+        request_id: ctx.request_id,
+        reason,
+        at: ctx.now,
+      });
+      result.id = sh.id;
+      break;
+    }
+    case "return.request": {
+      requiredReason(p);
+      const sh = find(s.shipments, p.shipment_id);
+      const ls = rows(p.lines).map((x) => {
+        const source = find(sh.lines, x.shipment_line_id);
+        const q = integer(x.quantity);
+        const occupied = sum(
+          s.returns.filter((z) => z.shipment_id === sh.id),
+          (r) =>
+            sum(
+              r.lines.filter((l) => l.shipment_line_id === source.id),
+              (l) => l.received + (r.closed ? 0 : l.quantity - l.received - l.cancelled),
+            ),
+        );
+        if (q > source.quantity - occupied) fail("EXCEEDS_RETURNABLE");
+        return { ...makeLine({ item_id: source.item_id, quantity: q }, ctx), shipment_line_id: source.id };
+      });
+      if (new Set(ls.map((x) => x.shipment_line_id)).size !== ls.length) fail("DUPLICATE_LINE", 400);
+      const r: Return = { id: ctx.id(), shipment_id: sh.id, lines: ls, lots: [], closed: false, created_at: ctx.now };
+      s.returns.push(r);
+      result.id = r.id;
+      break;
+    }
+    case "return.receive": {
+      const r = find(s.returns, p.return_id);
+      if (r.closed) fail("RETURN_CLOSED");
+      const receiving = uuid(p.receiving_id ?? ctx.request_id);
+      if (s.receiving_ids.includes(receiving)) fail("RECEIVING_ALREADY_CONFIRMED");
+      const ids = [];
+      for (const x of rows(p.lines)) {
+        const l = find(r.lines, x.line_id);
+        const q = integer(x.quantity);
+        if (q > receivedPending(l)) fail("EXCEEDS_RETURN_APPROVED");
+        const loc = location(s, ctx, x.location_id, ["RECEIVING"]);
+        l.received += q;
+        ids.push(addLot(s, ctx, r, l, q, loc, false, p).id);
+      }
+      s.receiving_ids.push(receiving);
+      result.id = r.id;
+      result.lot_ids = ids;
+      break;
+    }
+    case "return.close": {
+      requiredReason(p);
+      const r = find(s.returns, p.return_id);
+      for (const l of r.lines) l.cancelled += receivedPending(l);
+      r.closed = true;
+      result.id = r.id;
+      break;
+    }
+    case "return.inspect": {
+      const r = find(s.returns, p.return_id);
+      inspect(s, ctx, r, p);
+      result.id = r.id;
+      break;
+    }
+    case "return.putaway": {
+      const r = find(s.returns, p.return_id);
+      putaway(s, ctx, r, p);
+      result.id = r.id;
+      break;
+    }
+    case "stock.inspect": {
+      inspect(s, ctx, { lots: s.holds }, p);
+      break;
+    }
+    case "stock.putaway": {
+      putaway(s, ctx, { lots: s.holds }, p);
+      break;
+    }
+    case "stock.move":
+    case "stock.hold": {
+      requiredReason(p);
+      for (const x of rows(p.lines)) {
+        const item = uuid(x.item_id);
+        const q = integer(x.quantity);
+        const from = location(s, ctx, x.from_location_id, ["STORAGE"]);
+        const to = location(s, ctx, x.location_id, command === "stock.hold" ? ["HOLD"] : ["STORAGE"]);
+        if (from === to) fail("SAME_LOCATION");
+        if (stock(s, item, from).S - stock(s, item, from).R < q) fail("STOCK_OCCUPIED");
+        change(s, ctx, item, from, "S", -q, p);
+        change(s, ctx, item, to, command === "stock.hold" ? "B" : "S", q, p);
+        if (command === "stock.hold") {
+          const lot: Lot = {
+            id: ctx.id(),
+            line_id: ctx.id(),
+            item_id: item,
+            location_id: to,
+            quantity: q,
+            pending: 0,
+            normal: 0,
+            hold: q,
+            putaway: 0,
+            overage: false,
+            approved: 0,
+            released: 0,
+          };
+          s.holds.push(lot);
+          result.lot_ids = [...((result.lot_ids as string[]) ?? []), lot.id];
+        }
+      }
+      break;
+    }
+    case "count.start": {
+      const loc = location(s, ctx, p.location_id, ["STORAGE", "RECEIVING", "HOLD"]);
+      if (s.stock.some((x) => x.location_id === loc && (x.R > 0 || x.P > 0))) fail("LOCATION_OCCUPIED");
+      const baseline = structuredClone(s.stock.filter((x) => x.location_id === loc));
+      const c: Count = {
+        id: ctx.id(),
+        location_id: loc,
+        actor_id: ctx.actor.id,
+        version: 1,
+        status: "counting",
+        baseline,
+        lines: [],
+        recount: false,
+        reason: "",
+      };
+      s.counts.push(c);
+      result.id = c.id;
+      break;
+    }
+    case "count.record": {
+      const c = find(s.counts, p.count_id);
+      if (c.status !== "counting") fail("INVALID_COUNT_STATE");
+      const ls = rows(p.lines).map((x) => {
+        if (!["S", "Q", "B"].includes(String(x.bucket))) fail("INVALID_BUCKET", 400);
+        return {
+          item_id: uuid(x.item_id),
+          bucket: x.bucket as "S" | "Q" | "B",
+          quantity: integer(x.quantity, true),
+          recounted: p.recount === true,
+        };
+      });
+      if (new Set(ls.map((x) => x.item_id + ":" + x.bucket)).size !== ls.length) fail("DUPLICATE_LINE", 400);
+      for (const x of ls) {
+        const existing = c.lines.findIndex((y) => y.item_id === x.item_id && y.bucket === x.bucket);
+        if (existing >= 0) c.lines[existing] = x;
+        else c.lines.push(x);
+      }
+      c.counter_id = ctx.actor.id;
+      c.counter_ids = [...new Set([...(c.counter_ids ?? []), ctx.actor.id])];
+      c.recount = p.recount === true;
+      c.reason = typeof p.reason === "string" ? p.reason : "";
+      c.version++;
+      result.id = c.id;
+      break;
+    }
+    case "count.submit": {
+      const c = find(s.counts, p.count_id);
+      if (c.status !== "counting" || !c.lines.length) fail("INVALID_COUNT_STATE");
+      for (const b of c.baseline)
+        for (const bucket of ["S", "Q", "B"] as const)
+          if (b[bucket] > 0 && !c.lines.some((x) => x.item_id === b.item_id && x.bucket === bucket))
+            fail("INCOMPLETE_COUNT");
+      if (
+        countChanges(s, c).length &&
+        (!p.reason ||
+          countChanges(s, c).some(
+            (x) => !c.lines.find((l) => l.item_id === x.item_id && l.bucket === x.bucket)?.recounted,
+          ))
+      )
+        fail("RECOUNT_REQUIRED");
+      c.status = "submitted";
+      c.version++;
+      const a = approval(s, ctx, "count", c.id, c.version, 0, { lines: countChanges(s, c) }, requiredReason(p));
+      c.submitted_by = ctx.actor.id;
+      a.origin_actor_ids = [...new Set(c.counter_ids ?? [c.counter_id ?? c.actor_id])];
+      result.id = a.id;
+      result.count_id = c.id;
+      break;
+    }
+    case "count.unlock": {
+      manager(ctx);
+      requiredReason(p);
+      const c = find(s.counts, p.count_id);
+      if (!["counting", "submitted"].includes(c.status)) fail("INVALID_COUNT_STATE");
+      c.status = "unlocked";
+      c.version++;
+      result.id = c.id;
+      break;
+    }
+    case "correction.request": {
+      const ls = rows(p.lines);
+      for (const x of ls) {
+        uuid(x.item_id);
+        location(s, ctx, x.location_id);
+        integer(x.quantity, true, true);
+        if (!["S", "Q", "B"].includes(String(x.bucket))) fail("INVALID_BUCKET", 400);
+      }
+      const a = approval(
+        s,
+        ctx,
+        "correction",
+        uuid(p.original_id),
+        s.version,
+        0,
+        { lines: ls, ...(p.original_kind ? { original_kind: p.original_kind } : {}) },
+        requiredReason(p),
+      );
+      a.origin_actor_ids = Array.isArray(p.source_actor_ids)
+        ? p.source_actor_ids.filter((id): id is string => typeof id === "string")
+        : [];
+      result.id = a.id;
+      break;
+    }
+    case "approval.decide": {
+      manager(ctx);
+      const a = find(s.approvals, p.approval_id);
+      if (a.status !== "pending") fail("APPROVAL_ALREADY_DECIDED");
+      if (approvalActorExcluded(s, a, ctx.actor.id)) fail("SELF_APPROVAL_FORBIDDEN", 403);
+      if (typeof p.approve !== "boolean") fail("INVALID_INPUT", 400);
+      a.decision_reason = requiredReason(p);
+      if (p.approve) {
+        if (a.type === "overage") {
+          const lot = find(lots(s), a.target_id);
+          if (lot.approved !== a.target_version || overageCapacity(lot) < lot.approved + a.quantity)
+            fail("APPROVAL_STALE");
+          lot.approved += a.quantity;
+        } else if (a.type === "receipt.close") {
+          const r = find(s.receipts, a.target_id);
+          if (r.version !== a.target_version || r.closed) fail("APPROVAL_STALE");
+          for (const l of r.lines) l.cancelled += receivedPending(l);
+          r.closed = true;
+          r.version++;
+        } else if (a.type === "count") {
+          const c = find(s.counts, a.target_id);
+          if (c.version !== a.target_version || c.status !== "submitted" || !locked(s, c.location_id))
+            fail("APPROVAL_STALE");
+          applyAdjustment(
+            s,
+            ctx,
+            object(a.data).lines as Record<string, unknown>[],
+            { ...p, reason: a.reason, original_id: a.id },
+            c,
+          );
+          c.status = "completed";
+          c.version++;
+          s.location_blocks = s.location_blocks.filter((x) => x.location_id !== c.location_id);
+        } else {
+          if (!correctionVersionCurrent(s, a)) fail("APPROVAL_STALE");
+          applyAdjustment(s, ctx, a.data.lines as Record<string, unknown>[], {
+            ...p,
+            reason: a.reason,
+            original_id: a.target_id,
+          });
+        }
+      }
+      a.status = p.approve ? "approved" : "rejected";
+      a.decider_id = ctx.actor.id;
+      a.decided_at = ctx.now;
+      if (!p.approve && a.type === "count") {
+        const c = find(s.counts, a.target_id);
+        if (c.status === "submitted" && c.version === a.target_version) {
+          c.status = "counting";
+          c.version++;
+        }
+      }
+      result.id = a.id;
+      break;
+    }
+    case "task.assign": {
+      if (
+        p.unconfirmed_request_ids !== undefined &&
+        (!Array.isArray(p.unconfirmed_request_ids) || p.unconfirmed_request_ids.length)
+      )
+        fail("UNCONFIRMED_RESULTS");
+      const hold = p.object_type === "hold" ? s.holds.find((lot) => lot.id === p.object_id) : undefined;
+      if (p.object_type === "hold" && (!hold || !pendingGenericHold(hold))) fail("HOLD_TASK_UNAVAILABLE");
+      const current = hold
+        ? genericHoldOwnership(s, hold).task
+        : [...s.tasks].reverse().find((t) => t.object_id === p.object_id);
+      if (ctx.actor.role === "worker" && (!current || current.assignee_id !== ctx.actor.id))
+        fail("ASSIGNMENT_FORBIDDEN", 403);
+      const t = {
+        id: ctx.id(),
+        object_type: text(p.object_type),
+        object_id: uuid(p.object_id),
+        assignee_id: text(p.assignee_id),
+        reason: requiredReason(p),
+        assigned_at: ctx.now,
+      };
+      const group =
+        t.object_type === "receipt"
+          ? s.receipts
+          : t.object_type === "order"
+            ? s.orders
+            : t.object_type === "return"
+              ? s.returns
+              : t.object_type === "count"
+                ? s.counts
+                : t.object_type === "hold"
+                  ? s.holds
+                  : undefined;
+      if (!group || !group.some((x) => x.id === t.object_id)) fail("NOT_FOUND", 404);
+      s.tasks.push(t);
+      result.id = t.id;
+      break;
+    }
+    case "shift.close": {
+      manager(ctx);
+      if (!Array.isArray(p.unconfirmed_request_ids) || p.unconfirmed_request_ids.length) fail("UNCONFIRMED_RESULTS");
+      const handover = Array.isArray(p.handover) ? p.handover.map(object) : fail("HANDOVER_REQUIRED", 400);
+      const pending = [
+        ...s.receipts
+          .filter(
+            (r) => r.lines.some((l) => receivedPending(l) > 0) || r.lots.some((l) => l.pending + l.normal + l.hold > 0),
+          )
+          .map((r) => ({ type: "receipt", id: r.id })),
+        ...s.orders
+          .filter((o) => o.lines.some((l) => l.quantity > l.cancelled + l.shipped))
+          .map((o) => ({ type: "order", id: o.id })),
+        ...s.approvals.filter((a) => a.status === "pending").map((a) => ({ type: "approval", id: a.id })),
+        ...s.counts.filter((c) => c.status === "counting").map((c) => ({ type: "count", id: c.id })),
+        ...s.holds.filter(pendingGenericHold).map((lot) => ({ type: "hold", id: lot.id })),
+        ...s.returns
+          .filter((r) => !r.closed || r.lots.some((l) => l.pending + l.normal + l.hold > 0))
+          .map((r) => ({ type: "return", id: r.id })),
+      ];
+      for (const x of pending) {
+        const h = handover.find((h) => h.object_id === x.id && h.object_type === x.type);
+        if (!h || !h.assignee_id || !h.reason) fail("HANDOVER_REQUIRED");
+      }
+      for (const h of handover)
+        if (h.object_type === "hold" && !s.holds.some((lot) => lot.id === h.object_id && pendingGenericHold(lot)))
+          fail("HOLD_TASK_UNAVAILABLE");
+      for (const h of handover)
+        s.tasks.push({
+          id: ctx.id(),
+          object_type: text(h.object_type),
+          object_id: uuid(h.object_id),
+          assignee_id: text(h.assignee_id),
+          reason: text(h.reason),
+          assigned_at: ctx.now,
+        });
+      const report = reconcile(s);
+      if (!report.ok) fail("RECONCILIATION_FAILED");
+      const shift = {
+        id: ctx.id(),
+        closed_at: ctx.now,
+        business_day: new Intl.DateTimeFormat("en-CA", {
+          timeZone: "Asia/Seoul",
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+        }).format(new Date(ctx.now)),
+        actor_id: ctx.actor.id,
+        handover,
+        reconciliation: report,
+        version: s.version,
+      };
+      s.shifts.push(shift);
+      result.id = shift.id;
+      break;
+    }
+    default:
+      fail("UNKNOWN_COMMAND", 400);
+  }
+  refreshStockLocations(s, ctx.locations);
+  s.ledger_count = (original.ledger_count ?? original.ledger.length) + s.ledger.length - original.ledger.length;
+  s.version++;
+  const r = timeSync("workflow.reconcile", () => reconcile(s));
+  if (!r.ok) fail("RECONCILIATION_FAILED");
+  return { state: s, result };
 }
 
-export function reconcile(s:WorkflowState) {
- const issues:string[]=[],baseline=firstPositions(s.ledger_base??[]);
- const ledger=new Map<string,Map<string,Map<Bucket,number>>>(),reserved=new Map<string,Map<string,number>>(),picked=new Map<string,Map<string,number>>();
- const orderTotals=new Map<Order,{reserved:Map<string,number>;picked:Map<string,number>}>();
- const addPosition=(index:Map<string,Map<string,number>>,item:string,location:string,value:number)=>{let locations=index.get(item);if(!locations){locations=new Map();index.set(item,locations);}locations.set(location,(locations.get(location)??0)+value);};
- // Preserve the original per-key addition order, including zero/negative values.
- for(const row of s.ledger){let locations=ledger.get(row.item_id);if(!locations){locations=new Map();ledger.set(row.item_id,locations);}let buckets=locations.get(row.location_id);if(!buckets){buckets=new Map();locations.set(row.location_id,buckets);}buckets.set(row.bucket,(buckets.get(row.bucket)??0)+row.delta);}
- for(const order of s.orders){
-  const totals={reserved:new Map<string,number>(),picked:new Map<string,number>()};orderTotals.set(order,totals);
-  for(const row of order.reservations){addPosition(reserved,row.item_id,row.location_id,row.quantity);totals.reserved.set(row.line_id,(totals.reserved.get(row.line_id)??0)+row.quantity);}
-  for(const row of order.picks){addPosition(picked,row.item_id,row.location_id,row.active);totals.picked.set(row.line_id,(totals.picked.get(row.line_id)??0)+row.active);}
- }
- for(const st of s.stock){
-  for(const b of ['S','R','P','Q','B'] as const){
-   if(!Number.isSafeInteger(st[b])||st[b]<0)issues.push('NEGATIVE_OR_OVERFLOW');
-   const balance=(baseline.get(st.item_id)?.get(st.location_id)?.[b]??0)+(ledger.get(st.item_id)?.get(st.location_id)?.get(b)??0);
-   if(balance!==st[b])issues.push('LEDGER_MISMATCH');
+export function reconcile(s: WorkflowState) {
+  const issues: string[] = [],
+    baseline = firstPositions(s.ledger_base ?? []);
+  const ledger = new Map<string, Map<string, Map<Bucket, number>>>(),
+    reserved = new Map<string, Map<string, number>>(),
+    picked = new Map<string, Map<string, number>>();
+  const orderTotals = new Map<Order, { reserved: Map<string, number>; picked: Map<string, number> }>();
+  const addPosition = (index: Map<string, Map<string, number>>, item: string, location: string, value: number) => {
+    let locations = index.get(item);
+    if (!locations) {
+      locations = new Map();
+      index.set(item, locations);
+    }
+    locations.set(location, (locations.get(location) ?? 0) + value);
+  };
+  // Preserve the original per-key addition order, including zero/negative values.
+  for (const row of s.ledger) {
+    let locations = ledger.get(row.item_id);
+    if (!locations) {
+      locations = new Map();
+      ledger.set(row.item_id, locations);
+    }
+    let buckets = locations.get(row.location_id);
+    if (!buckets) {
+      buckets = new Map();
+      locations.set(row.location_id, buckets);
+    }
+    buckets.set(row.bucket, (buckets.get(row.bucket) ?? 0) + row.delta);
   }
-  if(st.R>st.S)issues.push('OVER_RESERVED');
-  if((reserved.get(st.item_id)?.get(st.location_id)??0)!==st.R)issues.push('RESERVATION_MISMATCH');
-  if((picked.get(st.item_id)?.get(st.location_id)??0)!==st.P)issues.push('PICK_MISMATCH');
- }
- for(const order of s.orders){const totals=orderTotals.get(order)!;for(const line of order.lines){const need=line.quantity-line.cancelled-line.shipped-(totals.reserved.get(line.id)??0)-(totals.picked.get(line.id)??0);if(need<0||line.cancelled+line.shipped>line.quantity)issues.push('ORDER_QUANTITY_MISMATCH');}}
- return{ok:issues.length===0,issues:[...new Set(issues)],stock_rows:s.stock.length,ledger_rows:s.ledger_count??s.ledger.length,version:s.version};
+  for (const order of s.orders) {
+    const totals = { reserved: new Map<string, number>(), picked: new Map<string, number>() };
+    orderTotals.set(order, totals);
+    for (const row of order.reservations) {
+      addPosition(reserved, row.item_id, row.location_id, row.quantity);
+      totals.reserved.set(row.line_id, (totals.reserved.get(row.line_id) ?? 0) + row.quantity);
+    }
+    for (const row of order.picks) {
+      addPosition(picked, row.item_id, row.location_id, row.active);
+      totals.picked.set(row.line_id, (totals.picked.get(row.line_id) ?? 0) + row.active);
+    }
+  }
+  for (const st of s.stock) {
+    for (const b of ["S", "R", "P", "Q", "B"] as const) {
+      if (!Number.isSafeInteger(st[b]) || st[b] < 0) issues.push("NEGATIVE_OR_OVERFLOW");
+      const balance =
+        (baseline.get(st.item_id)?.get(st.location_id)?.[b] ?? 0) +
+        (ledger.get(st.item_id)?.get(st.location_id)?.get(b) ?? 0);
+      if (balance !== st[b]) issues.push("LEDGER_MISMATCH");
+    }
+    if (st.R > st.S) issues.push("OVER_RESERVED");
+    if ((reserved.get(st.item_id)?.get(st.location_id) ?? 0) !== st.R) issues.push("RESERVATION_MISMATCH");
+    if ((picked.get(st.item_id)?.get(st.location_id) ?? 0) !== st.P) issues.push("PICK_MISMATCH");
+  }
+  for (const order of s.orders) {
+    const totals = orderTotals.get(order)!;
+    for (const line of order.lines) {
+      const need =
+        line.quantity -
+        line.cancelled -
+        line.shipped -
+        (totals.reserved.get(line.id) ?? 0) -
+        (totals.picked.get(line.id) ?? 0);
+      if (need < 0 || line.cancelled + line.shipped > line.quantity) issues.push("ORDER_QUANTITY_MISMATCH");
+    }
+  }
+  return {
+    ok: issues.length === 0,
+    issues: [...new Set(issues)],
+    stock_rows: s.stock.length,
+    ledger_rows: s.ledger_count ?? s.ledger.length,
+    version: s.version,
+  };
 }
-export function snapshot(s:WorkflowState,blind=true) {const lockedLocations=new Set(s.counts.filter(c=>['counting','submitted'].includes(c.status)).map(c=>c.location_id));return{...s,counts:s.counts.map(c=>blind&&['counting','submitted'].includes(c.status)?{...c,baseline:[]}:c),stock:s.stock.map(st=>({...st,A:lockedLocations.has(st.location_id)||st.reservation_blocked||(st.location_kind&&st.location_kind!=='STORAGE')?0:st.S-st.R,H:st.S+st.P+st.Q+st.B,locked:lockedLocations.has(st.location_id)})),reconciliation:timeSync('workflow.snapshot_reconcile',()=>reconcile(s))};}
+export function snapshot(s: WorkflowState, blind = true) {
+  const lockedLocations = new Set(
+    s.counts.filter((c) => ["counting", "submitted"].includes(c.status)).map((c) => c.location_id),
+  );
+  return {
+    ...s,
+    counts: s.counts.map((c) => (blind && ["counting", "submitted"].includes(c.status) ? { ...c, baseline: [] } : c)),
+    stock: s.stock.map((st) => ({
+      ...st,
+      A:
+        lockedLocations.has(st.location_id) ||
+        st.reservation_blocked ||
+        (st.location_kind && st.location_kind !== "STORAGE")
+          ? 0
+          : st.S - st.R,
+      H: st.S + st.P + st.Q + st.B,
+      locked: lockedLocations.has(st.location_id),
+    })),
+    reconciliation: timeSync("workflow.snapshot_reconcile", () => reconcile(s)),
+  };
+}

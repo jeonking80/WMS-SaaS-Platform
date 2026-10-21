@@ -1,0 +1,88 @@
+{
+  "historical_prior_runs_unchanged": true,
+  "run_id": "1b846b73-9260-4171-9993-8822a05c8bec",
+  "profile": "congestion",
+  "status": "final_failed_preserved",
+  "qualification_pending_final_report": true,
+  "observed_at": "2026-10-21T04:09:14.659905+00:00",
+  "runs": [
+    {
+      "id": "1b846b73-9260-4171-9993-8822a05c8bec:0",
+      "status": "paused",
+      "seed_start_ms": 1792553625609,
+      "measured_start_ms": 1792553647074,
+      "measured_elapsed_ms": 2107485,
+      "control_retry": {
+        "status": "retry_wait",
+        "attempts": 1,
+        "next_at": 1792555749101.3718,
+        "total_failures": 1,
+        "last_failure_at_ms": 1792555747163,
+        "last_failure": {
+          "status": 503,
+          "code": "NETWORK_UNAVAILABLE"
+        }
+      },
+      "peak_cohort": {
+        "received": 659,
+        "source": 0,
+        "excluded": 0,
+        "frozen_at_ms": 1792554547892
+      }
+    },
+    {
+      "id": "1b846b73-9260-4171-9993-8822a05c8bec:1",
+      "status": "paused",
+      "seed_start_ms": 1792553625849,
+      "measured_start_ms": 1792553647074,
+      "measured_elapsed_ms": 2107485,
+      "control_retry": null,
+      "peak_cohort": {
+        "received": 754,
+        "source": 0,
+        "excluded": 0,
+        "frozen_at_ms": 1792554549818
+      }
+    }
+  ],
+  "statuses": [
+    [
+      "command",
+      "done",
+      11912
+    ],
+    [
+      "command",
+      "superseded",
+      214
+    ],
+    [
+      "command",
+      "unsent",
+      1755
+    ],
+    [
+      "event",
+      "done",
+      5480
+    ],
+    [
+      "event",
+      "expected_business_rejected",
+      120
+    ]
+  ],
+  "measured_source": {
+    "planned": 5400,
+    "accepted": 5400,
+    "applied": 5280,
+    "expected_rejected": 120,
+    "in_flight": 0
+  },
+  "technical_or_429_attempts": 1,
+  "http429_attempts": 0,
+  "final_report_present": true,
+  "verdict": "failed",
+  "final_report": "docs/v2-congestion-fifth-final-recovery.json",
+  "shared_slot_released": true
+}

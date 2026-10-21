@@ -1,0 +1,47 @@
+{
+  "status": "final_failed_preserved",
+  "profile": "congestion",
+  "run_id": "1b846b73-9260-4171-9993-8822a05c8bec",
+  "build_id": "GgP2Fvn28yPhyBpYVJzWi",
+  "verified_commit": "39fa969ae03265051779d71be9e7581fd3c5d148",
+  "schema_version": 21,
+  "freeze_manifest_sha256": "8a518d169fa22fc150ccb6e2a2eb1d6400e75ece00a15d4763806a2994a31de2",
+  "measured_start": "2026-10-21T03:34:07.074Z",
+  "fixed_peak_cohort_boundary": "2026-10-21T03:49:07.074Z",
+  "exact25_deadline": "2026-10-21T03:59:07.074Z",
+  "fallback35_deadline": "2026-10-21T04:09:07.074Z",
+  "diagnostics": "off",
+  "web_workers": 2,
+  "web_pool_partition": [
+    3,
+    2
+  ],
+  "common_resource_envelope": {
+    "cpu_cores": 4,
+    "memory_bytes": 34359738368,
+    "evidence_path": "/tmp/wms-official25-fifth-preparation-20261021-r2/actual-resource-evidence.json",
+    "per_pid_harness_hashes_embedded": true
+  },
+  "private_evidence_paths": {
+    "preparation_root": "/tmp/wms-official25-fifth-preparation-20261021-r2",
+    "profile_journal": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-fifth-20261021-full/profile.sqlite",
+    "checkpoint25": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-fifth-20261021-full/at-25-minutes.json",
+    "progress": "/tmp/wms-official25-fifth-preparation-20261021-r2/progress.json",
+    "progress_history": "/tmp/wms-official25-fifth-preparation-20261021-r2/progress-history.jsonl",
+    "watchers": "/tmp/wms-official25-fifth-preparation-20261021-r2/watcher-state.json",
+    "freeze_manifest": "/tmp/wms-official25-fifth-preparation-20261021-r2/freeze-manifest.json"
+  },
+  "prior_four_failed_official_runs_preserved": [
+    "89990772-835e-4b2d-b9ee-4750ad668da0",
+    "c83531b5-faad-4e95-836e-26c7056ed465",
+    "c2267197-a92a-4374-bae0-fc0b3b920199",
+    "30d05ed0-8864-4282-a335-4d2746de1697"
+  ],
+  "no_automatic_resume": true,
+  "formal_client_runs": 1,
+  "credentials_published": false,
+  "note": "This static manifest remains available while the existing frozen observer updates the dynamic active document every20seconds.",
+  "verdict": "failed",
+  "final_report": "docs/v2-congestion-fifth-final-recovery.json",
+  "shared_slot_released": true
+}

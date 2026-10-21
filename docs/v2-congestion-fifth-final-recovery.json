@@ -1,0 +1,445 @@
+{
+  "status": "final_failed_preserved",
+  "profile": "congestion",
+  "run_id": "1b846b73-9260-4171-9993-8822a05c8bec",
+  "build_id": "GgP2Fvn28yPhyBpYVJzWi",
+  "verified_commit": "39fa969ae03265051779d71be9e7581fd3c5d148",
+  "schema_version": 21,
+  "freeze_manifest_sha256": "8a518d169fa22fc150ccb6e2a2eb1d6400e75ece00a15d4763806a2994a31de2",
+  "measured_start": "2026-10-21T03:34:07.074Z",
+  "fixed_peak_cohort_boundary": "2026-10-21T03:49:07.074Z",
+  "exact25_deadline": "2026-10-21T03:59:07.074Z",
+  "fallback35_deadline": "2026-10-21T04:09:07.074Z",
+  "diagnostics": "off",
+  "web_workers": 2,
+  "web_pool_partition": [
+    3,
+    2
+  ],
+  "common_resource_envelope": {
+    "cpu_cores": 4,
+    "memory_bytes": 34359738368,
+    "evidence_path": "/tmp/wms-official25-fifth-preparation-20261021-r2/actual-resource-evidence.json",
+    "per_pid_harness_hashes_embedded": true
+  },
+  "private_evidence_paths": {
+    "preparation_root": "/tmp/wms-official25-fifth-preparation-20261021-r2",
+    "profile_journal": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-fifth-20261021-full/profile.sqlite",
+    "checkpoint25": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-fifth-20261021-full/at-25-minutes.json",
+    "progress": "/tmp/wms-official25-fifth-preparation-20261021-r2/progress.json",
+    "progress_history": "/tmp/wms-official25-fifth-preparation-20261021-r2/progress-history.jsonl",
+    "watchers": "/tmp/wms-official25-fifth-preparation-20261021-r2/watcher-state.json",
+    "freeze_manifest": "/tmp/wms-official25-fifth-preparation-20261021-r2/freeze-manifest.json"
+  },
+  "prior_four_failed_official_runs_preserved": [
+    "89990772-835e-4b2d-b9ee-4750ad668da0",
+    "c83531b5-faad-4e95-836e-26c7056ed465",
+    "c2267197-a92a-4374-bae0-fc0b3b920199",
+    "30d05ed0-8864-4282-a335-4d2746de1697"
+  ],
+  "no_automatic_resume": true,
+  "formal_client_runs": 1,
+  "credentials_published": false,
+  "note": "This static manifest remains available while the existing frozen observer updates the dynamic active document every20seconds.",
+  "execution": "interrupted",
+  "verdict": "failed",
+  "original_report_generated_at": "2026-10-21T04:09:11.115Z",
+  "original_report_sha256": "bed802e88289c2bd7f93cd81bc2e32aa0bb07d9c0162548bd8cedc8aa1b729e8",
+  "companies": [
+    {
+      "company_index": 0,
+      "boundary": 8713,
+      "delivered_unique_events": 2700,
+      "normal": {
+        "name": "normal_combined",
+        "planned_events": 1200,
+        "accepted_events": 1200,
+        "automatic_events": 1140,
+        "applied_automatic_events": 1140,
+        "expected_outcomes": 60,
+        "external_acceptance": {
+          "p95_ms": 1850,
+          "maximum_ms": 1000,
+          "samples": 1200,
+          "met": false
+        },
+        "external_application": {
+          "p95_ms": 328635,
+          "maximum_ms": 5000,
+          "samples": 1140,
+          "met": false
+        },
+        "physical_confirmation": {
+          "p95_ms": 2992,
+          "maximum_ms": 1500,
+          "samples": 3486,
+          "met": false
+        },
+        "retry_inclusive_lead_time": {
+          "p95_ms": 1637,
+          "maximum_ms": 1000,
+          "samples": 1200,
+          "met": false,
+          "qualification": false,
+          "reason": "Additional first-send-to-receipt evidence; does not replace successful-HTTP acceptance p95."
+        },
+        "technical_failures": {
+          "numerator": 0,
+          "denominator": 21770,
+          "rate": 0,
+          "strict_maximum": 0.001,
+          "met": true
+        },
+        "business_rejection_http_attempts": 0,
+        "missing_acceptance_latency_ids": 0,
+        "unresolved": 0,
+        "met": false
+      },
+      "peak_recovery": {
+        "applicable": true,
+        "peak_end_ms": 1792554547074,
+        "deadline_ms": 1792555147074,
+        "frozen_at_ms": 1792554547892,
+        "observed_at_ms": 1792555747166,
+        "received_backlog": {
+          "ids": 659,
+          "count": 659,
+          "empty": false,
+          "completed": 659,
+          "unresolved": 0,
+          "late_ids": 0,
+          "recovered_at_ms": 1792555138788,
+          "recovery_ms": 591714,
+          "met": true
+        },
+        "source_backlog": {
+          "ids": 0,
+          "count": 0,
+          "empty": true,
+          "completed": 0,
+          "unresolved": 0,
+          "late_ids": 0,
+          "recovered_at_ms": 1792554547074,
+          "recovery_ms": 0,
+          "met": true
+        },
+        "excluded": 0,
+        "invalidated_exclusions": 0,
+        "cohort_regressions": {
+          "missing_final_ids": 0,
+          "unexpected_pre_peak_ids": 0,
+          "uncovered_ids": 0,
+          "duplicate_coverage": false,
+          "coverage_changed": false
+        },
+        "post_peak_outstanding": 0,
+        "met": true,
+        "not_yet_observed_through_deadline": false
+      },
+      "physical_confirmation": {
+        "p95_ms": 2992,
+        "maximum_ms": 1500,
+        "samples": 3486,
+        "met": false,
+        "qualification": false,
+        "reason": "Congestion physical latency is evidence; the 1.5s requirement belongs to the normal shift profile."
+      },
+      "incomplete_commands": 874,
+      "original_difference_count": 2684,
+      "original_difference_kinds": {
+        "original_quantity": 2684
+      },
+      "technical_error_count": 1,
+      "verdict": "failed"
+    },
+    {
+      "company_index": 1,
+      "boundary": 8679,
+      "delivered_unique_events": 2700,
+      "normal": {
+        "name": "normal_combined",
+        "planned_events": 1200,
+        "accepted_events": 1200,
+        "automatic_events": 1140,
+        "applied_automatic_events": 1140,
+        "expected_outcomes": 60,
+        "external_acceptance": {
+          "p95_ms": 1942,
+          "maximum_ms": 1000,
+          "samples": 1200,
+          "met": false
+        },
+        "external_application": {
+          "p95_ms": 383519,
+          "maximum_ms": 5000,
+          "samples": 1140,
+          "met": false
+        },
+        "physical_confirmation": {
+          "p95_ms": 2862,
+          "maximum_ms": 1500,
+          "samples": 3467,
+          "met": false
+        },
+        "retry_inclusive_lead_time": {
+          "p95_ms": 1758,
+          "maximum_ms": 1000,
+          "samples": 1200,
+          "met": false,
+          "qualification": false,
+          "reason": "Additional first-send-to-receipt evidence; does not replace successful-HTTP acceptance p95."
+        },
+        "technical_failures": {
+          "numerator": 0,
+          "denominator": 21547,
+          "rate": 0,
+          "strict_maximum": 0.001,
+          "met": true
+        },
+        "business_rejection_http_attempts": 0,
+        "missing_acceptance_latency_ids": 0,
+        "unresolved": 0,
+        "met": false
+      },
+      "peak_recovery": {
+        "applicable": true,
+        "peak_end_ms": 1792554547074,
+        "deadline_ms": 1792555147074,
+        "frozen_at_ms": 1792554549818,
+        "observed_at_ms": 1792555747166,
+        "received_backlog": {
+          "ids": 754,
+          "count": 754,
+          "empty": false,
+          "completed": 754,
+          "unresolved": 0,
+          "late_ids": 3,
+          "recovered_at_ms": 1792555219668,
+          "recovery_ms": 672594,
+          "met": false
+        },
+        "source_backlog": {
+          "ids": 0,
+          "count": 0,
+          "empty": true,
+          "completed": 0,
+          "unresolved": 0,
+          "late_ids": 0,
+          "recovered_at_ms": 1792554547074,
+          "recovery_ms": 0,
+          "met": true
+        },
+        "excluded": 0,
+        "invalidated_exclusions": 0,
+        "cohort_regressions": {
+          "missing_final_ids": 0,
+          "unexpected_pre_peak_ids": 0,
+          "uncovered_ids": 0,
+          "duplicate_coverage": false,
+          "coverage_changed": false
+        },
+        "post_peak_outstanding": 0,
+        "met": false,
+        "not_yet_observed_through_deadline": false
+      },
+      "physical_confirmation": {
+        "p95_ms": 2862,
+        "maximum_ms": 1500,
+        "samples": 3467,
+        "met": false,
+        "qualification": false,
+        "reason": "Congestion physical latency is evidence; the 1.5s requirement belongs to the normal shift profile."
+      },
+      "incomplete_commands": 881,
+      "original_difference_count": 2689,
+      "original_difference_kinds": {
+        "original_quantity": 2689
+      },
+      "technical_error_count": 0,
+      "verdict": "failed"
+    }
+  ],
+  "final_fixed_boundary_export": {
+    "run_id": "1b846b73-9260-4171-9993-8822a05c8bec",
+    "captured_at": "2026-10-21T04:12:11.492Z",
+    "report_sha256": "bed802e88289c2bd7f93cd81bc2e32aa0bb07d9c0162548bd8cedc8aa1b729e8",
+    "results": [
+      {
+        "company_id": "0313d4c7-9041-4c81-9ac1-d150da53f644",
+        "report_boundary": 8713,
+        "boundary": 8713,
+        "snapshot_basis": "matches_original_report_boundary",
+        "ledger_rows": 17092,
+        "pages": 35,
+        "snapshot_sha256": "98adddaf3cc606f255824883987f1fecf1a988f253cb8bd5d46cfad3a2e83106",
+        "ledger_sha256": "bec8354997e5cab12677916f6dbf0b038842ec111222520d394dc6ea75875ad8",
+        "client_independent_reconciliation": {
+          "status": "completed",
+          "boundary": 8713,
+          "independent_match": false,
+          "read_retries": 0
+        }
+      },
+      {
+        "company_id": "2eea70b6-7846-4c66-ace3-34a68e7c3a78",
+        "report_boundary": 8679,
+        "boundary": 8679,
+        "snapshot_basis": "matches_original_report_boundary",
+        "ledger_rows": 16933,
+        "pages": 34,
+        "snapshot_sha256": "50172e9ad8d57af14b1b37a7567926aeea1d57dfd5f9256798155cd90d60d85b",
+        "ledger_sha256": "9254d3b8a15468b20427a7e7c567821c23d29daf9136e5b17e54055c1601c054",
+        "client_independent_reconciliation": {
+          "status": "completed",
+          "boundary": 8679,
+          "independent_match": false,
+          "read_retries": 0
+        }
+      }
+    ],
+    "method": "Read-only export after observed post-client quiet. Snapshot and ledger have matching observed boundary and are rechecked after pagination. Original report boundaries are separate; later state is explicitly labeled post-run comparison. Report verdict unchanged."
+  },
+  "independent_conservation": {
+    "run_id": "1b846b73-9260-4171-9993-8822a05c8bec",
+    "method": "Independent Python arithmetic over all fixed-boundary exported ledger rows, all stock buckets and durable completed-command oracle deltas; no baseline, no database/API writes. Incomplete originals and quality failures remain failed in original report.",
+    "companies": [
+      {
+        "company_id": "0313d4c7-9041-4c81-9ac1-d150da53f644",
+        "original_report_boundary": 8713,
+        "snapshot_basis": "matches_original_report_boundary",
+        "boundary": 8713,
+        "ledger_boundary": 8713,
+        "ledger_rows": 17092,
+        "invalid_stock_or_reservations": 0,
+        "line_conservation_failures": 0,
+        "physical_stock_ledger_command_delta_conservation": true,
+        "difference_count": 0,
+        "differences": []
+      },
+      {
+        "company_id": "2eea70b6-7846-4c66-ace3-34a68e7c3a78",
+        "original_report_boundary": 8679,
+        "snapshot_basis": "matches_original_report_boundary",
+        "boundary": 8679,
+        "ledger_boundary": 8679,
+        "ledger_rows": 16933,
+        "invalid_stock_or_reservations": 0,
+        "line_conservation_failures": 0,
+        "physical_stock_ledger_command_delta_conservation": true,
+        "difference_count": 0,
+        "differences": []
+      }
+    ]
+  },
+  "technical_attempt_classification": {
+    "company_index": 0,
+    "method": "GET",
+    "path": "/api/v2/workflow",
+    "status": 0,
+    "response_body_complete": false,
+    "started_at": "2026-10-21T04:09:05.807Z",
+    "completed_at": "2026-10-21T04:09:07.162Z",
+    "duration_ms": 1355,
+    "completion_after_final_deadline_ms": 88,
+    "normal_window_technical_failures": [
+      0,
+      0
+    ],
+    "http_429_attempts": 0,
+    "http_5xx_attempts": 0,
+    "interpretation": "Transport/incomplete-response observation during finalization at the fixed deadline. SQLite has no HTTP response status; deadline alignment alone does not prove the transport failure cause."
+  },
+  "runtime_stop": {
+    "runtime_pid": 757319,
+    "client_pid": 759939,
+    "owned_processes": [
+      {
+        "pid": 757319,
+        "ppid": 757305,
+        "state": "S",
+        "start_ticks": "6571521"
+      },
+      {
+        "pid": 757331,
+        "ppid": 757319,
+        "state": "S",
+        "start_ticks": "6571526"
+      },
+      {
+        "pid": 757332,
+        "ppid": 757319,
+        "state": "S",
+        "start_ticks": "6571526"
+      }
+    ],
+    "signal": "SIGTERM",
+    "signal_sent_at": "2026-10-21T04:12:24.138Z",
+    "observed_at": "2026-10-21T04:12:25.148Z",
+    "all_owned_processes_exited": true,
+    "port": 3030,
+    "listener_present": false,
+    "quiet_and_exports_completed_before_stop": true,
+    "official_client_resumed": false,
+    "freeze_manifest_sha256": "8a518d169fa22fc150ccb6e2a2eb1d6400e75ece00a15d4763806a2994a31de2",
+    "shared_slot_releasable": true
+  },
+  "native_stop": {
+    "status": "stopped",
+    "native_postmaster_pid": 756517,
+    "process_state": "Z",
+    "port": 55441,
+    "listener_present": false,
+    "freeze_manifest_sha256": "8a518d169fa22fc150ccb6e2a2eb1d6400e75ece00a15d4763806a2994a31de2",
+    "retained_data_directory": "/tmp/wms-official25-fifth-preparation-20261021-r2/native-postgres/data",
+    "observed_at": "2026-10-21T04:12:36.494Z",
+    "shared_slot_releasable": true
+  },
+  "shared_slot_released": true,
+  "evidence": {
+    "1b846b73-9260-4171-9993-8822a05c8bec.json": {
+      "path": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-fifth-20261021-full/1b846b73-9260-4171-9993-8822a05c8bec.json",
+      "sha256": "bed802e88289c2bd7f93cd81bc2e32aa0bb07d9c0162548bd8cedc8aa1b729e8"
+    },
+    "at-25-minutes.json": {
+      "path": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-fifth-20261021-full/at-25-minutes.json",
+      "sha256": "f1b033d9f736d7c88507778c863e5c83b7db9e734ac170490e1da8d4c6460e78"
+    },
+    "frozen-peak-cohort.json": {
+      "path": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-fifth-20261021-full/frozen-peak-cohort.json",
+      "sha256": "69f9c6ba9feecaba294ef976bbe1f14cb27a5742cc1c602548dd9aa458d98c27"
+    },
+    "manifest.json": {
+      "path": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-fifth-20261021-full/final-boundary-evidence/manifest.json",
+      "sha256": "544451e8aa5267fd5223cf4a4438b34a91ab3d42e7990692ac50632b97e188d7"
+    },
+    "independent-conservation.json": {
+      "path": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-fifth-20261021-full/final-boundary-evidence/independent-conservation.json",
+      "sha256": "2305aa8cd0ac99c8f374cd1006f59b2e96132c5739c927857440c5356370326f"
+    },
+    "post-client-quiet.json": {
+      "path": "/tmp/wms-official25-fifth-preparation-20261021-r2/post-client-quiet.json",
+      "sha256": "e09480f79a8c5009e8c8abc4bbccfe593b87a92d22cb02bc02aec73c9b023b36"
+    },
+    "runtime-stop.json": {
+      "path": "/tmp/wms-official25-fifth-preparation-20261021-r2/runtime-stop.json",
+      "sha256": "97cb63b3bdbccf23c8b8b767db87e77896ff0636c4095dee4e8b2c8e65e9551e"
+    },
+    "native-stop.json": {
+      "path": "/tmp/wms-official25-fifth-preparation-20261021-r2/native-stop.json",
+      "sha256": "825615823e97d776a9e0e81add75e7d68437fa6408376ffb0f03ea73e6505291"
+    },
+    "actual-resource-evidence.json": {
+      "path": "/tmp/wms-official25-fifth-preparation-20261021-r2/actual-resource-evidence.json",
+      "sha256": "71927a8177840c4438793b80be87296005f4550b6954de4536f72379c6635b3f"
+    },
+    "freeze-manifest.json": {
+      "path": "/tmp/wms-official25-fifth-preparation-20261021-r2/freeze-manifest.json",
+      "sha256": "8a518d169fa22fc150ccb6e2a2eb1d6400e75ece00a15d4763806a2994a31de2"
+    }
+  },
+  "limitations": [
+    "Performance and original-quantity completeness remain FAILED. Zero independent conservation differences do not change the original verdict.",
+    "Full exports were captured after observed quiet; their versions exactly match the original report boundaries. Original report bytes remain unchanged.",
+    "No automatic resume, replacement workload or deadline extension occurred. Prior four failures remain preserved."
+  ]
+}

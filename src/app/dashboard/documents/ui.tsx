@@ -1248,6 +1248,7 @@ export default function Documents({
           locations={locations}
           documents
           history={history}
+          embedded
         />
         {!loaded ? (
           <p role="status" className="py-8 text-center text-slate-500">

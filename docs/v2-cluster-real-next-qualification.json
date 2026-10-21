@@ -1,0 +1,202 @@
+{
+  "status": "passed_bounded_correctness_cases",
+  "startedAt": "2026-10-21T02:46:06.941Z",
+  "buildId": "ygoExTu2jqOW7riRXrCxw",
+  "runtimeRevision": "r2",
+  "api": [
+    {
+      "case": "company_0_authenticated_read",
+      "passed": true,
+      "workers_observed": [
+        1,
+        2
+      ],
+      "requests": 2
+    },
+    {
+      "case": "company_0_cross_company_denial",
+      "passed": true,
+      "workers_observed": [
+        1,
+        2
+      ],
+      "requests": 2
+    },
+    {
+      "case": "company_0_explicit_replay",
+      "passed": true,
+      "workers_observed": [
+        1,
+        2
+      ],
+      "requests": 2
+    },
+    {
+      "case": "company_0_fresh_role_replay_denial",
+      "passed": true,
+      "workers_observed": [
+        1,
+        2
+      ],
+      "requests": 2
+    },
+    {
+      "case": "company_0_fresh_role_write_denial",
+      "passed": true,
+      "workers_observed": [
+        1,
+        2
+      ],
+      "requests": 2
+    },
+    {
+      "case": "company_0_single_committed_request_and_effect",
+      "passed": true,
+      "request_records": 1,
+      "business_objects": 1
+    },
+    {
+      "case": "company_1_authenticated_read",
+      "passed": true,
+      "workers_observed": [
+        1,
+        2
+      ],
+      "requests": 2
+    },
+    {
+      "case": "company_1_cross_company_denial",
+      "passed": true,
+      "workers_observed": [
+        1,
+        2
+      ],
+      "requests": 2
+    },
+    {
+      "case": "company_1_explicit_replay",
+      "passed": true,
+      "workers_observed": [
+        1,
+        2
+      ],
+      "requests": 2
+    },
+    {
+      "case": "company_1_fresh_role_replay_denial",
+      "passed": true,
+      "workers_observed": [
+        1,
+        2
+      ],
+      "requests": 2
+    },
+    {
+      "case": "company_1_fresh_role_write_denial",
+      "passed": true,
+      "workers_observed": [
+        1,
+        2
+      ],
+      "requests": 2
+    },
+    {
+      "case": "company_1_single_committed_request_and_effect",
+      "passed": true,
+      "request_records": 1,
+      "business_objects": 1
+    }
+  ],
+  "lifecycle": {
+    "status": "passed_sampled_cases",
+    "configuredPoolMaximum": 5,
+    "backendSamplingIntervalMs": 25,
+    "cases": [
+      {
+        "name": "disconnected_original_drain",
+        "passed": true,
+        "newRequestDenied": true,
+        "originalCommittedOnce": true,
+        "replaySingleRecord": true
+      },
+      {
+        "name": "killed_worker_recovery",
+        "passed": true,
+        "rolledBackOriginal": true,
+        "explicitReplaySingleRecord": true
+      }
+    ],
+    "maximumSampledApplicationBackends": 2,
+    "absoluteBackendCapGate": "not_exceeded_in_samples",
+    "absoluteBackendCapProven": false
+  },
+  "finalExports": [
+    {
+      "companyIndex": 0,
+      "boundary": 6648,
+      "ledgerRows": 15326,
+      "pages": 31
+    },
+    {
+      "companyIndex": 1,
+      "boundary": 6645,
+      "ledgerRows": 15308,
+      "pages": 31
+    }
+  ],
+  "stop": {
+    "clean": true,
+    "listenerAbsent": true,
+    "observedAt": "2026-10-21T02:46:29.312Z"
+  },
+  "finishedAt": "2026-10-21T02:46:29.312Z",
+  "independentConservation": {
+    "mode": "qualification",
+    "read_only_independent_python": true,
+    "companies": [
+      {
+        "target_index": 0,
+        "boundary": 6648,
+        "ledger_boundary": 6648,
+        "ledger_rows": 15326,
+        "stock_ledger_bucket_differences": 0,
+        "invalid_stock_or_reservations": 0,
+        "line_conservation_failures": 0,
+        "passed": true
+      },
+      {
+        "target_index": 1,
+        "boundary": 6645,
+        "ledger_boundary": 6645,
+        "ledger_rows": 15308,
+        "stock_ledger_bucket_differences": 0,
+        "invalid_stock_or_reservations": 0,
+        "line_conservation_failures": 0,
+        "passed": true
+      }
+    ],
+    "method": "Independent arithmetic over every stock S/R/P/Q/B bucket and complete matching-boundary ledger; nonnegative quantities, R<=S, and order/receipt line conservation. No new physical command-intent oracle claim."
+  },
+  "resourceCommonAncestorVerified": false,
+  "absoluteLiveBackendCapVerified": false,
+  "productionDeploymentQualified": false,
+  "G3Passed": false,
+  "verification": {
+    "full": "309 unit,55 simulator,208 PostgreSQL,44 E2E and build passed",
+    "post_full_external_supervisor": "39 focused cluster unit,315 all unit and typecheck passed",
+    "local_commit": "42331d6"
+  },
+  "runtime": {
+    "build_id": "ygoExTu2jqOW7riRXrCxw",
+    "revision": "r2",
+    "manifest_sha256": "b9c447836897582519459515fbafc3b641a73ac11460386a4bca405af2b343c6"
+  },
+  "limitations": [
+    "Correctness qualification only; no throughput comparison or official arrival-rate qualification.",
+    "Application parent reports4CPU32GiB, but common effective resource ancestry with Docker PostgreSQL remains unproven.",
+    "25ms backend sampling saw maximum2; pools were not saturated and instantaneous absolute cap5 is not proven.",
+    "Private controller/worker observation preloads were used; actual Docker image packaging remains separately unverified.",
+    "Earlier qualification-only observer failures were preserved; safe reruns added receipt intents only in the new isolated database.",
+    "Interrupted lifecycle commands exercised receipt.create, not a physical stock-changing command; intermediate transaction counts are controller assertions, while final ledger conservation is independently calculated."
+  ]
+}

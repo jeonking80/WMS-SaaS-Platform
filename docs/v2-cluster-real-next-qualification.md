@@ -1,0 +1,15 @@
+# Bounded real Next cluster correctness qualification
+
+The optional two-worker launcher passed the exercised authentication, authorization, replay and lifecycle cases against a fresh isolated schema 20 PostgreSQL copy. This does not qualify production multi-process deployment, prove an absolute backend cap, or pass G3.
+
+Both workers ran application build `ygoExTu2jqOW7riRXrCxw`, runtime revision r2, with configured pools 3+2. Full verification passed 309 unit, 55 simulator, 208 PostgreSQL and 44 browser tests. The later external supervisor shutdown-accounting correction passed 39 focused cluster tests, 315 all unit tests and typecheck. The application bundle was unchanged; the external launcher module received a new runtime manifest. Local source commit: `42331d6`.
+
+All 12 API assertions passed. A single authenticated cookie served protected requests through both workers for each company. Cross-company access was denied through both workers. Fresh membership downgrades denied both new writes and replay of previously authorized writes. Explicit replay through both workers retained one request record and one receipt object.
+
+A disconnected HTTP command remained blocked on an isolated workflow header lock while shutdown began. New admission returned 503 with a server request ID. Releasing the lock let the original command commit exactly once before drain acknowledgement and worker termination. Restarting the same runtime and explicitly replaying the original request retained one record. A separately identified worker was killed while blocked; its uncommitted command rolled back, a replacement started, and explicit retry/replay committed once. No automatic POST replay was introduced. These lifecycle transactions exercised `receipt.create`, not a physical stock-changing command; final independent stock/ledger arithmetic does not expand that interrupted-command scope.
+
+The configured application pool maximum was 5. Sampling every 25 ms observed at most 2 live application backends during the crash case. This did not saturate the pools and cannot establish an instantaneous absolute backend cap. Application processes had a 4 CPU / 32 GiB parent limit; a common effective ancestor with the Docker PostgreSQL container was not established. Throughput comparisons remain blocked on accurate resource placement.
+
+After ten stable quiet observations, complete matching-boundary snapshots and ledger exports covered 31 pages per company. Independent Python arithmetic found zero stock/ledger bucket differences, invalid stock/reservations or order/receipt line conservation failures. The runtime exited cleanly and port 3029 was absent at 2026-10-21T02:46:29.312Z.
+
+Private evidence and controller files remain under `/tmp/wms-cluster-qualification-20261021`. Initial observer failures are retained separately. They required fixes only to qualification instrumentation, and reruns affected only this isolated database. Actual Docker image packaging and deployment qualification remain separate gates. The original failed congestion runs and immutable dump remain unchanged.

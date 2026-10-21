@@ -33,8 +33,8 @@
     "hold.release validates and records the authoritative top-level command even when extra lines are supplied",
     "Two old-source failures reproduced missing scan validation and incorrect quantity normalization; full acceptance and browser regression passed"
   ],
-  "performance_claim": "Owned-engine predecessor diagnostic selected600 confirmation elapsed45.74% lower in one ordered pair; no official pass. Five official failures preserved.",
+  "performance_claim": "Six official congestion runs remain FAILED. Sixth fixed35-minute result: technical0 and both peak recoveries passed, but normal latency and completion failed (788/789incomplete;2432/2409original-quantity differences). Independent original-boundary physical conservation differences0; this is not G3/G4/G5 qualification. No further performance iterations, latest-build1M or actual8h work started.",
   "restore_status": "schema22 unchanged; actual c9d4673 synthetic restore evidence retained, no repeated restore claimed",
-  "congestion_evidence": "v2-congestion-fifth-final-recovery.json",
+  "congestion_evidence": "v2-congestion-sixth-final-recovery.json",
   "restore_evidence": "restore-verification-schema22.json"
 }

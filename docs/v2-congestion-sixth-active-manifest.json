@@ -1,0 +1,50 @@
+{
+  "status": "final_failed_preserved",
+  "profile": "congestion",
+  "run_id": "585faebc-1be1-4e52-9d8e-a3525707b548",
+  "build_id": "Lb3NKb1lCgfxlUs60Wy1T",
+  "verified_commit": "2aa2774e4d2a30718abdaed91504ad6b7164b44f",
+  "schema_version": 22,
+  "freeze_manifest_sha256": "dfefb178068993ed27fdfab1b326c4819c2cc2c5a334a894ffc7af6fc59ad4c5",
+  "measured_start": "2026-10-21T05:13:46.274Z",
+  "peak_start": "2026-10-21T05:23:46.274Z",
+  "fixed_peak_cohort_boundary": "2026-10-21T05:28:46.274Z",
+  "exact25_deadline": "2026-10-21T05:38:46.274Z",
+  "fallback35_deadline": "2026-10-21T05:48:46.274Z",
+  "diagnostics": "off",
+  "web_workers": 2,
+  "web_pool_partition": [
+    3,
+    2
+  ],
+  "common_resource_envelope": {
+    "cpu_cores": 4,
+    "memory_bytes": 34359738368,
+    "proof": "/tmp/wms-official25-sixth-preparation-20261021-r2/actual-resource-evidence.json",
+    "per_pid_all27_harness_hashes_embedded": true
+  },
+  "private_evidence_paths": {
+    "preparation_root": "/tmp/wms-official25-sixth-preparation-20261021-r2",
+    "profile_journal": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-sixth-20261021-full/profile.sqlite",
+    "checkpoint25": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-sixth-20261021-full/at-25-minutes.json",
+    "progress": "/tmp/wms-official25-sixth-preparation-20261021-r2/progress.json",
+    "freeze_manifest": "/tmp/wms-official25-sixth-preparation-20261021-r2/freeze-manifest.json"
+  },
+  "prior_five_failed_official_runs_preserved": [
+    "89990772-835e-4b2d-b9ee-4750ad668da0",
+    "c83531b5-faad-4e95-836e-26c7056ed465",
+    "c2267197-a92a-4374-bae0-fc0b3b920199",
+    "30d05ed0-8864-4282-a335-4d2746de1697",
+    "1b846b73-9260-4171-9993-8822a05c8bec"
+  ],
+  "historical_sixth_preparation_not_formal_run": "/tmp/wms-official25-sixth-preparation-20261021/historical-preparation.json",
+  "no_automatic_resume": true,
+  "formal_client_runs": 1,
+  "credentials_published": false,
+  "verdict": "failed",
+  "qualification_pending_final_report": false,
+  "final_report": "docs/v2-congestion-sixth-final-recovery.json",
+  "shared_slot_released": true,
+  "finalization_completed_at": "2026-10-21T05:50:17.086Z",
+  "official_failed_run_count": 6
+}

@@ -1,0 +1,80 @@
+{
+  "historical_prior_runs_unchanged": true,
+  "run_id": "585faebc-1be1-4e52-9d8e-a3525707b548",
+  "profile": "congestion",
+  "status": "final_failed_preserved",
+  "qualification_pending_final_report": false,
+  "observed_at": "2026-10-21T05:48:55.229165+00:00",
+  "runs": [
+    {
+      "id": "585faebc-1be1-4e52-9d8e-a3525707b548:0",
+      "status": "paused",
+      "seed_start_ms": 1792559605629,
+      "measured_start_ms": 1792559626274,
+      "measured_elapsed_ms": 2108848,
+      "control_retry": null,
+      "peak_cohort": {
+        "received": 634,
+        "source": 4,
+        "excluded": 0,
+        "frozen_at_ms": 1792560526807
+      }
+    },
+    {
+      "id": "585faebc-1be1-4e52-9d8e-a3525707b548:1",
+      "status": "paused",
+      "seed_start_ms": 1792559605780,
+      "measured_start_ms": 1792559626274,
+      "measured_elapsed_ms": 2108848,
+      "control_retry": null,
+      "peak_cohort": {
+        "received": 654,
+        "source": 4,
+        "excluded": 0,
+        "frozen_at_ms": 1792560528399
+      }
+    }
+  ],
+  "statuses": [
+    [
+      "command",
+      "done",
+      12627
+    ],
+    [
+      "command",
+      "superseded",
+      204
+    ],
+    [
+      "command",
+      "unsent",
+      1577
+    ],
+    [
+      "event",
+      "done",
+      5480
+    ],
+    [
+      "event",
+      "expected_business_rejected",
+      120
+    ]
+  ],
+  "measured_source": {
+    "planned": 5400,
+    "accepted": 5400,
+    "applied": 5280,
+    "expected_rejected": 120,
+    "in_flight": 0
+  },
+  "technical_or_429_attempts": 0,
+  "http429_attempts": 0,
+  "final_report_present": true,
+  "verdict": "failed",
+  "final_report": "docs/v2-congestion-sixth-final-recovery.json",
+  "shared_slot_released": true,
+  "finalization_completed_at": "2026-10-21T05:50:17.086Z",
+  "official_failed_run_count": 6
+}

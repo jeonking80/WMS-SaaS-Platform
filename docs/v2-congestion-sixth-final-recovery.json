@@ -1,0 +1,701 @@
+{
+  "status": "final_failed_preserved",
+  "profile": "congestion",
+  "run_id": "585faebc-1be1-4e52-9d8e-a3525707b548",
+  "build_id": "Lb3NKb1lCgfxlUs60Wy1T",
+  "verified_commit": "2aa2774e4d2a30718abdaed91504ad6b7164b44f",
+  "schema_version": 22,
+  "freeze_manifest_sha256": "dfefb178068993ed27fdfab1b326c4819c2cc2c5a334a894ffc7af6fc59ad4c5",
+  "measured_start": "2026-10-21T05:13:46.274Z",
+  "peak_start": "2026-10-21T05:23:46.274Z",
+  "fixed_peak_cohort_boundary": "2026-10-21T05:28:46.274Z",
+  "exact25_deadline": "2026-10-21T05:38:46.274Z",
+  "fallback35_deadline": "2026-10-21T05:48:46.274Z",
+  "diagnostics": "off",
+  "web_workers": 2,
+  "web_pool_partition": [
+    3,
+    2
+  ],
+  "common_resource_envelope": {
+    "cpu_cores": 4,
+    "memory_bytes": 34359738368,
+    "proof": "/tmp/wms-official25-sixth-preparation-20261021-r2/actual-resource-evidence.json",
+    "per_pid_all27_harness_hashes_embedded": true
+  },
+  "private_evidence_paths": {
+    "preparation_root": "/tmp/wms-official25-sixth-preparation-20261021-r2",
+    "profile_journal": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-sixth-20261021-full/profile.sqlite",
+    "checkpoint25": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-sixth-20261021-full/at-25-minutes.json",
+    "progress": "/tmp/wms-official25-sixth-preparation-20261021-r2/progress.json",
+    "freeze_manifest": "/tmp/wms-official25-sixth-preparation-20261021-r2/freeze-manifest.json"
+  },
+  "prior_five_failed_official_runs_preserved": [
+    "89990772-835e-4b2d-b9ee-4750ad668da0",
+    "c83531b5-faad-4e95-836e-26c7056ed465",
+    "c2267197-a92a-4374-bae0-fc0b3b920199",
+    "30d05ed0-8864-4282-a335-4d2746de1697",
+    "1b846b73-9260-4171-9993-8822a05c8bec"
+  ],
+  "historical_sixth_preparation_not_formal_run": "/tmp/wms-official25-sixth-preparation-20261021/historical-preparation.json",
+  "no_automatic_resume": true,
+  "formal_client_runs": 1,
+  "credentials_published": false,
+  "execution": "interrupted",
+  "verdict": "failed",
+  "original_report_generated_at": "2026-10-21T05:48:51.476Z",
+  "original_report_sha256": "d03c1855c5e842a8dfa26aa132f35ba19995a18b7a9db78c05d96578444356f3",
+  "official_failed_run_count": 6,
+  "companies": [
+    {
+      "company_index": 0,
+      "original_report_boundary": 9053,
+      "delivered_unique_events": 2700,
+      "normal": {
+        "name": "normal_combined",
+        "planned_events": 1200,
+        "accepted_events": 1200,
+        "automatic_events": 1140,
+        "applied_automatic_events": 1140,
+        "expected_outcomes": 60,
+        "external_acceptance": {
+          "p95_ms": 1629,
+          "maximum_ms": 1000,
+          "samples": 1200,
+          "met": false
+        },
+        "external_application": {
+          "p95_ms": 221857,
+          "maximum_ms": 5000,
+          "samples": 1140,
+          "met": false
+        },
+        "physical_confirmation": {
+          "p95_ms": 2620,
+          "maximum_ms": 1500,
+          "samples": 3592,
+          "met": false
+        },
+        "retry_inclusive_lead_time": {
+          "p95_ms": 1414,
+          "maximum_ms": 1000,
+          "samples": 1200,
+          "met": false,
+          "qualification": false,
+          "reason": "Additional first-send-to-receipt evidence; does not replace successful-HTTP acceptance p95."
+        },
+        "technical_failures": {
+          "numerator": 0,
+          "denominator": 24056,
+          "rate": 0,
+          "strict_maximum": 0.001,
+          "met": true
+        },
+        "business_rejection_http_attempts": 0,
+        "missing_acceptance_latency_ids": 0,
+        "unresolved": 0,
+        "met": false
+      },
+      "peak_recovery": {
+        "applicable": true,
+        "peak_end_ms": 1792560526274,
+        "deadline_ms": 1792561126274,
+        "frozen_at_ms": 1792560526807,
+        "observed_at_ms": 1792561726321,
+        "received_backlog": {
+          "ids": 634,
+          "count": 634,
+          "empty": false,
+          "completed": 634,
+          "unresolved": 0,
+          "late_ids": 0,
+          "recovered_at_ms": 1792560918522,
+          "recovery_ms": 392248,
+          "met": true
+        },
+        "source_backlog": {
+          "ids": 4,
+          "count": 4,
+          "empty": false,
+          "completed": 4,
+          "unresolved": 0,
+          "late_ids": 0,
+          "recovered_at_ms": 1792560781865,
+          "recovery_ms": 255591,
+          "met": true
+        },
+        "excluded": 0,
+        "invalidated_exclusions": 0,
+        "cohort_regressions": {
+          "missing_final_ids": 0,
+          "unexpected_pre_peak_ids": 0,
+          "uncovered_ids": 0,
+          "duplicate_coverage": false,
+          "coverage_changed": false
+        },
+        "post_peak_outstanding": 0,
+        "met": true,
+        "not_yet_observed_through_deadline": false
+      },
+      "physical_confirmation": {
+        "p95_ms": 2620,
+        "maximum_ms": 1500,
+        "samples": 3592,
+        "met": false,
+        "qualification": false,
+        "reason": "Congestion physical latency is evidence; the 1.5s requirement belongs to the normal shift profile."
+      },
+      "successful_physical_commands": 6313,
+      "incomplete_commands": 788,
+      "incomplete_statuses": {
+        "unsent": 788
+      },
+      "original_difference_count": 2432,
+      "original_difference_kinds": {
+        "original_quantity": 2432
+      },
+      "technical_error_count": 0,
+      "original_client_integrity_passed": false,
+      "verdict": "failed"
+    },
+    {
+      "company_index": 1,
+      "original_report_boundary": 9054,
+      "delivered_unique_events": 2700,
+      "normal": {
+        "name": "normal_combined",
+        "planned_events": 1200,
+        "accepted_events": 1200,
+        "automatic_events": 1140,
+        "applied_automatic_events": 1140,
+        "expected_outcomes": 60,
+        "external_acceptance": {
+          "p95_ms": 1611,
+          "maximum_ms": 1000,
+          "samples": 1200,
+          "met": false
+        },
+        "external_application": {
+          "p95_ms": 251991,
+          "maximum_ms": 5000,
+          "samples": 1140,
+          "met": false
+        },
+        "physical_confirmation": {
+          "p95_ms": 2552,
+          "maximum_ms": 1500,
+          "samples": 3570,
+          "met": false
+        },
+        "retry_inclusive_lead_time": {
+          "p95_ms": 1413,
+          "maximum_ms": 1000,
+          "samples": 1200,
+          "met": false,
+          "qualification": false,
+          "reason": "Additional first-send-to-receipt evidence; does not replace successful-HTTP acceptance p95."
+        },
+        "technical_failures": {
+          "numerator": 0,
+          "denominator": 23744,
+          "rate": 0,
+          "strict_maximum": 0.001,
+          "met": true
+        },
+        "business_rejection_http_attempts": 0,
+        "missing_acceptance_latency_ids": 0,
+        "unresolved": 0,
+        "met": false
+      },
+      "peak_recovery": {
+        "applicable": true,
+        "peak_end_ms": 1792560526274,
+        "deadline_ms": 1792561126274,
+        "frozen_at_ms": 1792560528399,
+        "observed_at_ms": 1792561726321,
+        "received_backlog": {
+          "ids": 654,
+          "count": 654,
+          "empty": false,
+          "completed": 654,
+          "unresolved": 0,
+          "late_ids": 0,
+          "recovered_at_ms": 1792560940082,
+          "recovery_ms": 413808,
+          "met": true
+        },
+        "source_backlog": {
+          "ids": 4,
+          "count": 4,
+          "empty": false,
+          "completed": 4,
+          "unresolved": 0,
+          "late_ids": 0,
+          "recovered_at_ms": 1792560963061,
+          "recovery_ms": 436787,
+          "met": true
+        },
+        "excluded": 0,
+        "invalidated_exclusions": 0,
+        "cohort_regressions": {
+          "missing_final_ids": 0,
+          "unexpected_pre_peak_ids": 0,
+          "uncovered_ids": 0,
+          "duplicate_coverage": false,
+          "coverage_changed": false
+        },
+        "post_peak_outstanding": 0,
+        "met": true,
+        "not_yet_observed_through_deadline": false
+      },
+      "physical_confirmation": {
+        "p95_ms": 2552,
+        "maximum_ms": 1500,
+        "samples": 3570,
+        "met": false,
+        "qualification": false,
+        "reason": "Congestion physical latency is evidence; the 1.5s requirement belongs to the normal shift profile."
+      },
+      "successful_physical_commands": 6314,
+      "incomplete_commands": 789,
+      "incomplete_statuses": {
+        "unsent": 789
+      },
+      "original_difference_count": 2409,
+      "original_difference_kinds": {
+        "original_quantity": 2409
+      },
+      "technical_error_count": 0,
+      "original_client_integrity_passed": false,
+      "verdict": "failed"
+    }
+  ],
+  "source_final_status_counts": {
+    "done": 5280,
+    "expected_business_rejected": 120
+  },
+  "technical_attempt_classification": {
+    "api_call_status_histogram": {
+      "200": 68903,
+      "202": 5600,
+      "409": 1
+    },
+    "transport_status0_attempts": 0,
+    "http429_attempts": 0,
+    "http5xx_attempts": 0,
+    "normal_window_technical_failures": [
+      0,
+      0
+    ],
+    "interpretation": "No technical or429 attempts recorded. The sole409 is retained as an HTTP observation and is outside the technical-error definition."
+  },
+  "exact25_checkpoint": {
+    "path": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-sixth-20261021-full/at-25-minutes.json",
+    "sha256": "221c4f360f91c236d64c5977b1ac2525d335b3cfe33d60d374a156618df947f0",
+    "logical_deadline": "2026-10-21T05:38:46.274Z",
+    "sampled_at": "2026-10-21T05:38:47.067Z",
+    "sampling_after_logical_deadline_ms": 793
+  },
+  "final_fixed_boundary_export": {
+    "run_id": "585faebc-1be1-4e52-9d8e-a3525707b548",
+    "captured_at": "2026-10-21T05:49:34.414Z",
+    "report_sha256": "d03c1855c5e842a8dfa26aa132f35ba19995a18b7a9db78c05d96578444356f3",
+    "results": [
+      {
+        "company_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+        "report_boundary": 9053,
+        "boundary": 9053,
+        "snapshot_basis": "matches_original_report_boundary",
+        "ledger_rows": 18420,
+        "pages": 37,
+        "snapshot_sha256": "7551203b96b9efb7328380f6f0203d2c5718a0d73ea4c6291789847b6a8d6d16",
+        "ledger_sha256": "b3e23db877e25f6ec3ebc2e533080e07af477f582729f6c629f924b71d69ca65",
+        "client_independent_reconciliation": {
+          "status": "completed",
+          "boundary": 9053,
+          "independent_match": false,
+          "read_retries": 0
+        }
+      },
+      {
+        "company_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+        "report_boundary": 9054,
+        "boundary": 9054,
+        "snapshot_basis": "matches_original_report_boundary",
+        "ledger_rows": 18360,
+        "pages": 37,
+        "snapshot_sha256": "15fb0f85edabc8254191ce08832e8253340cb644ff1153e71f9f2e323ecacc03",
+        "ledger_sha256": "c201296508fdeeab736fb67d937f22f0aecb6e3c67abb54ba10966ce49eeaa1a",
+        "client_independent_reconciliation": {
+          "status": "completed",
+          "boundary": 9054,
+          "independent_match": false,
+          "read_retries": 0
+        }
+      }
+    ],
+    "method": "Read-only export after observed post-client quiet. Snapshot and ledger have matching observed boundary and are rechecked after pagination. Original report boundaries are separate; later state is explicitly labeled post-run comparison. Report verdict unchanged."
+  },
+  "independent_physical_conservation": {
+    "run_id": "585faebc-1be1-4e52-9d8e-a3525707b548",
+    "method": "Independent Python arithmetic over all fixed-boundary exported ledger rows, all stock buckets and durable completed-command oracle deltas; no baseline, no database/API writes. Incomplete originals and quality failures remain failed in original report.",
+    "companies": [
+      {
+        "company_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+        "original_report_boundary": 9053,
+        "snapshot_basis": "matches_original_report_boundary",
+        "boundary": 9053,
+        "ledger_boundary": 9053,
+        "ledger_rows": 18420,
+        "invalid_stock_or_reservations": 0,
+        "line_conservation_failures": 0,
+        "physical_stock_ledger_command_delta_conservation": true,
+        "difference_count": 0,
+        "differences": []
+      },
+      {
+        "company_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+        "original_report_boundary": 9054,
+        "snapshot_basis": "matches_original_report_boundary",
+        "boundary": 9054,
+        "ledger_boundary": 9054,
+        "ledger_rows": 18360,
+        "invalid_stock_or_reservations": 0,
+        "line_conservation_failures": 0,
+        "physical_stock_ledger_command_delta_conservation": true,
+        "difference_count": 0,
+        "differences": []
+      }
+    ]
+  },
+  "post_client_quiet": {
+    "status": "observed_quiet",
+    "run_id": "585faebc-1be1-4e52-9d8e-a3525707b548",
+    "freeze_manifest_sha256": "dfefb178068993ed27fdfab1b326c4819c2cc2c5a334a894ffc7af6fc59ad4c5",
+    "client_start_ticks": "7186763",
+    "client_exit_evidence": {
+      "pid": 846219,
+      "start_ticks": "7186763",
+      "freeze_manifest_sha256": "dfefb178068993ed27fdfab1b326c4819c2cc2c5a334a894ffc7af6fc59ad4c5",
+      "code": 1,
+      "signal": null,
+      "observed_at": "2026-10-21T05:48:51.522Z"
+    },
+    "client_pid": 846219,
+    "client_absent": true,
+    "samples": [
+      {
+        "at": "2026-10-21T05:49:04.871Z",
+        "versions": [
+          {
+            "tenant_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+            "warehouse_id": "5b23ad78-4b12-42c1-9434-1df0194e6caa",
+            "version": 9053
+          },
+          {
+            "tenant_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+            "warehouse_id": "3c124e69-0145-42f1-b9aa-d68f143ff2ab",
+            "version": 9054
+          }
+        ],
+        "nonidle_application_database_sessions": 0,
+        "consecutive_stable_seconds": 0
+      },
+      {
+        "at": "2026-10-21T05:49:05.875Z",
+        "versions": [
+          {
+            "tenant_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+            "warehouse_id": "5b23ad78-4b12-42c1-9434-1df0194e6caa",
+            "version": 9053
+          },
+          {
+            "tenant_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+            "warehouse_id": "3c124e69-0145-42f1-b9aa-d68f143ff2ab",
+            "version": 9054
+          }
+        ],
+        "nonidle_application_database_sessions": 0,
+        "consecutive_stable_seconds": 1
+      },
+      {
+        "at": "2026-10-21T05:49:06.878Z",
+        "versions": [
+          {
+            "tenant_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+            "warehouse_id": "5b23ad78-4b12-42c1-9434-1df0194e6caa",
+            "version": 9053
+          },
+          {
+            "tenant_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+            "warehouse_id": "3c124e69-0145-42f1-b9aa-d68f143ff2ab",
+            "version": 9054
+          }
+        ],
+        "nonidle_application_database_sessions": 0,
+        "consecutive_stable_seconds": 2
+      },
+      {
+        "at": "2026-10-21T05:49:07.881Z",
+        "versions": [
+          {
+            "tenant_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+            "warehouse_id": "5b23ad78-4b12-42c1-9434-1df0194e6caa",
+            "version": 9053
+          },
+          {
+            "tenant_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+            "warehouse_id": "3c124e69-0145-42f1-b9aa-d68f143ff2ab",
+            "version": 9054
+          }
+        ],
+        "nonidle_application_database_sessions": 0,
+        "consecutive_stable_seconds": 3
+      },
+      {
+        "at": "2026-10-21T05:49:08.887Z",
+        "versions": [
+          {
+            "tenant_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+            "warehouse_id": "5b23ad78-4b12-42c1-9434-1df0194e6caa",
+            "version": 9053
+          },
+          {
+            "tenant_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+            "warehouse_id": "3c124e69-0145-42f1-b9aa-d68f143ff2ab",
+            "version": 9054
+          }
+        ],
+        "nonidle_application_database_sessions": 0,
+        "consecutive_stable_seconds": 4
+      },
+      {
+        "at": "2026-10-21T05:49:09.892Z",
+        "versions": [
+          {
+            "tenant_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+            "warehouse_id": "5b23ad78-4b12-42c1-9434-1df0194e6caa",
+            "version": 9053
+          },
+          {
+            "tenant_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+            "warehouse_id": "3c124e69-0145-42f1-b9aa-d68f143ff2ab",
+            "version": 9054
+          }
+        ],
+        "nonidle_application_database_sessions": 0,
+        "consecutive_stable_seconds": 5
+      },
+      {
+        "at": "2026-10-21T05:49:10.895Z",
+        "versions": [
+          {
+            "tenant_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+            "warehouse_id": "5b23ad78-4b12-42c1-9434-1df0194e6caa",
+            "version": 9053
+          },
+          {
+            "tenant_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+            "warehouse_id": "3c124e69-0145-42f1-b9aa-d68f143ff2ab",
+            "version": 9054
+          }
+        ],
+        "nonidle_application_database_sessions": 0,
+        "consecutive_stable_seconds": 6
+      },
+      {
+        "at": "2026-10-21T05:49:11.898Z",
+        "versions": [
+          {
+            "tenant_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+            "warehouse_id": "5b23ad78-4b12-42c1-9434-1df0194e6caa",
+            "version": 9053
+          },
+          {
+            "tenant_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+            "warehouse_id": "3c124e69-0145-42f1-b9aa-d68f143ff2ab",
+            "version": 9054
+          }
+        ],
+        "nonidle_application_database_sessions": 0,
+        "consecutive_stable_seconds": 7
+      },
+      {
+        "at": "2026-10-21T05:49:12.901Z",
+        "versions": [
+          {
+            "tenant_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+            "warehouse_id": "5b23ad78-4b12-42c1-9434-1df0194e6caa",
+            "version": 9053
+          },
+          {
+            "tenant_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+            "warehouse_id": "3c124e69-0145-42f1-b9aa-d68f143ff2ab",
+            "version": 9054
+          }
+        ],
+        "nonidle_application_database_sessions": 0,
+        "consecutive_stable_seconds": 8
+      },
+      {
+        "at": "2026-10-21T05:49:13.904Z",
+        "versions": [
+          {
+            "tenant_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+            "warehouse_id": "5b23ad78-4b12-42c1-9434-1df0194e6caa",
+            "version": 9053
+          },
+          {
+            "tenant_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+            "warehouse_id": "3c124e69-0145-42f1-b9aa-d68f143ff2ab",
+            "version": 9054
+          }
+        ],
+        "nonidle_application_database_sessions": 0,
+        "consecutive_stable_seconds": 9
+      },
+      {
+        "at": "2026-10-21T05:49:14.907Z",
+        "versions": [
+          {
+            "tenant_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+            "warehouse_id": "5b23ad78-4b12-42c1-9434-1df0194e6caa",
+            "version": 9053
+          },
+          {
+            "tenant_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+            "warehouse_id": "3c124e69-0145-42f1-b9aa-d68f143ff2ab",
+            "version": 9054
+          }
+        ],
+        "nonidle_application_database_sessions": 0,
+        "consecutive_stable_seconds": 10
+      }
+    ],
+    "report_boundaries": [
+      {
+        "company_id": "9939a1b6-4b5f-4fc8-b65d-82301f5039af",
+        "boundary": 9053
+      },
+      {
+        "company_id": "e62c2b80-2c30-4f28-ad6d-b21a373f4d79",
+        "boundary": 9054
+      }
+    ],
+    "limitation": "Observed unchanged workflow versions and no non-idle application DB sessions for10consecutive1s samples after client exit; later export rechecks versions. This does not rewrite the original report boundary."
+  },
+  "runtime_stop": {
+    "runtime_pid": 844346,
+    "client_pid": 846219,
+    "owned_processes": [
+      {
+        "pid": 844346,
+        "ppid": 844335,
+        "state": "S",
+        "start_ticks": "7170226"
+      },
+      {
+        "pid": 844357,
+        "ppid": 844346,
+        "state": "S",
+        "start_ticks": "7170231"
+      },
+      {
+        "pid": 844358,
+        "ppid": 844346,
+        "state": "S",
+        "start_ticks": "7170231"
+      }
+    ],
+    "signal": "SIGTERM",
+    "signal_sent_at": "2026-10-21T05:50:01.938Z",
+    "observed_at": "2026-10-21T05:50:02.948Z",
+    "all_owned_processes_exited": true,
+    "port": 3033,
+    "listener_present": false,
+    "quiet_and_exports_completed_before_stop": true,
+    "official_client_resumed": false,
+    "freeze_manifest_sha256": "dfefb178068993ed27fdfab1b326c4819c2cc2c5a334a894ffc7af6fc59ad4c5",
+    "shared_slot_releasable": true
+  },
+  "native_stop": {
+    "status": "stopped",
+    "native_postmaster_pid": 844171,
+    "process_state": "Z",
+    "port": 55444,
+    "listener_present": false,
+    "freeze_manifest_sha256": "dfefb178068993ed27fdfab1b326c4819c2cc2c5a334a894ffc7af6fc59ad4c5",
+    "retained_data_directory": "/tmp/wms-official25-sixth-preparation-20261021-r2/native-postgres/data",
+    "observed_at": "2026-10-21T05:50:17.086Z",
+    "shared_slot_releasable": true
+  },
+  "all_owned_processes_inactive": true,
+  "shared_slot_released": true,
+  "finalization_completed_at": "2026-10-21T05:50:17.086Z",
+  "historical_sixth_preparation_formal_client_started": false,
+  "source_verification": {
+    "verified_commit": "2aa2774e4d2a30718abdaed91504ad6b7164b44f",
+    "build_id": "Lb3NKb1lCgfxlUs60Wy1T",
+    "unit": 359,
+    "simulator": 55,
+    "postgres": 223,
+    "e2e": 44,
+    "type_build_exit_code": 0,
+    "verification_log_sha256": "e65bbe6963d0a1f0023c67833ced1a36d60cd61f3dc8cf88ec354b5f8db79134",
+    "schema22_restore": "Actual c9d4673 restore retained; all22SQL and restore script byte-identical; no repeated restore claimed.",
+    "restore_evidence_sha256": "b23c18fd53af76b868a710a13457d35494fdcca553fd10440046c6f9db334383"
+  },
+  "evidence": {
+    "585faebc-1be1-4e52-9d8e-a3525707b548.json": {
+      "path": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-sixth-20261021-full/585faebc-1be1-4e52-9d8e-a3525707b548.json",
+      "sha256": "d03c1855c5e842a8dfa26aa132f35ba19995a18b7a9db78c05d96578444356f3"
+    },
+    "at-25-minutes.json": {
+      "path": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-sixth-20261021-full/at-25-minutes.json",
+      "sha256": "221c4f360f91c236d64c5977b1ac2525d335b3cfe33d60d374a156618df947f0"
+    },
+    "frozen-peak-cohort.json": {
+      "path": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-sixth-20261021-full/frozen-peak-cohort.json",
+      "sha256": "87393c30dbb649356369d511d1b591152aa949476dac33a95d1a5a41f6feaf8f"
+    },
+    "manifest.json": {
+      "path": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-sixth-20261021-full/final-boundary-evidence/manifest.json",
+      "sha256": "a7fa2c25707779fd736600aa30eaec7d2d74bd66d4a8e1a21b7e334a22b1620e"
+    },
+    "independent-conservation.json": {
+      "path": "/workspace/WMS-SaaS-Platform/artifacts/v2-congestion-sixth-20261021-full/final-boundary-evidence/independent-conservation.json",
+      "sha256": "a072e1fe31b84911cd21163975d2d16cf05ad86178d9138acd9efdd08234b791"
+    },
+    "post-client-quiet.json": {
+      "path": "/tmp/wms-official25-sixth-preparation-20261021-r2/post-client-quiet.json",
+      "sha256": "7df03ddb2c2c72571fd551a872571b0eb2411838cd29439f3ef2f29d9d22568c"
+    },
+    "runtime-stop.json": {
+      "path": "/tmp/wms-official25-sixth-preparation-20261021-r2/runtime-stop.json",
+      "sha256": "9bd1cd11af315e9e570dabe76946f7f820bcd0f50aa7b07afc2e9173d8eb55ba"
+    },
+    "native-stop.json": {
+      "path": "/tmp/wms-official25-sixth-preparation-20261021-r2/native-stop.json",
+      "sha256": "85f0bbc4043efe281bc00358677d136176ee51da012ea544c9790d1138c27713"
+    },
+    "freeze-manifest.json": {
+      "path": "/tmp/wms-official25-sixth-preparation-20261021-r2/freeze-manifest.json",
+      "sha256": "dfefb178068993ed27fdfab1b326c4819c2cc2c5a334a894ffc7af6fc59ad4c5"
+    },
+    "actual-resource-evidence.json": {
+      "path": "/tmp/wms-official25-sixth-preparation-20261021-r2/actual-resource-evidence.json",
+      "sha256": "f592735d9026e28df76cdf982853c0b9311880fce38cfa57d548dd65cadad895"
+    },
+    "client-contract-provenance.json": {
+      "path": "/tmp/wms-official25-sixth-preparation-20261021-r2/client-contract-provenance.json",
+      "sha256": "d3073ec76f9dd8dd35fbe8cc8717e2495a39fce6c889f1ef468a0d968629d4b3"
+    }
+  },
+  "limitations": [
+    "Normal performance and original-quantity completeness remain FAILED. Zero independent physical conservation differences do not change the original client integrity/verdict.",
+    "Quiet full exports exactly match original final report boundaries9053/9054; they do not purport to be raw25-minute snapshots. Exact25 consistentSQLite evidence is retained separately.",
+    "All5400arrivals,seed,rates,workers,timeouts,thresholds,25/35deadlines were unchanged; all12client modules match officialfifth byte-for-byte.",
+    "No automatic resume,replacement workload,deadline extension or new iteration occurred. All five prior official failures remain preserved; the first sixth preparation stopped before formalclient and is not an additional run.",
+    "Per user scope,no further performance iterations/newruns/1M/actual8h work were started. Raw original reports,journal,exports,frozenruntime and native data remain retained."
+  ]
+}

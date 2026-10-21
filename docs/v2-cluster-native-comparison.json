@@ -1,0 +1,363 @@
+{
+  "status": "completed_bounded_diagnostic_not_official_qualification",
+  "recorded_at": "2026-10-21T03:08:29.383341+00:00",
+  "source_commit": "42331d65f7d03f966736ffadcaee6cc03bf54efa",
+  "build_id": "ygoExTu2jqOW7riRXrCxw",
+  "runtime_revision": "r2",
+  "schema_version": 20,
+  "topology": {
+    "single": {
+      "workers": 1,
+      "pool_partition": [
+        5
+      ]
+    },
+    "dual": {
+      "workers": 2,
+      "pool_partition": [
+        3,
+        2
+      ]
+    }
+  },
+  "contract": {
+    "companies": 2,
+    "preaccepted_events_per_company": 300,
+    "total_cohort": 600,
+    "new_source_arrivals": 0,
+    "physical_workers": 0,
+    "diagnostics": "on",
+    "timeout_ms": 15000,
+    "pulse_ms": 50,
+    "poll_slots": 10,
+    "poll_backoff_ms": 250,
+    "processor_slots": 1,
+    "process_limit": 50,
+    "duration_cap_ms": 300000
+  },
+  "results": [
+    {
+      "mode": "single",
+      "workers": 1,
+      "web_pool_partition": [
+        5
+      ],
+      "timed_client_status": "cohort_applied",
+      "elapsed_ms": 100223.29218299998,
+      "observed_company_completion_ms": [
+        100223.09607599999,
+        94898.602036
+      ],
+      "client_confirmed_applied": [
+        300,
+        300
+      ],
+      "post_client_committed_applied": [
+        300,
+        300
+      ],
+      "all_warehouse_event_status_counts": [
+        [
+          {
+            "status": "accepted",
+            "n": 888
+          },
+          {
+            "status": "applied",
+            "n": 1945
+          },
+          {
+            "status": "business_rejected",
+            "n": 47
+          }
+        ],
+        [
+          {
+            "status": "accepted",
+            "n": 891
+          },
+          {
+            "status": "applied",
+            "n": 1940
+          },
+          {
+            "status": "business_rejected",
+            "n": 49
+          }
+        ]
+      ],
+      "timed_attempts": 7169,
+      "process_attempts": 38,
+      "poll_attempts": 7131,
+      "technical_attempts": 0,
+      "technical_categories": {},
+      "request_p95_ms": 311.4078590000063,
+      "independent_conservation_passed": true,
+      "quiet_seconds": 10,
+      "boundaries": [
+        6997,
+        6995
+      ],
+      "runtime_stopped_and_port_clear": true,
+      "parent_envelope": {
+        "observed_at": "2026-10-21T03:00:19.755Z",
+        "cpu_max_raw": "400000 100000",
+        "memory_max_raw": "34359738368",
+        "shared_parent": true
+      },
+      "evidence_sha256": {
+        "single-cohort-results.json": "fd876045c0c4e030fd5e529e73bb3b26722e98d381d4aec2f0b2f1b380b4432d",
+        "single-final-observation.json": "9c16e5ff1d6f4041951738562cb237a8dca69379136dfe4fd2f256d4bfce0241",
+        "single-conservation.json": "2d14753755c4d8f1958b68bdc3d74031a009e7a6a4444e99e7592481afb5acaf",
+        "single-stop.json": "459d1332ac89082a95410c367c7fc8785dd40db30b22876ff242d960949fc2cf",
+        "single-parent-envelope.json": "a635bc4f9c5a383ae78df1651841312411642626d1bbddd2a22271626c628b7f"
+      }
+    },
+    {
+      "mode": "dual",
+      "workers": 2,
+      "web_pool_partition": [
+        3,
+        2
+      ],
+      "timed_client_status": "cohort_applied",
+      "elapsed_ms": 71943.238853,
+      "observed_company_completion_ms": [
+        71943.042827,
+        67302.652227
+      ],
+      "client_confirmed_applied": [
+        300,
+        300
+      ],
+      "post_client_committed_applied": [
+        300,
+        300
+      ],
+      "all_warehouse_event_status_counts": [
+        [
+          {
+            "status": "accepted",
+            "n": 890
+          },
+          {
+            "status": "applied",
+            "n": 1943
+          },
+          {
+            "status": "business_rejected",
+            "n": 47
+          }
+        ],
+        [
+          {
+            "status": "accepted",
+            "n": 889
+          },
+          {
+            "status": "applied",
+            "n": 1942
+          },
+          {
+            "status": "business_rejected",
+            "n": 49
+          }
+        ]
+      ],
+      "timed_attempts": 8138,
+      "process_attempts": 28,
+      "poll_attempts": 8110,
+      "technical_attempts": 0,
+      "technical_categories": {},
+      "request_p95_ms": 208.56232500000624,
+      "independent_conservation_passed": true,
+      "quiet_seconds": 10,
+      "boundaries": [
+        6995,
+        6997
+      ],
+      "runtime_stopped_and_port_clear": true,
+      "parent_envelope": {
+        "observed_at": "2026-10-21T03:03:45.640Z",
+        "cpu_max_raw": "400000 100000",
+        "memory_max_raw": "34359738368",
+        "shared_parent": true
+      },
+      "evidence_sha256": {
+        "dual-cohort-results.json": "689302fc5027c164f1030f547968ae86b2fdf44ae09190335762d9f2a09badd3",
+        "dual-final-observation.json": "f7832aec609ae141b16217752f01513498b7e35ce525236419bfc73640882bab",
+        "dual-conservation.json": "6c9e96679d09531e31c9c8a74b85ee60a6469ca498b4890c6025e1e1e5402fc3",
+        "dual-stop.json": "32b2dd48eed2d7756168f9428b7084a6039237341533a868c69b43c87d880185",
+        "dual-parent-envelope.json": "73281ccfc38d61df32c3fbcd1b1a67e32b245acd7d82e0e84062546e9f2376a5"
+      }
+    }
+  ],
+  "dual_over_single_elapsed_ratio": 0.7178295312993431,
+  "observed_elapsed_reduction_percent": 28.217046870065687,
+  "all_committed_and_conserved": true,
+  "shared_slot_release": {
+    "observed_at": "2026-10-21T03:07:12.903555+00:00",
+    "native_postmaster_pid": 722798,
+    "native_postmaster_state": "Z",
+    "native_postmaster_active": false,
+    "listeners_present": {
+      "3028": false,
+      "55440": false
+    },
+    "all_timed_work_finalization_complete": true,
+    "shared_slot_released": true
+  },
+  "resource_evidence": {
+    "native_postgres_version": "17.9",
+    "native_port": 55440,
+    "shared_cpu_quota_cores": 4,
+    "shared_memory_limit_bytes": 34359738368,
+    "actual_pids_verified_before_each_driver_main": true,
+    "postmaster_namespace_proof": "Same PID and startticks before exec with namespace/root/limits, then unchanged cgroup and fork descendant lineage; protected cross-process namespace reads were denied.",
+    "root_evidence": "/tmp/wms-native-postgres-20261021-r1/placement-evidence.json",
+    "per_arm": [
+      "/tmp/wms-cluster-comparison-plan-20261021-r2/single-actual-resource-evidence.json",
+      "/tmp/wms-cluster-comparison-plan-20261021-r2/dual-actual-resource-evidence.json"
+    ],
+    "server_configuration": {
+      "same_server_for_both_fresh_copies": true,
+      "port": 55440,
+      "settings": [
+        {
+          "name": "checkpoint_timeout",
+          "setting": "300",
+          "unit": "s",
+          "source": "default"
+        },
+        {
+          "name": "effective_cache_size",
+          "setting": "524288",
+          "unit": "8kB",
+          "source": "default"
+        },
+        {
+          "name": "fsync",
+          "setting": "on",
+          "unit": null,
+          "source": "default"
+        },
+        {
+          "name": "full_page_writes",
+          "setting": "on",
+          "unit": null,
+          "source": "default"
+        },
+        {
+          "name": "jit",
+          "setting": "on",
+          "unit": null,
+          "source": "default"
+        },
+        {
+          "name": "maintenance_work_mem",
+          "setting": "65536",
+          "unit": "kB",
+          "source": "default"
+        },
+        {
+          "name": "max_connections",
+          "setting": "100",
+          "unit": null,
+          "source": "configuration file"
+        },
+        {
+          "name": "max_parallel_workers",
+          "setting": "8",
+          "unit": null,
+          "source": "default"
+        },
+        {
+          "name": "max_wal_size",
+          "setting": "1024",
+          "unit": "MB",
+          "source": "configuration file"
+        },
+        {
+          "name": "max_worker_processes",
+          "setting": "8",
+          "unit": null,
+          "source": "default"
+        },
+        {
+          "name": "shared_buffers",
+          "setting": "16384",
+          "unit": "8kB",
+          "source": "configuration file"
+        },
+        {
+          "name": "synchronous_commit",
+          "setting": "on",
+          "unit": null,
+          "source": "default"
+        },
+        {
+          "name": "track_io_timing",
+          "setting": "off",
+          "unit": null,
+          "source": "default"
+        },
+        {
+          "name": "work_mem",
+          "setting": "4096",
+          "unit": "kB",
+          "source": "default"
+        }
+      ],
+      "limitation": "Native cluster configuration and storage differ from earlier Docker runs. Compare only this pair; no old absolute timing claim."
+    }
+  },
+  "hash_metadata": {
+    "fixed_driver_sha256": "3eb0d2488c91698fb0bae263c5b6bf45a2b96aeef8b75bc187f9abbab4a5dd62",
+    "postrun_passive_harness_hashes": {
+      "scope": "Hashes recorded after both runs; reviewer observed identical unchanged instrumentation during execution. These are NOT cryptographic per-arm startup attestations.",
+      "recorded_at": "2026-10-21T03:07:12.903555+00:00",
+      "sha256": {
+        "resource-preload.mjs": "03537c3bcc75936e0c98e1c1045d1883bd600db1646e264c088559fe7a3a215b",
+        "wait-for-placement.mjs": "aa8a80d4bdbbb812b76f5ed1f6a2589528fe98d52438333fe5dc76c7c5e6c4a6",
+        "verify-actual-pids.mjs": "4134e23679407eec447556576f247663390d7515db1f895d8f5095deac79aeee"
+      }
+    },
+    "historical_commit_nonruntime_document_mismatches": [
+      "deploy/cluster-option.md"
+    ],
+    "meaning": "Different manifest hashes describe different files/scopes; they are not differing runtime builds. Driver SHA was pinned at both launch states; passive harness hashes were recorded only after the pair and equality was independently observed.",
+    "shared_runtime_manifest_sha256": "b9c447836897582519459515fbafc3b641a73ac11460386a4bca405af2b343c6",
+    "comparison_adoption_manifest_sha256": "92d8e9c2ba8c34d919c02f39c1e26f16542498846ba23e4d25e144ec17ad9f91"
+  },
+  "archive_retention": {
+    "immutable_archive_sha256": "40cc61a425e306991400d39a8bde88b5f7506415decb8284d279fa40b2f3c78a",
+    "archive_retained": true,
+    "fresh_native_copies_retained": true,
+    "prior_four_official_failures_unchanged": [
+      "89990772-835e-4b2d-b9ee-4750ad668da0",
+      "c83531b5-faad-4e95-836e-26c7056ed465",
+      "c2267197-a92a-4374-bae0-fc0b3b920199",
+      "30d05ed0-8864-4282-a335-4d2746de1697"
+    ],
+    "original_database_accessed": false
+  },
+  "limitations": [
+    "One ordered diagnostic pair has cache/order noise.",
+    "Passive startup instrumentation equality was independently observed and final hashes recorded; per-arm startup records did not cryptographically pin those harness script hashes.",
+    "Final per-company outside-cohort processing distribution differs slightly; complete final status counts are retained.",
+    "Native PostgreSQL settings/storage/resource placement differ from prior Docker runs; no old absolute timing comparison.",
+    "No fresh source arrivals or physical-worker workload; no official congestion or G3 qualification.",
+    "Timed client outcome is separate from post-client committed outcome.",
+    "CPU counters describe usage and cannot establish the cause of elapsed-time differences."
+  ],
+  "private_evidence_root": "/tmp/wms-cluster-comparison-plan-20261021-r2",
+  "raw_evidence": {
+    "snapshots_and_all_ledger_pages": [
+      "/tmp/wms-cluster-comparison-plan-20261021-r2/single-final-boundary",
+      "/tmp/wms-cluster-comparison-plan-20261021-r2/dual-final-boundary"
+    ],
+    "summary_sha256": "d27cd91b96cf3dd4371150927cc670588bc1fdea3033512e21c42312ded90ff4"
+  },
+  "credentials_published": false,
+  "outside_cohort_note": "Same600-event selected cohort; both arms total3885 applied in the two warehouses at final boundary, but per-company final work is not identical (single1945/1940, dual1943/1942)."
+}

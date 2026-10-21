@@ -1,5 +1,6 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import type { Identity } from "@/server/auth/access";
 import {
   api,
@@ -32,21 +33,35 @@ type Runtime = {
   assignees?: Person[];
   automationAccounts?: Person[];
 };
-const fieldTabs = ["control", "queue", "receipts", "orders", "returns"],
-  environments: Record<string, string> = { production: "운영 환경", test: "시험 환경", development: "개발 환경" };
-const tabs = [
-  ["control", "운영 관제"],
-  ["queue", "업무 대기열"],
-  ["receipts", "입고 작업"],
-  ["orders", "출고 작업"],
-  ["returns", "반품 작업"],
-  ["inventory", "재고·실사·승인"],
-  ["masters", "기준정보·CSV"],
-  ["shift", "교대·일일 마감"],
-  ["integration", "연계 관리"],
-  ["accounts", "계정·연계 키"],
-  ["cutover", "기존 창고 전환"],
+const environments: Record<string, string> = { production: "운영 환경", test: "시험 환경", development: "개발 환경" },
+  roles: Record<string, string> = { admin: "관리자", supervisor: "운영 책임자", worker: "작업자", viewer: "조회자" };
+const menu = [
+  {
+    group: "운영",
+    tabs: [
+      ["control", "운영 관제"],
+      ["queue", "업무 대기열"],
+      ["receipts", "입고"],
+      ["orders", "출고"],
+      ["returns", "반품"],
+      ["inventory", "재고"],
+      ["audit", "실사·승인"],
+    ],
+  },
+  {
+    group: "관리",
+    tabs: [
+      ["masters", "기준정보"],
+      ["integration", "외부 연계"],
+      ["shift", "교대·마감"],
+      ["accounts", "계정·권한"],
+      ["cutover", "기존 창고 전환"],
+    ],
+  },
 ];
+const tabs = menu.flatMap((section) => section.tabs);
+// Approval and count views moved from 재고 to their own 실사·승인 menu; old links keep working.
+const auditViews = ["approval", "count"];
 export default function Operations({ identity }: { identity: Identity }) {
   const [runtime, setRuntime] = useState<Runtime | null>(null),
     [warehouse, setWarehouse] = useState(""),
@@ -155,7 +170,9 @@ export default function Operations({ identity }: { identity: Identity }) {
     }
     const route = new URLSearchParams(window.location.search);
     if (!pendingRef.current && route.get("warehouse_id") === warehouse) {
-      const target = route.get("tab") || "";
+      const requested = route.get("tab") || "";
+      const target =
+        requested === "inventory" && auditViews.includes(route.get("inventory_view") || "") ? "audit" : requested;
       if (tabs.some(([key]) => key === target)) {
         setTab(target);
         const id = route.get("object_id") || "";
@@ -368,151 +385,179 @@ export default function Operations({ identity }: { identity: Identity }) {
     receipts: snapshot?.receipts.filter((row) => !receiptGuide(row).done).length,
     orders: snapshot?.orders.filter((row) => !orderGuide(row, snapshot.packages).done).length,
     returns: snapshot?.returns.filter((row) => !receiptGuide(row).done).length,
+    audit: snapshot?.approvals.filter((row) => row.status === "pending").length,
   } as Record<string, number | undefined>;
-  const warehouseRow = runtime?.warehouses.find((w) => w.id === warehouse);
   if (terminal.locked) return <LockedTerminal error={terminal.error} retry={() => void terminal.logout()} />;
   return (
-    <div className="v2">
-      {terminal.warning !== null && (
-        <div className="v2-alert" role="alert">
-          <strong>{terminal.warning}초 후 공용 단말이 자동 잠깁니다.</strong>
-          <p>
-            회사 정책: {runtime?.idleLockMinutes || 15}분 무활동 후 세션 종료. 진행 중인 확정의 복구 키는 보존합니다.
-          </p>
-          <button onClick={terminal.resume}>계속 작업</button>
+    <div className="v2 v2-app">
+      <nav className="v2-side" aria-label="현장 업무 메뉴">
+        <div className="v2-brand">
+          <span className="v2-brand-mark" aria-hidden="true">
+            W
+          </span>
+          <div>
+            <strong>WMS Lite</strong>
+            <h1>현장 운영</h1>
+          </div>
         </div>
-      )}
-      <div className="v2-header">
-        <div>
-          <p className="v2-eyebrow">
-            현장 단말 · {warehouseRow ? String(warehouseRow.name || warehouseRow.code) : "창고 선택"}
-          </p>
-          <h1>현장 운영</h1>
-        </div>
-        <div className="v2-actions">
+        {menu.map((section) => (
+          <Fragment key={section.group}>
+            <p className="v2-side-caption">{section.group}</p>
+            <div role="tablist" aria-label={`${section.group} 메뉴`} aria-orientation="vertical" className="v2-tabs">
+              {section.tabs
+                .filter(([key]) => !["accounts", "cutover"].includes(key) || identity.role === "admin")
+                .map(([key, caption]) => (
+                  <button role="tab" aria-selected={tab === key} key={key} onClick={() => navigate(key)}>
+                    {caption}
+                    {openCounts[key] ? (
+                      <span className="v2-tab-count" aria-hidden="true">
+                        {openCounts[key]}
+                      </span>
+                    ) : null}
+                  </button>
+                ))}
+            </div>
+          </Fragment>
+        ))}
+        <details className="v2-side-legacy">
+          <summary>이전 화면</summary>
+          <Link href="/dashboard">업무 홈</Link>
+          <Link href="/dashboard/stock">재고 조회</Link>
+          <Link href="/dashboard/history">확정 이력</Link>
+          {identity.role !== "viewer" && <Link href="/dashboard/documents">기존 전표</Link>}
+          {identity.role !== "viewer" && <Link href="/dashboard/delivery-destinations">배송지 관리</Link>}
+          {identity.role === "admin" && <Link href="/dashboard/audit">감사 로그</Link>}
+        </details>
+      </nav>
+      <div className="v2-main">
+        <header className="v2-context">
+          <strong>{identity.tenant.name}</strong>
+          <Select
+            label="현재 창고"
+            value={warehouse}
+            options={options(runtime?.warehouses || [])}
+            onChange={setWarehouse}
+            disabled={Boolean(pending) || busy}
+          />
+          <span role="status" className="v2-chip" data-tone={online ? "ok" : "bad"}>
+            {online ? "● 온라인" : "● 연결 끊김 · 신규 확정 중지"}
+          </span>
+          <span
+            className="v2-chip"
+            data-tone={runtime?.tenant.isTest || runtime?.environment === "test" ? "warn" : undefined}
+          >
+            {runtime ? environments[runtime.environment] || runtime.environment : "환경 확인 중"}
+            {runtime?.tenant.isTest ? " · 시험 회사" : ""}
+          </span>
+          <span className="v2-asof" title={loadedAt ? `${time(loadedAt)} 기준` : undefined}>
+            {loadedAt
+              ? `${new Date(loadedAt).toLocaleTimeString("ko-KR", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit" })} 기준`
+              : "서버 조회 대기"}
+          </span>
+          <span className="v2-user">
+            {roles[identity.role] || identity.role} · {identity.user.name}
+          </span>
           <button onClick={() => void reloadAll()} disabled={loading || busy}>
             새로고침
           </button>
           <button className="v2-lock" onClick={terminal.lock}>
-            단말 잠금·교대 로그아웃
+            단말 잠금
           </button>
-        </div>
-      </div>
-      <div className="v2-context">
-        <strong>{identity.tenant.name}</strong>
-        <span className="v2-chip">작업자 {identity.user.name}</span>
-        <span role="status" className="v2-chip" data-tone={online ? "ok" : "bad"}>
-          {online ? "● 온라인" : "● 연결 끊김 · 신규 확정 중지"}
-        </span>
-        <span
-          className="v2-chip"
-          data-tone={runtime?.tenant.isTest || runtime?.environment === "test" ? "warn" : undefined}
-        >
-          {runtime ? environments[runtime.environment] || runtime.environment : "환경 확인 중"}
-          {runtime?.tenant.isTest ? " · 시험 회사" : ""}
-        </span>
-        <Select
-          label="현재 창고"
-          value={warehouse}
-          options={options(runtime?.warehouses || [])}
-          onChange={setWarehouse}
-          disabled={Boolean(pending) || busy}
-        />
-        <span className="v2-asof">{loadedAt ? `${time(loadedAt)} 기준` : "서버 조회 대기"}</span>
-      </div>
-      {error && (
-        <p className="v2-alert" role="alert">
-          {error}
-        </p>
-      )}
-      {status && (
-        <p className={pending ? "v2-alert" : "v2-success"} role="status">
-          {status}
-        </p>
-      )}
-      {pending && (
-        <div className="v2-card">
-          <h2>확정 결과 복구</h2>
-          <p>같은 실물을 새 작업으로 등록하지 마세요. 이 요청의 결과부터 확인합니다.</p>
-          <div className="v2-actions">
-            <button disabled={busy} onClick={() => void recover()}>
-              원래 확정 결과 조회
-            </button>
-            <button disabled={busy} onClick={() => void transmit(pending)}>
-              원래 요청 그대로 재전송
-            </button>
-          </div>
-        </div>
-      )}
-      <div role="tablist" aria-label="현장 업무" className="v2-tabs">
-        {tabs
-          .filter(([key]) => !["accounts", "cutover"].includes(key) || identity.role === "admin")
-          .map(([key, caption]) => (
-            <button
-              role="tab"
-              aria-selected={tab === key}
-              key={key}
-              data-group={fieldTabs.includes(key) ? "field" : "manage"}
-              onClick={() => navigate(key)}
-            >
-              {caption}
-              {openCounts[key] ? (
-                <span className="v2-tab-count" aria-hidden="true">
-                  {openCounts[key]}
-                </span>
-              ) : null}
-            </button>
-          ))}
-      </div>
-      {(loading && !snapshot) || mastersLoading ? (
-        <p role="status">창고의 업무를 불러오고 있습니다…</p>
-      ) : !warehouse ? (
-        <p className="v2-empty">허용된 창고가 없습니다. 회사 관리자에게 창고 권한을 요청하세요.</p>
-      ) : context ? (
-        <>
-          {tab === "control" && <ControlTower c={context} open={open} />}
-          {tab === "queue" && <Queue c={context} open={open} />}
-          <div hidden={!["receipts", "orders", "returns"].includes(tab)}>
-            <Workflow
-              c={context}
-              kind={tab === "orders" ? "order" : tab === "returns" ? "return" : "receipt"}
-              selected={selected}
-              select={open}
-              compose={compose === (tab === "orders" ? "order" : "receipt") && ["receipts", "orders"].includes(tab)}
-              composed={() => setCompose("")}
-            />
-          </div>
-          {["inventory", "shift"].includes(tab) && <Inventory c={context} shift={tab === "shift"} open={open} />}{" "}
-          {tab === "masters" && (
-            <Masters
-              c={context}
-              reload={async () => {
-                const revision = ++masterGeneration.current;
-                setMastersLoading(true);
-                try {
-                  const values = await Promise.all(
-                    ["items", "locations", "partners", "destinations", "barcodes"].map(async (kind) => [
-                      kind,
-                      await loadAllMasters<Row>(`/api/v2/masters/${kind}?warehouse_id=${warehouse}`),
-                    ]),
-                  );
-                  if (revision !== masterGeneration.current) return;
-                  setMasters(Object.fromEntries(values));
-                  await refresh();
-                } finally {
-                  if (revision === masterGeneration.current) setMastersLoading(false);
-                }
-              }}
-            />
+        </header>
+        <div className="v2-page">
+          {terminal.warning !== null && (
+            <div className="v2-alert" role="alert">
+              <strong>{terminal.warning}초 후 공용 단말이 자동 잠깁니다.</strong>
+              <p>
+                회사 정책: {runtime?.idleLockMinutes || 15}분 무활동 후 세션 종료. 진행 중인 확정의 복구 키는
+                보존합니다.
+              </p>
+              <button onClick={terminal.resume}>계속 작업</button>
+            </div>
           )}
-          {tab === "accounts" && identity.role === "admin" && (
-            <Accounts c={context} warehouses={runtime?.warehouses || []} />
-          )}{" "}
-          {tab === "integration" && <Integration c={context} />} {tab === "cutover" && <Cutover c={context} />}
-        </>
-      ) : (
-        <p className="v2-empty">업무 데이터를 불러오지 못했습니다. 새로고침으로 다시 확인하세요.</p>
-      )}
+          {error && (
+            <p className="v2-alert" role="alert">
+              {error}
+            </p>
+          )}
+          {status && (
+            <p className={pending ? "v2-alert" : "v2-success"} role="status">
+              {status}
+            </p>
+          )}
+          {pending && (
+            <div className="v2-card">
+              <h2>확정 결과 복구</h2>
+              <p>같은 실물을 새 작업으로 등록하지 마세요. 이 요청의 결과부터 확인합니다.</p>
+              <div className="v2-actions">
+                <button disabled={busy} onClick={() => void recover()}>
+                  원래 확정 결과 조회
+                </button>
+                <button disabled={busy} onClick={() => void transmit(pending)}>
+                  원래 요청 그대로 재전송
+                </button>
+              </div>
+            </div>
+          )}
+          {(loading && !snapshot) || mastersLoading ? (
+            <p role="status">창고의 업무를 불러오고 있습니다…</p>
+          ) : !warehouse ? (
+            <p className="v2-empty">허용된 창고가 없습니다. 회사 관리자에게 창고 권한을 요청하세요.</p>
+          ) : context ? (
+            <>
+              {tab === "control" && <ControlTower c={context} open={open} />}
+              {tab === "queue" && <Queue c={context} open={open} />}
+              <div hidden={!["receipts", "orders", "returns"].includes(tab)}>
+                <Workflow
+                  c={context}
+                  kind={tab === "orders" ? "order" : tab === "returns" ? "return" : "receipt"}
+                  selected={selected}
+                  select={open}
+                  compose={compose === (tab === "orders" ? "order" : "receipt") && ["receipts", "orders"].includes(tab)}
+                  composed={() => setCompose("")}
+                />
+              </div>
+              {["inventory", "audit", "shift"].includes(tab) && (
+                <Inventory
+                  key={tab}
+                  c={context}
+                  shift={tab === "shift"}
+                  area={tab === "audit" ? "audit" : "stock"}
+                  open={open}
+                />
+              )}{" "}
+              {tab === "masters" && (
+                <Masters
+                  c={context}
+                  reload={async () => {
+                    const revision = ++masterGeneration.current;
+                    setMastersLoading(true);
+                    try {
+                      const values = await Promise.all(
+                        ["items", "locations", "partners", "destinations", "barcodes"].map(async (kind) => [
+                          kind,
+                          await loadAllMasters<Row>(`/api/v2/masters/${kind}?warehouse_id=${warehouse}`),
+                        ]),
+                      );
+                      if (revision !== masterGeneration.current) return;
+                      setMasters(Object.fromEntries(values));
+                      await refresh();
+                    } finally {
+                      if (revision === masterGeneration.current) setMastersLoading(false);
+                    }
+                  }}
+                />
+              )}
+              {tab === "accounts" && identity.role === "admin" && (
+                <Accounts c={context} warehouses={runtime?.warehouses || []} />
+              )}{" "}
+              {tab === "integration" && <Integration c={context} />} {tab === "cutover" && <Cutover c={context} />}
+            </>
+          ) : (
+            <p className="v2-empty">업무 데이터를 불러오지 못했습니다. 새로고침으로 다시 확인하세요.</p>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

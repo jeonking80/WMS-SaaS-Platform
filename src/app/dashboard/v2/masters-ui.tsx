@@ -163,7 +163,7 @@ export function Masters({ c, reload }: { c: Context; reload: () => Promise<void>
     <>
       <section className="v2-card">
         <h2>현장 기준정보</h2>
-        <div className="v2-steps">
+        <div className="v2-steps v2-subnav">
           {kinds.map(([key, title]) => (
             <button
               key={key}
@@ -251,7 +251,7 @@ export function Masters({ c, reload }: { c: Context; reload: () => Promise<void>
                             ? `${row.recipient_name} · ${row.address_line1} ${row.address_line2 || ""}`
                             : `EA · 최소 ${row.min_stock || 0}`}
                   </td>
-                  <td>{row.active ? "사용 중" : "비활성"}</td>
+                  <td className="v2-nowrap">{row.active ? "사용 중" : "비활성"}</td>
                   <td>
                     {writable && <button onClick={() => start(row)}>수정</button>}
                     {kind === "barcodes" && (

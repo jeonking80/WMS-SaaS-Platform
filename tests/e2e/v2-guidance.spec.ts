@@ -31,7 +31,7 @@ test('처음 쓰는 작업자도 홈의 시작 버튼과 지금 할 일 안내�
  await page.getByRole('checkbox',{name:/선택한 1명세 · 12 EA와 실물/}).check();await expect(blocker).toHaveCount(0);
  await page.getByRole('button',{name:'실물 수령 확정',exact:true}).click();
  await expect(next).toContainText('검수할 수량 12 EA');await expect(page.getByRole('button',{name:'1 수령',exact:true})).toContainText('12 EA 남음');
- await page.getByRole('tab',{name:'출고 작업',exact:true}).click();await page.getByRole('button',{name:'신규 등록',exact:true}).click();
+ await page.getByRole('tab',{name:'출고',exact:true}).click();await page.getByRole('button',{name:'신규 등록',exact:true}).click();
  await page.getByRole('button',{name:'내일 09:00',exact:true}).click();await page.getByLabel('납품처',{exact:true}).selectOption(customer);await page.getByLabel('배송지 주소록',{exact:true}).selectOption(destination);await page.getByLabel('품목 1',{exact:true}).selectOption(item);await page.getByLabel('품목 1 예정 수량 (EA)',{exact:true}).fill('5');
  await expect(page.getByText('창고 가용 0 EA (참고) · 부족분은 입고 후 예약',{exact:true})).toBeVisible();
  await page.getByRole('button',{name:'등록 · 재고 변동 없음',exact:true}).click();
@@ -40,6 +40,6 @@ test('처음 쓰는 작업자도 홈의 시작 버튼과 지금 할 일 안내�
  await page.getByRole('tab',{name:'업무 대기열',exact:true}).click();
  const work=page.locator('section').filter({has:page.getByRole('heading',{name:'지금 처리할 작업 · 2건',exact:true})});
  await expect(work.getByRole('button',{name:/출고 작업.*예약할 수량 5 EA/})).toBeVisible();await expect(work.getByRole('button',{name:/입고 작업.*검수할 수량 12 EA/})).toBeVisible();
- await page.getByRole('button',{name:/^미출하 주문/}).click();await expect(page.getByRole('tab',{name:'출고 작업',exact:true})).toHaveAttribute('aria-selected','true');
+ await page.getByRole('button',{name:/^미출하 주문/}).click();await expect(page.getByRole('tab',{name:'출고',exact:true})).toHaveAttribute('aria-selected','true');
  await page.setViewportSize({width:390,height:844});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
 });

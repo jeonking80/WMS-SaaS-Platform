@@ -1,0 +1,41 @@
+{
+  "recorded_at": "2026-10-21T01:18:00.467183+00:00",
+  "build_id": "B2lhC7WGVo-cXhsbawRWf",
+  "candidate": "transaction-boundary soft process budget; bounded performance comparison pending",
+  "full_verify_exit_code": 1,
+  "typecheck": "passed",
+  "unit_passed": 236,
+  "simulator_passed": 55,
+  "integration_passed": 188,
+  "production_build": "passed",
+  "e2e_full": {
+    "passed": 43,
+    "failed": 1,
+    "failure": "Second idle warning assertion exactly 14 minutes after resume; interval samples every second."
+  },
+  "targeted_before_test_fix": {
+    "passed": 0,
+    "failed": 1
+  },
+  "targeted_after_test_fix": {
+    "passed": 1,
+    "failed": 0,
+    "exit_code": 0
+  },
+  "test_only_fix": "Advance virtual clock through one polling sample after warning threshold (14 minutes + 1 second); application 15-minute idle policy unchanged.",
+  "scope": "43 full-run passes plus 1 targeted pass; not a successful full verify invocation or load qualification",
+  "evidence": [
+    {
+      "path": "/tmp/wms-v2-process-budget-verify.log",
+      "sha256": "9dd3af6aa9dc92540247795cf8b72b6b37e61b3c944f46e03e39d3e54c62b2b2"
+    },
+    {
+      "path": "/tmp/wms-v2-process-budget-ui-targeted.log",
+      "sha256": "bff99527a8ae4f60b9c41b03a1beb94017d53bba4bf24dd28fb624aa07cc892b"
+    },
+    {
+      "path": "/tmp/wms-v2-process-budget-ui-clock-fixed.log",
+      "sha256": "57a01f3bdeb7e50323dfe79be77fe900246f97dd2a9126a0c433c65e85d756c6"
+    }
+  ]
+}

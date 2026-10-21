@@ -22,7 +22,8 @@ test('현장 화면에서 재검색 없이 박스 스캔 수령·검수·적치�
  await signIn(page.request,'admin.a@example.test',password);
  let lastCommand:unknown;page.on('request',request=>{if(request.method()==='POST'&&new URL(request.url()).pathname==='/api/v2/workflow')lastCommand=request.postDataJSON();});
  const code=`UI-${randomUUID().slice(0,8)}`.toUpperCase();
- const warehouseResponse=await page.request.post('/api/warehouses',{headers,data:{code,name:code}});expect(warehouseResponse.status()).toBe(201);const warehouse=(await warehouseResponse.json()).warehouse.id;
+ const warehouseName=`${code} 현장창고`;
+ const warehouseResponse=await page.request.post('/api/warehouses',{headers,data:{code,name:warehouseName}});expect(warehouseResponse.status()).toBe(201);const warehouse=(await warehouseResponse.json()).warehouse.id;
  async function master(kind:string,data:unknown){const response=await page.request.post(`/api/v2/masters/${kind}?warehouse_id=${warehouse}`,{headers,data});expect(response.status(),await response.text()).toBe(201);return (await response.json()).row.id as string;}
  const item=await master('items',{code:`${code}-SKU`,name:`${code} 품목`});
  const receiving=await master('locations',{code:`${code}-RCV`,name:'수령 대기',kind:'RECEIVING'});
@@ -31,6 +32,8 @@ test('현장 화면에서 재검색 없이 박스 스캔 수령·검수·적치�
  const supplier=await master('partners',{code:`${code}-SUP`,name:'테스트 공급처',supplier:true,customer:false});
  const customer=await master('partners',{code:`${code}-CUS`,name:'테스트 납품처',supplier:false,customer:true});
  const destination=await master('destinations',{name:`${code} 테스트 배송지`,recipient_name:`${code} 담당자`,address_line1:'서울특별시 종로구 세종대로 1',partner_id:customer});
+ const changedAddress='서울특별시 강남구 테헤란로 999',changedRecipient=`${code} 변경 수령인`;
+ const changedDestination=await master('destinations',{name:`${code} 변경 배송지`,recipient_name:changedRecipient,address_line1:changedAddress,partner_id:customer});
  const box=`${code}-BOX12`,rcv=`${code}-L-RCV`,sto=`${code}-L-STO`,stg=`${code}-L-STG`;
  for(const [barcode,location_id]of[[rcv,receiving],[sto,storage],[stg,staging]])await master('barcodes',{barcode,location_id});
  await master('barcodes',{barcode:box,item_id:item,unit:'BOX',quantity:12});
@@ -50,7 +53,39 @@ test('현장 화면에서 재검색 없이 박스 스캔 수령·검수·적치�
  await expect(page.getByRole('heading',{name:`${code}-OUT`,exact:true})).toBeVisible();await page.getByRole('button',{name:'잔량 전체 예약',exact:true}).click();await expect(page.getByRole('heading',{name:'피킹',exact:true})).toBeVisible();
  await scan(page,'출발 위치 → 도착 위치 → 품목 바코드 스캔',[sto,stg,box,box]);await page.getByRole('checkbox',{name:/선택한 1명세 · 24 EA와 실물/}).check();await page.getByRole('button',{name:'피킹 확정',exact:true}).click();
  await expect(page.getByRole('heading',{name:'포장 검수·완료',exact:true})).toBeVisible();await expect(page.getByRole('heading',{name:`${code}-OUT`,exact:true})).toBeVisible();await scan(page,'현재 위치 → 품목 바코드 스캔',[stg,box,box]);await page.getByLabel('포장 무게 (g, 선택)',{exact:true}).fill('875');await page.getByRole('checkbox',{name:/선택한 1명세 · 24 EA와 실물/}).check();await page.getByRole('button',{name:'포장 검수·완료 확정',exact:true}).click();
- await expect(page.getByRole('heading',{name:'완료 포장 전체 인계',exact:true})).toBeVisible();await page.getByRole('checkbox',{name:/포장 1 · 1명세 · 24 EA/}).check();await page.getByLabel('운송사 · 운송수단',{exact:true}).fill('시험 운송차량');await page.getByLabel('실제 인계자 이름',{exact:true}).fill('현장 담당자');await page.getByRole('checkbox',{name:'선택한 포장 전체를 실제 인계했습니다.',exact:true}).check();await page.getByRole('button',{name:'인계·출하 확정',exact:true}).click();
+ await expect(page.getByRole('heading',{name:'완료 포장 전체 인계',exact:true})).toBeVisible();
+ await test.step('포장 후 주문 주소를 바꿔도 저장된 배송지와 고유번호를 재출력하고 재고를 보존한다',async()=>{
+  await page.getByText('예정 수량·주문 배송지 수정',{exact:true}).click();
+  await page.getByLabel('변경할 배송지',{exact:true}).selectOption(changedDestination);
+  await page.getByLabel('수정 사유',{exact:true}).fill('완료 포장 배송지 스냅샷과 변경 주문의 분리 확인');
+  await page.getByRole('button',{name:'현재 버전 확인·변경 저장',exact:true}).click();
+  await expect(page.getByRole('button',{name:'현재 버전 확인·변경 저장',exact:true})).toBeHidden();
+  const readPrintState=async()=>{const response=await page.request.get(`/api/v2/workflow?warehouse_id=${warehouse}`);expect(response.status()).toBe(200);return (await response.json()).snapshot as WorkflowState;};
+  const company=await page.locator('.v2-context strong').innerText();
+  const beforePrint=await readPrintState(),savedPack=beforePrint.packages.find(row=>row.status==='complete')!,savedOrder=beforePrint.orders.find(row=>row.id===savedPack.order_id)!;
+  expect(savedOrder.delivery).toMatchObject({id:changedDestination,address_line1:changedAddress});
+  expect(savedPack.delivery).toMatchObject({id:destination,address_line1:'서울특별시 종로구 세종대로 1'});
+  for(let copy=0;copy<2;copy++){
+   const from=await page.evaluate(()=>Date.now()),popupReady=page.waitForEvent('popup');
+   await page.getByRole('button',{name:'명세 인쇄',exact:true}).click();const popup=await popupReady;
+   try{
+    await expect(popup.getByRole('heading',{name:'내부 포장명세',exact:true})).toBeVisible();
+    for(const id of [savedPack.id,savedPack.order_id,`${code}-OUT`,destination,customer])await expect(popup.getByRole('cell',{name:id,exact:true})).toHaveCount(1);
+    await expect(popup.locator('small')).toContainText(company);await expect(popup.locator('small')).toContainText(`창고 ${warehouseName} (${code})`);await expect(popup.locator('small')).toContainText(`창고 ID ${warehouse}`);
+    await expect(popup.locator('small')).toContainText(`상태 버전 ${beforePrint.version}`);
+    await expect(popup.getByRole('cell',{name:`${code} 담당자`,exact:true})).toBeVisible();await expect(popup.getByRole('cell',{name:'서울특별시 종로구 세종대로 1',exact:true})).toBeVisible();
+    await expect(popup.locator('body')).not.toContainText(changedAddress);await expect(popup.locator('body')).not.toContainText(changedRecipient);await expect(popup.locator('body')).not.toContainText(changedDestination);
+    const created=await page.evaluate(at=>new Date(at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}),savedPack.created_at);
+    const creationRow=popup.getByRole('row').filter({has:popup.getByRole('cell',{name:'포장 생성 시각',exact:true})});await expect(creationRow.getByRole('cell').nth(1)).toHaveText(created);
+    const printed=(await popup.locator('small').innerText()).split('출력 시각 ')[1]?.split(' (Asia/Seoul)')[0],to=await page.evaluate(()=>Date.now());
+    const possibleTimes=await page.evaluate(({from,to})=>Array.from({length:Math.ceil((to-from)/1000)+1},(_,second)=>new Date(from+second*1000).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'})),{from,to});expect(possibleTimes).toContain(printed);
+    const line=popup.getByRole('row').filter({has:popup.getByRole('cell',{name:savedPack.lines[0].pick_id,exact:true})});await expect(line.getByRole('cell').nth(1)).toHaveText('24');
+    await expect(popup.getByRole('cell',{name:'875 g',exact:true})).toBeVisible();
+   }finally{await popup.close();}
+  }
+  const afterPrint=await readPrintState();expect(afterPrint.version).toBe(beforePrint.version);expect(afterPrint.stock).toEqual(beforePrint.stock);expect(afterPrint.ledger_count).toBe(beforePrint.ledger_count);expect(afterPrint.orders).toEqual(beforePrint.orders);expect(afterPrint.packages).toEqual(beforePrint.packages);
+ });
+ await page.getByRole('checkbox',{name:/포장 1 · 1명세 · 24 EA/}).check();await page.getByLabel('운송사 · 운송수단',{exact:true}).fill('시험 운송차량');await page.getByLabel('실제 인계자 이름',{exact:true}).fill('현장 담당자');await page.getByRole('checkbox',{name:'선택한 포장 전체를 실제 인계했습니다.',exact:true}).check();await page.getByRole('button',{name:'인계·출하 확정',exact:true}).click();
  await expect(page.getByRole('status').filter({hasText:'선택한 수량이 확정되었습니다'})).toBeVisible();const snapshot=(await(await page.request.get(`/api/v2/workflow?warehouse_id=${warehouse}`)).json()).snapshot;
  expect(snapshot.shipments).toHaveLength(1);expect(snapshot.shipments[0].lines[0].quantity).toBe(24);expect(snapshot.stock.reduce((sum:number,row:{H:number})=>sum+row.H,0)).toBe(0);expect(snapshot.orders[0].lines[0].shipped).toBe(24);
  await expect(page.getByText('무게 875 g',{exact:false}).first()).toBeVisible();expect(snapshot.packages[0].weight_grams).toBe(875);
@@ -64,7 +99,9 @@ test('현장 화면에서 재검색 없이 박스 스캔 수령·검수·적치�
  await page.setViewportSize({width:390,height:844});await expect(page.getByRole('heading',{name:'현장 운영',exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=window.innerWidth)).toBe(true);
  const me=await(await page.request.get('/api/me')).json();const pendingKey=`wms-v2:${me.tenant.id}:${me.user.id}:request`;
  await page.evaluate(({pendingKey,lastCommand})=>localStorage.setItem(pendingKey,JSON.stringify(lastCommand)),{pendingKey,lastCommand});
- await page.clock.install({time:new Date()});await page.clock.runFor(14*60_000);await expect(page.getByRole('alert').filter({hasText:'공용 단말이 자동 잠깁니다'})).toBeVisible();await page.getByRole('button',{name:'계속 작업',exact:true}).click();await page.clock.runFor(14*60_000);await expect(page.getByRole('alert').filter({hasText:'공용 단말이 자동 잠깁니다'})).toBeVisible();await page.clock.runFor(60_000);await expect(page).toHaveURL('/login');
+ // The warning is sampled every second; advance through one sample after the 14-minute boundary.
+ // Resume does not realign the interval, so exactly 14 minutes can still display 61 seconds.
+ await page.clock.install({time:new Date()});await page.clock.runFor(14*60_000+1000);await expect(page.getByRole('alert').filter({hasText:'공용 단말이 자동 잠깁니다'})).toBeVisible();await page.getByRole('button',{name:'계속 작업',exact:true}).click();await page.clock.runFor(14*60_000+1000);await expect(page.getByRole('alert').filter({hasText:'공용 단말이 자동 잠깁니다'})).toBeVisible();await page.clock.runFor(60_000);await expect(page).toHaveURL('/login');
  expect(await page.evaluate(pendingKey=>localStorage.getItem(pendingKey),pendingKey)).toBe(JSON.stringify(lastCommand));const revoked=await page.request.get('/api/me');expect(revoked.status()).toBe(401);
 });
 

@@ -309,6 +309,41 @@ describe('WMS v2 acceptance against PostgreSQL with enforced tenant RLS', () => 
     await assertQuantities(w, item, { S: 11, H: 11, A: 11 });
   });
 
+  it('AC-10 rejects obsolete count approval history without reviving a force-unlocked baseline after movement', async () => {
+    const w = await world(); const item = await w.item(); await w.seed(item, 10);
+    const started = await w.command('count.start', { location_id: w.location.storage }); const oldCountId = started.result.id;
+    await w.command('count.record', { count_id: oldCountId, lines: [{ item_id: item, bucket: 'S', quantity: 8 }], recount: true, reason: 'Old recount says two missing' });
+    const submitted = await w.command('count.submit', { count_id: oldCountId, reason: 'Old difference' }); const oldApprovalId = submitted.result.id;
+    await w.command('count.unlock', { count_id: oldCountId, reason: 'Invalidate the old count before resuming work' }, manager);
+    const moved = await w.command('stock.move', { lines: [{ item_id: item, from_location_id: w.location.storage, location_id: w.location.second, quantity: 2 }], reason: 'Move after force unlock' });
+    const oldCount = structuredClone(moved.snapshot.counts.find(c => c.id === oldCountId)!);
+    expect(oldCount).toMatchObject({ status: 'unlocked', baseline: [expect.objectContaining({ item_id: item, location_id: w.location.storage, S: 10 })] });
+    await assertQuantities(w, item, { S: 10, H: 10, A: 10 });
+    const effectsBeforeRejection = await w.effects();
+    const rejected = await w.command('approval.decide', { approval_id: oldApprovalId, approve: false, reason: 'Close obsolete approval history' }, manager);
+    expect(rejected.snapshot.approvals.find(a => a.id === oldApprovalId)).toMatchObject({ status: 'rejected', decider_id: approver, decision_reason: 'Close obsolete approval history' });
+    expect(rejected.snapshot.counts.find(c => c.id === oldCountId)).toEqual(oldCount);
+    const effectsAfterRejection = await w.effects();
+    for (const table of ['v2_workflow_stock', 'v2_workflow_ledger']) expect(effectsAfterRejection[table]).toEqual(effectsBeforeRejection[table]);
+    await assertQuantities(w, item, { S: 10, H: 10, A: 10 });
+    const beforeInvalidResubmit = await w.effects();
+    await expect(w.command('count.submit', { count_id: oldCountId, reason: 'Must not reuse the old baseline and count lines' })).rejects.toMatchObject({ code: 'INVALID_COUNT_STATE' });
+    expect(await w.effects()).toEqual(beforeInvalidResubmit);
+    // A new count must use the post-move location baseline (8), not the old 10.
+    const fresh = await w.command('count.start', { location_id: w.location.storage }); const freshId = fresh.result.id;
+    const persisted = await withTenant(tenant, c => c.query('SELECT state FROM v2_workflow_state WHERE warehouse_id=$1', [w.warehouse]));
+    expect(persisted.rows[0].state.counts.find((c: { id: string }) => c.id === freshId).baseline).toEqual([expect.objectContaining({ item_id: item, location_id: w.location.storage, S: 8 })]);
+    await w.command('count.record', { count_id: freshId, lines: [{ item_id: item, bucket: 'S', quantity: 8 }], recount: true, reason: 'Fresh physical count after movement' });
+    const freshSubmit = await w.command('count.submit', { count_id: freshId, reason: 'Fresh baseline matches count' });
+    const beforeFreshApproval = await w.effects();
+    await w.command('approval.decide', { approval_id: freshSubmit.result.id, approve: true, reason: 'Independent fresh-count review' }, manager);
+    expect((await w.effects()).v2_workflow_ledger).toEqual(beforeFreshApproval.v2_workflow_ledger);
+    await assertQuantities(w, item, { S: 10, H: 10, A: 10 });
+    expect((await w.snapshot()).stock.find(s => s.item_id === item && s.location_id === w.location.storage)?.S).toBe(8);
+    expect((await w.snapshot()).stock.find(s => s.item_id === item && s.location_id === w.location.second)?.S).toBe(2);
+    await w.invariant();
+  });
+
   it('AC-18 invalidates an approval after the receipt changes and rejects self approval by an authorized manager', async () => {
     const w = await world(); const item = await w.item();
     const created = await w.command('receipt.create', { lines: [{ item_id: item, quantity: 10 }] }); const receipt = created.snapshot.receipts[0];
@@ -538,6 +573,93 @@ describe('WMS v2 acceptance against PostgreSQL with enforced tenant RLS', () => 
     await w.command('receipt.inspect', inspect, manager);
     expect((await w.snapshot()).shifts[0]).toEqual(report);
     await assertQuantities(w, item, { Q: 4, H: 4, A: 0 });
+  });
+
+  it('AC-20 retains closed returns with held physical goods through handover and reinspection', async () => {
+    const w = await world(); const item = await w.item(); await w.seed(item, 3);
+    const order = await w.pick(item, 3);
+    const packed = await w.command('package.create', { order_id: order.id, lines: [{ pick_id: order.picks[0].id, quantity: 3 }] });
+    const shipped = await w.command('shipment.create', { package_ids: [packed.result.id], handover_by: 'Driver', carrier: 'Acceptance' });
+    const shipment = shipped.snapshot.shipments.find(row => row.id === shipped.result.id)!;
+    const requested = await w.command('return.request', { shipment_id: shipment.id, lines: [{ shipment_line_id: shipment.lines[0].id, quantity: 3 }], reason: 'Approve return' });
+    const returned = requested.snapshot.returns.find(row => row.id === requested.result.id)!;
+    const received = await w.command('return.receive', { return_id: returned.id, receiving_id: randomUUID(), lines: [{ line_id: returned.lines[0].id, quantity: 1, location_id: w.location.receiving }] });
+    const lot = received.snapshot.returns.find(row => row.id === returned.id)!.lots[0];
+    await w.command('return.inspect', { return_id: returned.id, lines: [{ lot_id: lot.id, quantity: 1, outcome: 'hold' }] });
+    const closedReturn = await w.command('return.close', { return_id: returned.id, reason: 'Two units will not arrive' });
+    expect(closedReturn.snapshot.returns.find(row => row.id === returned.id)).toMatchObject({ closed: true, lines: [{ received: 1, cancelled: 2 }] });
+    await assertQuantities(w, item, { S: 0, P: 0, Q: 0, B: 1, H: 1, A: 0 });
+    const beforeRejectedClose = await w.effects();
+    await expect(w.command('shift.close', { handover: [], unconfirmed_request_ids: [] }, manager)).rejects.toMatchObject({ code: 'HANDOVER_REQUIRED' });
+    expect(await w.effects()).toEqual(beforeRejectedClose);
+    const nextWorkerId = randomUUID();
+    const nextWorker: Identity = { user: { id: nextWorkerId, name: 'Next return worker', email: `${nextWorkerId}@example.test` }, tenant: identity.tenant, role: 'worker' };
+    await withTenant(tenant, async client => {
+      await client.query('INSERT INTO "user"(id,name,email) VALUES($1,$2,$3)', [nextWorkerId,nextWorker.user.name,nextWorker.user.email]);
+      await client.query("INSERT INTO memberships(tenant_id,user_id,role) VALUES($1,$2,'worker')", [tenant,nextWorkerId]);
+      await client.query('INSERT INTO v2_warehouse_grants(tenant_id,user_id,warehouse_id) VALUES($1,$2,$3)', [tenant,nextWorkerId,w.warehouse]);
+    });
+    const handover = [{ object_type: 'return', object_id: returned.id, assignee_id: nextWorkerId, reason: 'Inspect held return next shift' }];
+    const shift = await w.command('shift.close', { handover, unconfirmed_request_ids: [] }, manager);
+    expect(shift.snapshot.tasks.at(-1)).toMatchObject(handover[0]);
+    const report = structuredClone(shift.snapshot.shifts.at(-1));
+    const release = { lot_id: lot.id, quantity: 1, location_id: w.location.receiving, reason: 'Quality cleared' };
+    await expect(w.command('hold.release', release)).rejects.toMatchObject({ code: 'TASK_ASSIGNEE_MISMATCH' });
+    await w.command('hold.release', release, nextWorker);
+    await w.command('return.inspect', { return_id: returned.id, lines: [{ lot_id: lot.id, quantity: 1, outcome: 'normal' }] }, nextWorker);
+    await w.command('return.putaway', { return_id: returned.id, lines: [{ lot_id: lot.id, quantity: 1, location_id: w.location.storage }] }, nextWorker);
+    await assertQuantities(w, item, { S: 1, P: 0, Q: 0, B: 0, H: 1, A: 1 });
+    expect((await w.snapshot()).shifts.at(-1)).toEqual(report);
+    await w.command('shift.close', { handover: [], unconfirmed_request_ids: [] }, manager);
+    await w.invariant();
+  });
+
+  it('AC-20 hands counting work to an authorized worker without changing original actors or approval separation', async () => {
+    const w = await world(); const item = await w.item(); await w.seed(item, 10);
+    const nextWorkerId = randomUUID();
+    const nextWorker: Identity = { user: { id: nextWorkerId, name: 'Next counter', email: `${nextWorkerId}@example.test` }, tenant: identity.tenant, role: 'worker' };
+    await withTenant(tenant, async client => {
+      await client.query('INSERT INTO "user"(id,name,email) VALUES($1,$2,$3)', [nextWorkerId,nextWorker.user.name,nextWorker.user.email]);
+      await client.query("INSERT INTO memberships(tenant_id,user_id,role) VALUES($1,$2,'worker')", [tenant,nextWorkerId]);
+      await client.query('INSERT INTO v2_warehouse_grants(tenant_id,user_id,warehouse_id) VALUES($1,$2,$3)', [tenant,nextWorkerId,w.warehouse]);
+    });
+    const started = await w.command('count.start', { location_id: w.location.storage }); const countId = started.result.id;
+    await w.command('count.record', { count_id: countId, lines: [{ item_id: item, bucket: 'S', quantity: 8 }], recount: false, reason: 'First counter observes shortage' });
+    const beforeHandover = (await w.snapshot()).counts.find(row => row.id === countId)!;
+    const persistedBeforeHandover = await withTenant(tenant, client => client.query("SELECT state->'counts' AS counts FROM v2_workflow_state WHERE warehouse_id=$1", [w.warehouse]));
+    const beforeRejectedClose = await w.effects();
+    await expect(w.command('shift.close', { handover: [], unconfirmed_request_ids: [] }, manager)).rejects.toMatchObject({ code: 'HANDOVER_REQUIRED' });
+    expect(await w.effects()).toEqual(beforeRejectedClose);
+    await w.command('task.assign', { object_type: 'count', object_id: countId, assignee_id: nextWorkerId, reason: 'Next worker will recount', unconfirmed_request_ids: [] }, manager);
+    const handover = [{ object_type: 'count', object_id: countId, assignee_id: nextWorkerId, reason: 'Continue blind count and recheck difference' }];
+    const shifted = await w.command('shift.close', { handover, unconfirmed_request_ids: [] }, manager);
+    const current = shifted.snapshot.counts.find(row => row.id === countId)!;
+    expect(current).toEqual(beforeHandover);
+    const persistedAfterHandover = await withTenant(tenant, client => client.query("SELECT state->'counts' AS counts FROM v2_workflow_state WHERE warehouse_id=$1", [w.warehouse]));
+    expect(persistedAfterHandover.rows[0].counts).toEqual(persistedBeforeHandover.rows[0].counts);
+    expect(current.actor_id).toBe(actor);
+    expect(current.counter_ids).toEqual([actor]);
+    await assertQuantities(w, item, { S: 10, H: 10, A: 0 });
+    const recount = { count_id: countId, lines: [{ item_id: item, bucket: 'S', quantity: 8 }], recount: true, reason: 'Independent recount agrees' };
+    await expect(w.command('count.record', recount)).rejects.toMatchObject({ code: 'TASK_ASSIGNEE_MISMATCH' });
+    await w.command('count.record', recount, nextWorker);
+    const submitted = await w.command('count.submit', { count_id: countId, reason: 'Two missing after recount' }, nextWorker);
+    const approval = submitted.snapshot.approvals.find(row => row.target_id === countId)!;
+    expect(submitted.snapshot.counts.find(row => row.id === countId)).toMatchObject({ actor_id: actor, counter_ids: [actor,nextWorkerId], submitted_by: nextWorkerId, status: 'submitted' });
+    // Submitted work is handed over through its approval, not a second counting task.
+    await w.command('shift.close', { handover: [{ object_type: 'approval', object_id: approval.id, assignee_id: approver, reason: 'Independent review next shift' }], unconfirmed_request_ids: [] }, manager);
+    // Give both recorded counters approval authority to prove separation, not just role denial.
+    await owner.query(`UPDATE "${schema}".memberships SET role='admin' WHERE tenant_id=$1 AND user_id=ANY($2::text[])`, [tenant,[actor,nextWorkerId]]);
+    try {
+      await expect(w.command('approval.decide', { approval_id: approval.id, approve: true, reason: 'Original counter cannot approve' }, { ...identity, role: 'admin' })).rejects.toMatchObject({ code: 'SELF_APPROVAL_FORBIDDEN' });
+      await expect(w.command('approval.decide', { approval_id: approval.id, approve: true, reason: 'Successor counter cannot approve' }, { ...nextWorker, role: 'admin' })).rejects.toMatchObject({ code: 'SELF_APPROVAL_FORBIDDEN' });
+    } finally {
+      await owner.query(`UPDATE "${schema}".memberships SET role='worker' WHERE tenant_id=$1 AND user_id=ANY($2::text[])`, [tenant,[actor,nextWorkerId]]);
+    }
+    await w.command('approval.decide', { approval_id: approval.id, approve: true, reason: 'Independent manager confirms difference' }, manager);
+    await assertQuantities(w, item, { S: 8, H: 8, A: 8 });
+    await w.command('shift.close', { handover: [], unconfirmed_request_ids: [] }, manager);
+    await w.invariant();
   });
 
   it('AC-23 isolates damaged picks atomically and permits replacement without cancelling the original order', async () => {

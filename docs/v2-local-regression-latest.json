@@ -1,16 +1,16 @@
 {
-  "verified_at": "2026-10-21T00:12:44.104965+00:00",
-  "build_id": "2rKXP8Qbi54h8gu6e8KB5",
+  "verified_at": "2026-10-21T01:34:53.680158+00:00",
+  "build_id": "9xt7hww5jhA_G4dbro5r6",
   "scope": "local function/regression; not public deployment or G3/G4/G5 qualification",
   "typecheck": "passed",
   "unit": {
-    "passed": 225
+    "passed": 250
   },
   "simulator": {
     "passed": 55
   },
   "integration": {
-    "passed": 187,
+    "passed": 191,
     "skipped": 0
   },
   "production_build": "passed",
@@ -22,13 +22,23 @@
   "migration_count": 20,
   "evidence": [
     {
-      "path": "/tmp/wms-v2-schema20-verify.log",
-      "sha256": "6eb055fbd6b0cea4a1555e6afa57ae66835ad1e366f405c5569ff8c451564770"
+      "path": "/tmp/wms-v2-handover-print-full-verify.log",
+      "sha256": "ff95c0e0134a166b2979fc35ea7f66d8272e9c146b376f9126747e8b8c4fc991"
     }
   ],
   "independent_storage_review": {
     "focused_pg_passed": 56,
     "scope": "includes mixed ID, JSON null, RLS, array parity, concurrency, atomic rollback and replay"
   },
-  "restore_evidence": "restore-verification-schema20.json"
+  "restore_evidence": "restore-verification-schema20.json",
+  "changes": [
+    "transaction-boundary processor time budget",
+    "closed return hold and counting task handover",
+    "stale count rejection does not revive unlocked baseline",
+    "saved package delivery and identifiers on print"
+  ],
+  "focused_checks": {
+    "unit_passed": 25,
+    "postgresql_acceptance_passed": 25
+  }
 }

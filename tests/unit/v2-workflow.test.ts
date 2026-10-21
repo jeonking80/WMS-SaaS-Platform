@@ -27,4 +27,41 @@ describe('v2 workflow conservation and exception transitions',()=>{
  it('preserves the original order quantity after work begins and links additional demand',()=>{const w=world();w.seed(10);const id=w.command('order.create',{lines:[{item_id:w.item,quantity:5}]}).id;const line=w.state.orders[0].lines[0];w.command('order.update',{order_id:id,lines:[{id:line.id,item_id:w.item,quantity:4}]});expect(w.state.orders[0].lines[0].quantity).toBe(4);w.command('order.reserve',{order_id:id,partial:false});expect(()=>w.command('order.update',{order_id:id,lines:[{id:line.id,item_id:w.item,quantity:6}]})).toThrow('CREATE_LINKED_ORDER');const extra=w.command('order.create',{original_order_id:id,lines:[{item_id:w.item,quantity:2}]}).id;expect(w.state.orders.find(x=>x.id===extra)?.original_order_id).toBe(id);});
  it('accepts a complete location count in several batches while rejecting incomplete submission',()=>{const w=world();const ctx={...w.context,items:Array.from({length:21},()=>({id:randomUUID(),active:true}))};let state=emptyState();state.stock=ctx.items.map(i=>({item_id:i.id,location_id:w.storage,S:1,R:0,P:0,Q:0,B:0}));state.ledger_base=structuredClone(state.stock);const start=applyCommand(state,'count.start',{location_id:w.storage},ctx);state=start.state;const id=start.result.id;state=applyCommand(state,'count.record',{count_id:id,lines:ctx.items.slice(0,20).map(i=>({item_id:i.id,bucket:'S',quantity:1})),recount:false},ctx).state;expect(()=>applyCommand(state,'count.submit',{count_id:id,reason:'Complete'},ctx)).toThrow('INCOMPLETE_COUNT');state=applyCommand(state,'count.record',{count_id:id,lines:[{item_id:ctx.items[20].id,bucket:'S',quantity:1}],recount:false},ctx).state;expect(applyCommand(state,'count.submit',{count_id:id,reason:'Complete'},ctx).state.counts[0].status).toBe('submitted');});
 
+ it.each([
+  {status:'unlocked',versionOffset:0},
+  {status:'completed',versionOffset:0},
+  {status:'counting',versionOffset:0},
+  {status:'submitted',versionOffset:1},
+ ] as const)('records stale count rejection without changing $status target at version offset $versionOffset',({status,versionOffset})=>{
+  const w=world();w.seed(10);
+  const id=w.command('count.start',{location_id:w.storage}).id;
+  w.command('count.record',{count_id:id,lines:[{item_id:w.item,bucket:'S',quantity:8}],recount:true,reason:'Counted independently'});
+  const approval=w.command('count.submit',{count_id:id,reason:'Two missing'}).id;
+  // Legacy persisted combinations exercise status and version guards separately.
+  // The real unlock/move path is covered by the PostgreSQL acceptance scenario.
+  const original=structuredClone(w.state),count=original.counts.find(c=>c.id===id)!;
+  count.status=status;count.version+=versionOffset;
+  const savedCount=structuredClone(count);
+  const after=applyCommand(original,'approval.decide',{approval_id:approval,approve:false,reason:'Close obsolete approval history'},{...w.context,actor:{id:randomUUID(),role:'supervisor'}}).state;
+  expect(after.approvals.find(a=>a.id===approval)).toMatchObject({status:'rejected',decision_reason:'Close obsolete approval history'});
+  expect(after.counts.find(c=>c.id===id)).toEqual(savedCount);
+  expect(after.stock).toEqual(original.stock);expect(after.ledger).toEqual(original.ledger);
+  expect(original.approvals.find(a=>a.id===approval)?.status).toBe('pending');
+  expect(reconcile(after).ok).toBe(true);
+ });
+ it('returns only the current submitted count to counting on rejection and accepts a fresh recount',()=>{
+  const w=world();w.seed(10);
+  const id=w.command('count.start',{location_id:w.storage}).id;
+  w.command('count.record',{count_id:id,lines:[{item_id:w.item,bucket:'S',quantity:8}],recount:true,reason:'First recount'});
+  const approval=w.command('count.submit',{count_id:id,reason:'Two missing'}).id;
+  const before=structuredClone(w.state.counts.find(c=>c.id===id)!);
+  w.command('approval.decide',{approval_id:approval,approve:false,reason:'Recount again'},true);
+  expect(w.state.counts.find(c=>c.id===id)).toEqual({...before,status:'counting',version:before.version+1});
+  expect(w.stock()).toMatchObject({S:10,H:10,A:0});
+  w.command('count.record',{count_id:id,lines:[{item_id:w.item,bucket:'S',quantity:9}],recount:true,reason:'Fresh recount confirms one missing'});
+  const current=w.command('count.submit',{count_id:id,reason:'One missing'}).id;
+  w.command('approval.decide',{approval_id:current,approve:true,reason:'Independent fresh-count approval'},true);
+  expect(w.stock()).toMatchObject({S:9,H:9,A:9});expect(reconcile(w.state).ok).toBe(true);
+ });
+
 });

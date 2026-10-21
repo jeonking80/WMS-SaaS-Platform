@@ -97,11 +97,18 @@ async function resolveInput(client:PoolClient,event:EventRow,objectId:string|nul
   return {warehouse_id:event.warehouse_id,command:event.event_type,request_id:event.id,payload};
 }
 
+// Soft per-call budget; an active event always finishes its transaction.
+const PROCESS_EVENTS_BUDGET_MS=5000;
+
 // One warehouse is serialized by a transaction-scoped advisory lock. No processing state lives in RAM.
 export async function processEvents(identity:IntegrationIdentity,warehouseId:string,limit=25) {
+  const started=performance.now();
   const endBatch=beginTiming('integration.batch');try{
   const output=[];
   for(let i=0;i<Math.max(1,Math.min(50,limit));i++) {
+    // Always attempt the first transaction, even after a long initial pool wait.
+    // Later checks run only after withTenant committed/rolled back and released.
+    if(i>0&&performance.now()-started>=PROCESS_EVENTS_BUDGET_MS)break;
     const item=await withTenant(identity.tenant.id,async client=>{
       const endEvent=beginTiming('integration.event');try{
       const lock=await timeAsync('integration.queue_sql',()=>client.query<{locked:boolean}>(`SELECT pg_try_advisory_xact_lock(hashtextextended($1,0)) AS locked`,['v2-integration:'+identity.tenant.id+':'+warehouseId]));

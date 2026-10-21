@@ -7,6 +7,7 @@ const state=vi.hoisted(()=>({pool:undefined as pg.Pool|undefined}));
 vi.mock('../../src/server/db/pool',()=>({getPool:()=>state.pool}));
 import {withTenant} from '../../src/server/db/tenant';
 import {assertV2MachineKey,assertV2MachineKeyInTransaction,tokenHash} from '../../src/server/v2/access';
+import * as access from '../../src/server/v2/access';
 import {acceptEvent,listEvents,processEvents,type IntegrationIdentity} from '../../src/server/v2/integration';
 import {parseEvent} from '../../src/server/v2/integration/contract';
 const url=process.env.TEST_DATABASE_URL;
@@ -43,6 +44,37 @@ it('processes and commits an actual queued event using only its one outer pool c
  try{const processed=await processEvents(admin,warehouse,1);expect(processed.events).toMatchObject([{id:accepted.event.id,status:'applied',reason:null}]);expect(connect).toHaveBeenCalledTimes(1);expect(state.pool!.waitingCount).toBe(0);}finally{connect.mockRestore();}
  expect((await listEvents(source,warehouse,{eventId:input.event_id})).events).toMatchObject([{status:'applied'}]);
  const stored=await tx(c=>c.query('SELECT response FROM v2_workflow_requests WHERE request_id=$1',[accepted.event.id]));expect(stored.rows[0].response.result.id).toEqual(expect.any(String));
+});
+
+it('commits the active event after budget exhaustion and leaves subsequent PostgreSQL events untouched for later calls',async()=>{
+ const inputs=[event(),event(),event()],queued=[];
+ for(const input of inputs)queued.push(await acceptEvent(source,input));
+ let monotonic=0;
+ const originalAuthorize=access.assertV2MachineKeyInTransaction;
+ const clock=vi.spyOn(performance,'now').mockImplementation(()=>monotonic);
+ const authorize=vi.spyOn(access,'assertV2MachineKeyInTransaction').mockImplementation(async(...args)=>{
+  const authorized=await originalAuthorize(...args);
+  // No sleep and no fake database: expiry occurs during the real active event.
+  monotonic=6000;return authorized;
+ });
+ try{
+  expect((await processEvents(admin,warehouse,50)).events).toMatchObject([{id:queued[0].event.id,status:'applied',attempts:1}]);
+  expect(authorize).toHaveBeenCalledTimes(1);
+ }finally{authorize.mockRestore();clock.mockRestore();}
+ const ids=queued.map(row=>row.event.id);
+ const remaining=await tx(c=>c.query('SELECT id,status,attempts,result,processed_at FROM v2_integration_events WHERE id=ANY($1::uuid[]) ORDER BY sequence',[ids]));
+ expect(remaining.rows).toEqual([
+  expect.objectContaining({id:ids[0],status:'applied',attempts:1}),
+  {id:ids[1],status:'accepted',attempts:0,result:null,processed_at:null},
+  {id:ids[2],status:'accepted',attempts:0,result:null,processed_at:null},
+ ]);
+ expect((await tx(c=>c.query('SELECT request_id FROM v2_workflow_requests WHERE request_id=ANY($1::uuid[])',[ids]))).rows).toEqual([{request_id:ids[0]}]);
+ // One-event calls always attempt progress, irrespective of elapsed batch time.
+ for(const id of ids.slice(1))expect((await processEvents(admin,warehouse,1)).events).toMatchObject([{id,status:'applied',attempts:1}]);
+ expect((await processEvents(admin,warehouse,1)).events).toEqual([]);
+ expect((await tx(c=>c.query('SELECT request_id FROM v2_workflow_requests WHERE request_id=ANY($1::uuid[]) ORDER BY request_id',[ids]))).rows.map(row=>row.request_id)).toEqual([...ids].sort());
+ expect((await tx(c=>c.query('SELECT revision FROM v2_integration_entities WHERE external_entity_id=ANY($1::text[])',[inputs.map(input=>input.external_entity_id)]))).rows).toEqual([{revision:1},{revision:1},{revision:1}]);
+ for(let i=0;i<inputs.length;i++)expect(await acceptEvent(source,inputs[i])).toMatchObject({replayed:true,event:{id:ids[i],status:'applied',attempts:1}});
 });
 
 it('rechecks a revoked issuing key on that same connection and commits rejection without business effects',async()=>{

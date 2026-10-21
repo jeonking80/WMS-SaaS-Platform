@@ -1,0 +1,24 @@
+{
+  "verified_at": "2026-10-21T01:04:04.826555+00:00",
+  "build_id": "5kXkW7jTmieNOSezqw_8E",
+  "candidate": "ordered full-body aggregation; rejected after controlled performance comparison",
+  "verify_command_exit_code": 0,
+  "typecheck": "passed",
+  "unit_passed": 235,
+  "simulator_passed": 55,
+  "integration_passed": 187,
+  "e2e_passed": 44,
+  "production_build": "passed",
+  "migration_count": 20,
+  "evidence": {
+    "path": "/tmp/wms-v2-aggregate-reader-verify.log",
+    "sha256": "f3e041a50445bf57a96247c61c662a6545ab5d28527093438be14c77ce32d7f0"
+  },
+  "scope": "local functional regression only; not congestion or field qualification",
+  "adoption": {
+    "status": "rejected",
+    "reason": "50-event batches about 55% slower than row reader in both companies",
+    "evidence": "v2-state-reader-comparison.json",
+    "source_reverted": true
+  }
+}

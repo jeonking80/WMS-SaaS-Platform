@@ -132,12 +132,15 @@ describe('V2 masters PostgreSQL isolation and operations',()=>{
  it.each(['completed','unlocked'] as const)('protects newly discovered count items until the count is %s',async ending=>{
   // Model an incremental upgrade whose connection did not run migration0018.
   const migration=await readFile(new URL('../../db/migrations/1792368000020_v2-count-master-usage.sql',import.meta.url),'utf8');
+  const latest=await readFile(new URL('../../db/migrations/1792368000021_v2-supplier-pending-lots.sql',import.meta.url),'utf8');
   const upgrade=await owner.connect();try{
    await upgrade.query('BEGIN');await upgrade.query(`SET LOCAL search_path TO "${schema}"`);
    const before=(await upgrade.query(`SELECT proowner,proacl::text FROM pg_proc WHERE oid='master_workflow_in_use_scoped(uuid,text,uuid)'::regprocedure`)).rows[0];
    await upgrade.query(migration.split('-- Down Migration')[0]);
    const after=(await upgrade.query(`SELECT proowner,proacl::text,proconfig FROM pg_proc WHERE oid='master_workflow_in_use_scoped(uuid,text,uuid)'::regprocedure`)).rows[0];
-   expect({proowner:after.proowner,proacl:after.proacl}).toEqual(before);expect(after.proconfig.some((setting:string)=>setting.startsWith('search_path=')&&setting.includes(schema)&&setting.endsWith(', pg_temp'))).toBe(true);await upgrade.query('COMMIT');
+   expect({proowner:after.proowner,proacl:after.proacl}).toEqual(before);expect(after.proconfig.some((setting:string)=>setting.startsWith('search_path=')&&setting.includes(schema)&&setting.endsWith(', pg_temp'))).toBe(true);
+   // Preserve the current schema after specifically checking the incremental0020 guard.
+   await upgrade.query(latest.split('-- Down Migration')[0]);await upgrade.query('COMMIT');
   }catch(error){await upgrade.query('ROLLBACK');throw error;}finally{upgrade.release();}
   const discovered=await item(),countWarehouse=randomUUID(),countLocation=randomUUID(),reviewer=randomUUID();
   await tx(async c=>{
@@ -316,5 +319,76 @@ describe('V2 masters PostgreSQL isolation and operations',()=>{
   expect((await masterHttp(req('POST',{code:'FORBIDDEN',name:'Forbidden'}),ctx(),'collection')).status).toBe(403);
   expect((await masterHttp(req(),ctx(),'collection')).status).toBe(200);
   await expect(monitorOperations(identity,warehouse)).rejects.toMatchObject({code:'ROLE_FORBIDDEN'});
+ });
+});
+
+
+describe('supplier retirement waits for physical receipt work',()=>{
+ it('preserves incremental22 owner, ACL and pg_temp-last scope without exposing hidden or foreign work',async()=>{
+  const migration=await readFile(new URL('../../db/migrations/1792368000021_v2-supplier-pending-lots.sql',import.meta.url),'utf8');
+  const upgrade=await owner.connect();try{
+   await upgrade.query('BEGIN');await upgrade.query(`SET LOCAL search_path TO "${schema}"`);
+   const before=(await upgrade.query(`SELECT proowner,proacl::text FROM pg_proc WHERE oid='master_workflow_in_use_scoped(uuid,text,uuid)'::regprocedure`)).rows[0];
+   await upgrade.query(migration.split('-- Down Migration')[0]);
+   const after=(await upgrade.query(`SELECT proowner,proacl::text,proconfig FROM pg_proc WHERE oid='master_workflow_in_use_scoped(uuid,text,uuid)'::regprocedure`)).rows[0];
+   expect({proowner:after.proowner,proacl:after.proacl}).toEqual(before);expect(after.proconfig.some((setting:string)=>setting.startsWith('search_path=')&&setting.includes(schema)&&setting.endsWith(', pg_temp'))).toBe(true);await upgrade.query('COMMIT');
+  }catch(error){await upgrade.query('ROLLBACK');throw error;}finally{upgrade.release();}
+  const supplier=await tx(c=>insertMaster(c,tenant,warehouse,'partners',{code:randomUUID(),name:'Hidden physical supplier',supplier:true,customer:false}));
+  await owner.query(`INSERT INTO "${schema}".v2_workflow_state_header(tenant_id,warehouse_id,state) VALUES($1,$2,'{}') ON CONFLICT(tenant_id,warehouse_id) DO NOTHING`,[tenant,otherWarehouse]);
+  const previous=(await owner.query(`SELECT state FROM "${schema}".v2_workflow_state WHERE warehouse_id=$1`,[otherWarehouse])).rows[0].state;
+  try{
+   await owner.query(`UPDATE "${schema}".v2_workflow_state SET state=$1::jsonb WHERE warehouse_id=$2`,[JSON.stringify({...emptyState(),receipts:[{id:randomUUID(),supplier_id:supplier.id,closed:true,lines:[],lots:[{id:randomUUID(),pending:1,normal:0,hold:0}]}]}),otherWarehouse]);
+   await tx(async c=>{
+    await c.query("SELECT set_config('app.user_id',$1,true)",[actor]);await c.query('CREATE TEMP TABLE v2_workflow_state(state jsonb) ON COMMIT DROP');
+    expect((await c.query("SELECT master_workflow_in_use($1,'partners',$2) used",[tenant,supplier.id])).rows[0].used).toBe(true);
+    expect((await c.query(`SELECT warehouse_id FROM "${schema}".v2_workflow_state WHERE warehouse_id=$1`,[otherWarehouse])).rows).toEqual([]);
+   });
+   await expect(withTenant(foreign,c=>c.query("SELECT master_workflow_in_use($1,'partners',$2)",[tenant,supplier.id]))).rejects.toMatchObject({code:'42501'});
+   expect((await withTenant(foreign,c=>c.query("SELECT master_workflow_in_use($1,'partners',$2) used",[foreign,supplier.id]))).rows[0].used).toBe(false);
+  }finally{await owner.query(`UPDATE "${schema}".v2_workflow_state SET state=$1::jsonb WHERE warehouse_id=$2`,[JSON.stringify(previous),otherWarehouse]);}
+ });
+ it.each(['pending','normal','hold','closed-hold','overage'] as const)('blocks service and direct SQL retirement for %s lots, then allows completed history',async stage=>{
+  const receiptWarehouse=randomUUID(),receiving=randomUUID(),storage=randomUUID(),hold=randomUUID(),operator=randomUUID(),reviewer=randomUUID(),sku=await item();
+  const supplier=await tx(c=>insertMaster(c,tenant,warehouse,'partners',{code:randomUUID(),name:'Physical receipt supplier',supplier:true,customer:false}));
+  await tx(async c=>{
+   await c.query("INSERT INTO warehouses(id,tenant_id,code,name) VALUES($1::uuid,$2,$1::text,'Supplier completion')",[receiptWarehouse,tenant]);
+   for(const [id,kind]of [[receiving,'RECEIVING'],[storage,'STORAGE'],[hold,'HOLD']])await c.query("INSERT INTO locations(id,tenant_id,warehouse_id,code,name,kind) VALUES($1::uuid,$2,$3,$1::text,$4,$5)",[id,tenant,receiptWarehouse,kind,kind]);
+   for(const user of [operator,reviewer]){await c.query(`INSERT INTO "user"(id,name,email) VALUES($1,'Receipt operator',$2)`,[user,user+'@example.test']);await c.query("INSERT INTO memberships(user_id,tenant_id,role) VALUES($1,$2,'admin')",[user,tenant]);}
+   for(const user of [operator,reviewer])await c.query('INSERT INTO v2_warehouse_grants(tenant_id,user_id,warehouse_id) VALUES($1,$2,$3)',[tenant,user,receiptWarehouse]);
+  });
+  const operatorIdentity:Identity={...identity,user:{id:operator,name:'Receipt operator',email:operator+'@example.test'}};
+  const independent:Identity={...identity,user:{id:reviewer,name:'Receipt reviewer',email:reviewer+'@example.test'}};
+  const command=(command:string,payload:Record<string,unknown>,who=operatorIdentity)=>executeWorkflow(who,{warehouse_id:receiptWarehouse,request_id:randomUUID(),command,payload:{manual_entry_reason:'Physical supplier lifecycle test',...payload,...(Array.isArray(payload.lines)?{lines:payload.lines.map(line=>({input_mode:'search',...(line as object)}))}:{input_mode:'search'})}});
+  const created=await command('receipt.create',{supplier_id:supplier.id,expected_at:'2026-10-21T09:00:00.000Z',lines:[{item_id:sku.id,quantity:1}]}),receipt=created.snapshot.receipts[0];
+  const received=await command('receipt.receive',{receipt_id:receipt.id,lines:[{line_id:receipt.lines[0].id,quantity:stage==='overage'?2:1,location_id:receiving,hold_location_id:hold}],reason:'Record actual arrival'});
+  const normal=received.snapshot.receipts[0].lots.find(lot=>!lot.overage)!,excess=received.snapshot.receipts[0].lots.find(lot=>lot.overage);
+  let lot=normal;
+  if(stage==='normal'||stage==='overage')await command('receipt.inspect',{receipt_id:receipt.id,lines:[{lot_id:normal.id,quantity:1,outcome:'normal'}]});
+  if(stage==='hold'||stage==='closed-hold')await command('receipt.inspect',{receipt_id:receipt.id,lines:[{lot_id:normal.id,quantity:1,outcome:'hold'}]});
+  if(stage==='overage'){await command('receipt.putaway',{receipt_id:receipt.id,lines:[{lot_id:normal.id,quantity:1,location_id:storage}]});lot=excess!;}
+  if(stage==='closed-hold'){
+   const close=await command('receipt.close.request',{receipt_id:receipt.id,reason:'No more arrivals'});
+   const closed=await command('approval.decide',{approval_id:close.result.id,approve:true,reason:'Independent close'},independent);expect(closed.snapshot.receipts[0].closed).toBe(true);
+  }
+  const blocked=async()=>{
+   await expect(tx(c=>updateMaster(c,warehouse,'partners',supplier.id,{active:false}))).rejects.toMatchObject({code:'MASTER_IN_USE'});
+   await expect(tx(c=>c.query('UPDATE business_partners SET active=false WHERE id=$1',[supplier.id]))).rejects.toMatchObject({code:'23503'});
+   expect((await tx(c=>c.query('SELECT active FROM business_partners WHERE id=$1',[supplier.id]))).rows[0].active).toBe(true);
+  };
+  await blocked();
+  if(stage==='overage'){
+   const approval=await command('overage.request',{lot_id:lot.id,quantity:1,reason:'Accept real excess'});
+   await command('approval.decide',{approval_id:approval.result.id,approve:true,reason:'Independent acquisition approval'},independent);await blocked();
+  }
+  if(stage==='hold'||stage==='closed-hold'||stage==='overage')await command('hold.release',{lot_id:lot.id,quantity:1,location_id:receiving,reason:'Resume physical inspection'});
+  if(stage!=='normal')await command('receipt.inspect',{receipt_id:receipt.id,lines:[{lot_id:lot.id,quantity:1,outcome:'normal'}]});
+  const completed=await command('receipt.putaway',{receipt_id:receipt.id,lines:[{lot_id:lot.id,quantity:1,location_id:storage}]});
+  expect(completed.snapshot.receipts[0].lots.every(row=>row.pending+row.normal+row.hold===0)).toBe(true);
+  expect(completed.snapshot.stock.some(row=>row.item_id===sku.id&&row.S>0)).toBe(true);
+  const historicalSupplier=completed.snapshot.receipts[0].supplier;
+  expect((await tx(c=>updateMaster(c,warehouse,'partners',supplier.id,{active:false}))).active).toBe(false);
+  await tx(c=>c.query('UPDATE business_partners SET active=true WHERE id=$1',[supplier.id]));
+  await tx(c=>c.query('UPDATE business_partners SET active=false WHERE id=$1',[supplier.id]));
+  expect((await tx(c=>c.query('SELECT state FROM v2_workflow_state WHERE warehouse_id=$1',[receiptWarehouse]))).rows[0].state.receipts[0].supplier).toEqual(historicalSupplier);
  });
 });

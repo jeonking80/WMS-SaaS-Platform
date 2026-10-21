@@ -44,7 +44,7 @@ async function masterGuardMetadata(client) {
     (SELECT jsonb_agg(jsonb_build_object('grantor',pg_get_userbyid(a.grantor),'grantee',CASE WHEN a.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END,'privilege',a.privilege_type,'grantable',a.is_grantable) ORDER BY pg_get_userbyid(a.grantor),CASE WHEN a.grantee=0 THEN 'PUBLIC' ELSE pg_get_userbyid(a.grantee) END,a.privilege_type,a.is_grantable)
      FROM aclexplode(COALESCE(p.proacl,acldefault('f',p.proowner))) a) acl
     FROM pg_proc p WHERE p.oid=$1::regprocedure`,[signature])).rows[0];
-  assert(row,'Schema 21 master guard must exist.');
+  assert(row,'Schema 22 master guard must exist.');
   const searchPath=row.configuration?.find(value=>value.startsWith('search_path='));
   assert(searchPath&&searchPath.split(',').at(-1).trim()==='pg_temp','Master guard must retain its stored search path with pg_temp explicitly last.');
   return {signature,definition_sha256:createHash('sha256').update(row.definition).digest('hex'),owner:row.owner,configuration:row.configuration,acl:row.acl};
@@ -59,6 +59,22 @@ async function probeRestoredCountLineGuard(client,{tenant,warehouse,location}) {
     await client.query("UPDATE v2_workflow_state SET state=jsonb_set(state,'{counts}',COALESCE(state->'counts','[]'::jsonb) || $3::jsonb) WHERE tenant_id=$1 AND warehouse_id=$2",[tenant,warehouse,JSON.stringify([count])]);
     assert.equal((await client.query("SELECT master_workflow_in_use($1,'items',$2) used",[tenant,discovered])).rows[0].used,true,'Restored guard must protect a discovered active count line absent from its baseline.');
     return {application_role:true,rolled_back:true,baseline_absent_count_line_protected:true};
+  } finally { await client.query('ROLLBACK'); }
+}
+async function probeRestoredSupplierGuard(client,{tenant,warehouse}) {
+  const supplier=randomUUID(),receiptId=randomUUID();
+  await client.query('BEGIN');
+  try {
+    await client.query("INSERT INTO business_partners(id,tenant_id,code,name,supplier,customer) VALUES($1,$2,$3,'Restore supplier',true,false)",[supplier,tenant,'restore-supplier-'+supplier]);
+    const original=(await client.query("SELECT state->'receipts' receipts FROM v2_workflow_state WHERE tenant_id=$1 AND warehouse_id=$2",[tenant,warehouse])).rows[0].receipts??[];
+    for(const bucket of ['pending','normal','hold','completed']) {
+      const lot={id:randomUUID(),pending:0,normal:0,hold:0,quantity:1,putaway:bucket==='completed'?1:0};
+      if(bucket!=='completed')lot[bucket]=1;
+      const receipt={id:receiptId,supplier_id:supplier,closed:true,lines:[],lots:[lot]};
+      await client.query("UPDATE v2_workflow_state SET state=jsonb_set(state,'{receipts}',$3::jsonb) WHERE tenant_id=$1 AND warehouse_id=$2",[tenant,warehouse,JSON.stringify([...original,receipt])]);
+      assert.equal((await client.query("SELECT master_workflow_in_use($1,'partners',$2) used",[tenant,supplier])).rows[0].used,bucket!=='completed','Restored supplier guard must protect remaining physical work even after receipt closure.');
+    }
+    return {application_role:true,rolled_back:true,closed_receipt_pending_normal_hold_protected:true,completed_history_released:true};
   } finally { await client.query('ROLLBACK'); }
 }
 async function verifyNormalizedState(client, {tenant,warehouse,state}) {
@@ -131,7 +147,7 @@ try {
   const normalizedState=await verifyNormalizedState(sourceClient,normalizedFixture);
   const before = await fingerprint(sourceClient);
   const sourceMasterGuard=await masterGuardMetadata(sourceClient);
-  assert.equal(migrationFiles.length,21,'Restore drill requires all v2 migrations.');
+  assert.equal(migrationFiles.length,22,'Restore drill requires all v2 migrations.');
   assert.equal(before.counts.pgmigrations,migrationFiles.length);
   for(const table of v2Tables)assert(before.counts[table]>0,'Every v2 table must have synthetic data.');
   assert.equal(before.counts.delivery_destinations,1);
@@ -178,6 +194,7 @@ try {
   for(const table of v2Tables)assert((await app.query(`SELECT * FROM ${pg.escapeIdentifier(table)}`)).rowCount>0,'Restored application role must read each synthetic v2 table under its tenant.');
   await app.query("SELECT set_config('app.user_id',$1,false),set_config('app.environment','test',false)",[user]);
   const restoredMasterGuardProbe=await probeRestoredCountLineGuard(app,{tenant,warehouse,location});
+  const restoredSupplierGuardProbe=await probeRestoredSupplierGuard(app,{tenant,warehouse});
   assert.deepEqual(await fingerprint(targetClient),before,'Rolled-back master guard probe must preserve restored data.');
   assert.deepEqual(await verifyNormalizedState(app,normalizedFixture),normalizedState);
   for(const relation of ['v2_workflow_state','v2_workflow_state_header','v2_workflow_object_state']) {
@@ -237,7 +254,7 @@ try {
   const verifiedAt=new Date().toISOString();
   const evidence={tenant_id:tenant,completed_at:archive.completed_at,archive_sha256:archive.archive_sha256,restore_verified_at:verifiedAt};
   const report={result:'PASS',verified_at:verifiedAt,verification_scope:'synthetic_local_same_cluster',provider_recovery:'NOT_EXECUTED',
-    master_guard:{source:sourceMasterGuard,restored:restoredMasterGuard,metadata_identical:true,probe:restoredMasterGuardProbe},
+    master_guard:{source:sourceMasterGuard,restored:restoredMasterGuard,metadata_identical:true,probe:restoredMasterGuardProbe,supplier_probe:restoredSupplierGuardProbe},
     migrations:migrationFiles.length,tables_checked:tables.length,v2_tables_checked:v2Tables.length,compatibility_views_checked:v2Views.length,normalized_state:normalizedState,
     sequence_states:before.sequences,next_restored_document_no:nextDocument.document_no,next_restored_event_sequence:nextEvent,
     archive_bytes:archive.bytes,archive_sha256:archive.archive_sha256,completed_at:archive.completed_at,restore_verified_at:verifiedAt,
@@ -246,13 +263,13 @@ try {
     forced_rls_tables:security.rowCount,reconciliation_mismatches:0,v2_reconciliation:v2Reconciliation,
     application_role:'authenticated wms_app; nonowner/nonsuperuser/no BYPASSRLS',
     tenants:{[tenant]:evidence,[foreign]:{...evidence,tenant_id:foreign}},
-    checks:['schema21 master guard definition, stored search path, owner and effective ACL preserved; application-role rolled-back discovered count-line probe passed','all physical public tables fingerprinted; every v2 table has synthetic rows; invoker compatibility view and reconstructed logical state fingerprinted','normalized header metadata, ordered object bodies and compatibility write triggers preserved','all sequence states preserved including document and event gaps',
+    checks:['schema22 master guard definition, stored search path, owner and effective ACL preserved; application-role rolled-back discovered count-line and closed-receipt supplier pending/normal/hold probes passed; completed supplier history released','all physical public tables fingerprinted; every v2 table has synthetic rows; invoker compatibility view and reconstructed logical state fingerprinted','normalized header metadata, ordered object bodies and compatibility write triggers preserved','all sequence states preserved including document and event gaps',
       'legacy and v2 stock/ledger and aggregate state reconcile independently','workflow request response, pending approval and retry event preserved',
       'restored credentials, membership, idle policy, explicit warehouse grant, rotated key and consumed link preserved',
       'all FORCE RLS tables hide rows without context and hide source-tenant rows in foreign context','tenant composite FK rejects foreign warehouse grant',
       'append-only permissions and immutable triggers survive restore','source unchanged; existing/source targets and archive overwrite refused','archive checksum mismatch refused before target creation','shared authentication rate-limit state preserved'],
     limitations:['Same local PostgreSQL cluster; existing cluster roles and passwords were reused.','Synthetic SQL fixtures prove preservation, not new workflow execution.','No remote-provider restore, PITR, offsite archive recovery, HTTP login, RPO or RTO verification was executed.']};
-  await writeFile(new URL('../docs/restore-verification-schema21.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
+  await writeFile(new URL('../docs/restore-verification-schema22.json',import.meta.url),JSON.stringify(report,null,2)+'\n');
   console.log(JSON.stringify(report,null,2));
 } catch(error) { const line=error.stack?.match(/verify-restore\.mjs:(\d+):\d+/)?.[1]; if(line)console.error(`Restore verification check failed at script line ${line}.`); if (/^v2-fixture-statement-\d+$/.test(error.restoreStage ?? '')) console.error(`Synthetic restore fixture failed at ${error.restoreStage}.`); safeFailure('Restore verification',error); }
 finally {

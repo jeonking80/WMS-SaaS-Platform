@@ -1,0 +1,22 @@
+{
+  "status": "passed",
+  "exit_code": 0,
+  "verification_scope": "synthetic_local_isolated_cluster",
+  "report": "docs/restore-verification-schema22.json",
+  "report_sha256": "b23c18fd53af76b868a710a13457d35494fdcca553fd10440046c6f9db334383",
+  "private_log": "/tmp/wms-schema22-restore-20261021.log",
+  "log_sha256": "b23c18fd53af76b868a710a13457d35494fdcca553fd10440046c6f9db334383",
+  "script_sha256": "0e4bd31c3e798e634bc72bb4977b109c1e0a0a8bbbd15b2905548379cd97b2a2",
+  "migration22_sha256": "9177d532158a23108a257d179330f1d9432c267accf80f5624a9108d193c0fdf",
+  "provider_recovery": "NOT_EXECUTED",
+  "fullverify_before_drill": {
+    "result": "PASS",
+    "unit": 359,
+    "simulator": 55,
+    "postgresql": 221,
+    "e2e": 44,
+    "build_id": "yWT1tEXPpQvdrfCjU8NtH"
+  },
+  "observed_at": "2026-10-21T04:54:18.301871+00:00",
+  "remaining_drill_databases": 0
+}

@@ -1,0 +1,201 @@
+{
+  "result": "PASS",
+  "verified_at": "2026-10-21T04:53:48.616Z",
+  "verification_scope": "synthetic_local_same_cluster",
+  "provider_recovery": "NOT_EXECUTED",
+  "master_guard": {
+    "source": {
+      "signature": "public.master_workflow_in_use_scoped(uuid,text,uuid)",
+      "definition_sha256": "258b5514536b266faf4ae5ed77681baf9917c7a3f985b05f4c9c8ad15012b73f",
+      "owner": "postgres",
+      "configuration": [
+        "search_path=\"$user\", public, pg_temp, pg_temp, pg_temp"
+      ],
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ]
+    },
+    "restored": {
+      "signature": "public.master_workflow_in_use_scoped(uuid,text,uuid)",
+      "definition_sha256": "258b5514536b266faf4ae5ed77681baf9917c7a3f985b05f4c9c8ad15012b73f",
+      "owner": "postgres",
+      "configuration": [
+        "search_path=\"$user\", public, pg_temp, pg_temp, pg_temp"
+      ],
+      "acl": [
+        {
+          "grantee": "postgres",
+          "grantor": "postgres",
+          "grantable": false,
+          "privilege": "EXECUTE"
+        }
+      ]
+    },
+    "metadata_identical": true,
+    "probe": {
+      "application_role": true,
+      "rolled_back": true,
+      "baseline_absent_count_line_protected": true
+    },
+    "supplier_probe": {
+      "application_role": true,
+      "rolled_back": true,
+      "closed_receipt_pending_normal_hold_protected": true,
+      "completed_history_released": true
+    }
+  },
+  "migrations": 22,
+  "tables_checked": 42,
+  "v2_tables_checked": 24,
+  "compatibility_views_checked": 1,
+  "normalized_state": {
+    "storage_format": 2,
+    "header_rows": 1,
+    "body_rows": 8,
+    "logical_state_identical": true
+  },
+  "sequence_states": {
+    "inventory_documents_document_no_seq": {
+      "last_value": "3",
+      "is_called": true
+    },
+    "pgmigrations_id_seq": {
+      "last_value": "22",
+      "is_called": true
+    },
+    "v2_integration_events_sequence_seq": {
+      "last_value": "3",
+      "is_called": true
+    }
+  },
+  "next_restored_document_no": "4",
+  "next_restored_event_sequence": "4",
+  "archive_bytes": 220794,
+  "archive_sha256": "5a97b621663d4c69909c1e7199e6f8a790871db5caa1a3b6fea56566d2a999bc",
+  "completed_at": "2026-10-21T04:53:47.991Z",
+  "restore_verified_at": "2026-10-21T04:53:48.616Z",
+  "fixture": {
+    "synthetic_only": true,
+    "tenants": 2,
+    "users": 1,
+    "documents": 2,
+    "idle_lock_minutes": 7,
+    "legacy_balance": 70,
+    "v2_stock": {
+      "S": 50,
+      "R": 10,
+      "P": 5,
+      "Q": 12,
+      "B": 3,
+      "H": 70
+    },
+    "workflow_ledger_entries": 6,
+    "workflow_requests": 1,
+    "request_metrics": 2,
+    "pending_approvals": 1,
+    "integration_events": {
+      "applied": 1,
+      "retry_wait": 1
+    },
+    "rotated_keys": 2,
+    "opening_imports": {
+      "originals": 2,
+      "approved": 1,
+      "rejected": 1,
+      "original_csv_hash_verified": true
+    }
+  },
+  "row_counts": {
+    "tenants": 2,
+    "user": 1,
+    "session": 1,
+    "account": 1,
+    "verification": 1,
+    "rateLimit": 1,
+    "memberships": 1,
+    "items": 2,
+    "warehouses": 2,
+    "locations": 2,
+    "inventory_documents": 2,
+    "inventory_document_lines": 2,
+    "stock_balances": 1,
+    "stock_ledger": 2,
+    "idempotency_requests": 2,
+    "audit_logs": 2,
+    "delivery_destinations": 1,
+    "pgmigrations": 22,
+    "v2_workflow_state_header": 1,
+    "v2_workflow_object_state": 8,
+    "v2_workflow_stock": 1,
+    "v2_workflow_objects": 2,
+    "v2_workflow_requests": 1,
+    "v2_workflow_performances": 1,
+    "v2_workflow_receivings": 1,
+    "v2_workflow_ledger": 6,
+    "v2_warehouse_grants": 1,
+    "v2_identity_links": 1,
+    "v2_machine_keys": 2,
+    "v2_machine_warehouses": 2,
+    "v2_identity_audit": 1,
+    "business_partners": 1,
+    "master_barcodes": 3,
+    "master_csv_previews": 1,
+    "master_csv_applies": 1,
+    "master_csv_applied_rows": 1,
+    "v2_integration_limits": 1,
+    "v2_integration_entities": 1,
+    "v2_integration_events": 2,
+    "v2_cutovers": 1,
+    "api_request_metrics": 2,
+    "v2_opening_imports": 4
+  },
+  "source_sha256": "e9426f7c6a153a84ea06f09e7676510f37fe33dbd5c8597a290bed935daca106",
+  "restored_identical": true,
+  "source_unchanged": true,
+  "forced_rls_tables": 34,
+  "reconciliation_mismatches": 0,
+  "v2_reconciliation": {
+    "ledger_mismatches": 0,
+    "state_mismatches": 0
+  },
+  "application_role": "authenticated wms_app; nonowner/nonsuperuser/no BYPASSRLS",
+  "tenants": {
+    "11d82d4b-01c7-475f-9a99-5238251f544d": {
+      "tenant_id": "11d82d4b-01c7-475f-9a99-5238251f544d",
+      "completed_at": "2026-10-21T04:53:47.991Z",
+      "archive_sha256": "5a97b621663d4c69909c1e7199e6f8a790871db5caa1a3b6fea56566d2a999bc",
+      "restore_verified_at": "2026-10-21T04:53:48.616Z"
+    },
+    "9423fa3e-05f0-4075-966b-12532ea8dd61": {
+      "tenant_id": "9423fa3e-05f0-4075-966b-12532ea8dd61",
+      "completed_at": "2026-10-21T04:53:47.991Z",
+      "archive_sha256": "5a97b621663d4c69909c1e7199e6f8a790871db5caa1a3b6fea56566d2a999bc",
+      "restore_verified_at": "2026-10-21T04:53:48.616Z"
+    }
+  },
+  "checks": [
+    "schema22 master guard definition, stored search path, owner and effective ACL preserved; application-role rolled-back discovered count-line and closed-receipt supplier pending/normal/hold probes passed; completed supplier history released",
+    "all physical public tables fingerprinted; every v2 table has synthetic rows; invoker compatibility view and reconstructed logical state fingerprinted",
+    "normalized header metadata, ordered object bodies and compatibility write triggers preserved",
+    "all sequence states preserved including document and event gaps",
+    "legacy and v2 stock/ledger and aggregate state reconcile independently",
+    "workflow request response, pending approval and retry event preserved",
+    "restored credentials, membership, idle policy, explicit warehouse grant, rotated key and consumed link preserved",
+    "all FORCE RLS tables hide rows without context and hide source-tenant rows in foreign context",
+    "tenant composite FK rejects foreign warehouse grant",
+    "append-only permissions and immutable triggers survive restore",
+    "source unchanged; existing/source targets and archive overwrite refused",
+    "archive checksum mismatch refused before target creation",
+    "shared authentication rate-limit state preserved"
+  ],
+  "limitations": [
+    "Same local PostgreSQL cluster; existing cluster roles and passwords were reused.",
+    "Synthetic SQL fixtures prove preservation, not new workflow execution.",
+    "No remote-provider restore, PITR, offsite archive recovery, HTTP login, RPO or RTO verification was executed."
+  ]
+}

@@ -34,8 +34,6 @@
 
 원문 로그는 `/tmp/v2-scan-authority-old-source-pg.log`, `/tmp/v2-scan-authority-unit.log`, `/tmp/v2-scan-authority-fixed-pg.log`, `/tmp/v2-scan-authority-typecheck.log`다. 수정 전 로그 SHA-256은 `461e3dcb0a58b22102a6d6486aa07fad405b8b3fadbccdd865dc9acdf43629af`, 적용 패치 SHA-256은 `44ab0c414849b0bfa7e7bd15b75205b830082352c9d6ba63bb0963df6145ab29`다. 수정 전 소스 파일 해시는 `/tmp/v2-scan-authority-old-source-sha256.txt`에 보존했다.
 
-이 변경을 포함한 전체 `npm run verify`는 기록 시점에 실행 중이며 결과는 미판정이다(`/tmp/wms-v2-scan-authority-full-verify.log`). 표적 합격은 전체 기획, 성능, 장시간, 실기기 또는 현장 게이트의 완료 선언이 아니다.
-
 ## Full local regression
 
 Exit code 0: 359 unit, 55 simulator, 215 PostgreSQL and 44 browser tests, typecheck and standalone production build. Build `LukXG34LM9HHGd6cYWiMc`; log `/tmp/wms-v2-scan-authority-full-verify.log`, SHA-256 `b4b8fdf8a5f105eb2ed8da3a9d57bcfd954851190228ba03a6efbbd7645e8581`. This does not qualify G3–G5 or overall completion.

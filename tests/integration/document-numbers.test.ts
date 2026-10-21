@@ -23,7 +23,7 @@ it('backfills existing documents, never resets on rerun, and never truncates lar
     location = (await client.query("INSERT INTO locations(tenant_id,warehouse_id,code,name) VALUES ($1,$2,'L','L') RETURNING id",[tenant,warehouse])).rows[0].id;
     existing = (await client.query("INSERT INTO inventory_documents(tenant_id,kind,warehouse_id,destination_location_id) VALUES ($1,'INBOUND',$2,$3) RETURNING id",[tenant,warehouse,location])).rows[0].id;
   } finally { client.release(); }
-  expect(await migrate(databaseUrl,options)).toHaveLength(12);
+  expect(await migrate(databaseUrl,options)).toHaveLength(13);
   const check = await owner.connect();
   try {
     await check.query(`SET search_path TO "${schema}"`);

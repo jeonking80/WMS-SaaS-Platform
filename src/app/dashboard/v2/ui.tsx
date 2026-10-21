@@ -449,7 +449,11 @@ export default function Operations({ identity }: { identity: Identity }) {
             {runtime ? environments[runtime.environment] || runtime.environment : "환경 확인 중"}
             {runtime?.tenant.isTest ? " · 시험 회사" : ""}
           </span>
-          <span className="v2-asof">{loadedAt ? `${time(loadedAt)} 기준` : "서버 조회 대기"}</span>
+          <span className="v2-asof" title={loadedAt ? `${time(loadedAt)} 기준` : undefined}>
+            {loadedAt
+              ? `${new Date(loadedAt).toLocaleTimeString("ko-KR", { timeZone: "Asia/Seoul", hour: "2-digit", minute: "2-digit" })} 기준`
+              : "서버 조회 대기"}
+          </span>
           <span className="v2-user">
             {roles[identity.role] || identity.role} · {identity.user.name}
           </span>

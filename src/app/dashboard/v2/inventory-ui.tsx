@@ -284,6 +284,13 @@ export function Queue({ c, open }: { c: Context; open: Open }) {
     </>
   );
 }
+const approvalStates: Record<string, string> = { pending: "승인 대기", approved: "승인 완료", rejected: "반려" },
+  countStates: Record<string, string> = {
+    counting: "계수 중",
+    submitted: "승인 대기",
+    completed: "완료",
+    unlocked: "잠금 해제",
+  };
 const inventoryViews = [
   ["stock", "재고 7지표", "stock"],
   ["move", "이동·보충·보류", "stock"],
@@ -377,7 +384,7 @@ export function Inventory({
   const holds = s.holds || [];
   return (
     <>
-      <div className="v2-steps">
+      <div className="v2-steps v2-subnav">
         {inventoryViews
           .filter(([, , group]) => group === area)
           .map(([key, title]) => (
@@ -725,7 +732,7 @@ export function Inventory({
                 {approval.requester_name ||
                   c.people.find((p) => p.userId === approval.requester_id)?.name ||
                   "이전 요청자"}{" "}
-                · {approval.quantity} EA · {approval.status}
+                · {approval.quantity} EA · {approvalStates[approval.status] || approval.status}
               </p>
               <p>요청 사유: {approval.reason}</p>
               {approval.decider_id && (
@@ -910,14 +917,14 @@ function Counts({ c }: { c: Context }) {
           }}
           options={c.snapshot.counts.map((count, index) => ({
             id: count.id,
-            label: `실사 ${index + 1} · ${nameOf(c.locations, count.location_id)} · ${count.status}`,
+            label: `실사 ${index + 1} · ${nameOf(c.locations, count.location_id)} · ${countStates[count.status] || count.status}`,
           }))}
         />
       </section>
       {selected && (
         <section className="v2-card">
           <h3>
-            {nameOf(c.locations, selected.location_id)} · {selected.status}
+            {nameOf(c.locations, selected.location_id)} · {countStates[selected.status] || selected.status}
           </h3>
           {selected.status === "counting" && <Assignment c={c} objectType="count" objectId={selected.id} />}
           {selected.status === "counting" && c.role !== "viewer" && (

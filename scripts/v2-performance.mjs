@@ -383,7 +383,7 @@ try {
     if(report.fixture.ledger_per_tenant!==ledgerPerTenant)failure('RESUME_PROFILE_MISMATCH');
     if(report.phase==='measured')report.previous_measurement={measurement_profile:report.measurement_profile??'inventory-1600-dom-v1',build_id:report.build_id,measurement_started_at:report.measurement_started_at,finished_at:report.finished_at,verdict:report.verdict,failure_analysis:report.latest_failure_analysis};
     delete report.error; delete report.cleanup_error;delete report.verdict;delete report.finished_at;delete report.latest_failure_analysis;delete report.isolation_probe; report.db={}; report.api={}; report.browser={}; delete report.inventory_preservation;inventoryDisplayContract(); report.phase='measuring';
-    await measureDatabase();await startServer();await measureApi();await measureBrowser();
+    await measureDatabase();const databasePhasePool=appPool;appPool=null;await databasePhasePool.end();await startServer();await measureApi();await measureBrowser();
     const metrics=[...Object.values(report.db),...Object.values(report.api),...Object.values(report.browser)];
     report.verdict=report.fixture.full_million_profile&&samples===100&&concurrency===5&&metrics.every(metric=>metric.target_met&&!metric.early_stopped&&metric.count===metric.requested_measured_samples&&metric.warmups.every(sample=>sample.ok))&&report.isolation_probe?.passed&&report.inventory_preservation?.passed?'passed_local_million_ledger_read_profile':'failed_local_read_profile';
     report.phase='measured';report.finished_at=new Date().toISOString();

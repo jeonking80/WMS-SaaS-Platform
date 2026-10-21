@@ -284,8 +284,25 @@ export function Queue({ c, open }: { c: Context; open: Open }) {
     </>
   );
 }
-export function Inventory({ c, shift = false, open }: { c: Context; shift?: boolean; open?: Open }) {
-  const [view, setView] = useState("stock"),
+const inventoryViews = [
+  ["stock", "재고 7지표", "stock"],
+  ["move", "이동·보충·보류", "stock"],
+  ["ledger", "원장·정정", "stock"],
+  ["approval", "승인", "audit"],
+  ["count", "위치 실사", "audit"],
+];
+export function Inventory({
+  c,
+  shift = false,
+  area = "stock",
+  open,
+}: {
+  c: Context;
+  shift?: boolean;
+  area?: "stock" | "audit";
+  open?: Open;
+}) {
+  const [view, setView] = useState(area === "audit" ? "approval" : "stock"),
     [item, setItem] = useState(""),
     [location, setLocation] = useState(""),
     [reason, setReason] = useState(""),
@@ -297,7 +314,7 @@ export function Inventory({ c, shift = false, open }: { c: Context; shift?: bool
     const route = new URLSearchParams(window.location.search);
     if (
       route.get("warehouse_id") === c.warehouse &&
-      route.get("tab") === "inventory" &&
+      ["inventory", "audit"].includes(route.get("tab") || "") &&
       route.get("inventory_view") === "approval"
     ) {
       setView("approval");
@@ -361,17 +378,13 @@ export function Inventory({ c, shift = false, open }: { c: Context; shift?: bool
   return (
     <>
       <div className="v2-steps">
-        {[
-          ["stock", "재고 7지표"],
-          ["move", "이동·보충·보류"],
-          ["count", "위치 실사"],
-          ["approval", "승인"],
-          ["ledger", "원장·정정"],
-        ].map(([key, title]) => (
-          <button key={key} aria-selected={view === key} onClick={() => setView(key)}>
-            {title}
-          </button>
-        ))}
+        {inventoryViews
+          .filter(([, , group]) => group === area)
+          .map(([key, title]) => (
+            <button key={key} aria-selected={view === key} onClick={() => setView(key)}>
+              {title}
+            </button>
+          ))}
       </div>
       {view === "stock" && (
         <>

@@ -226,7 +226,7 @@ export function operationsAlerts(
       kind: "approval",
       title: `승인 대기 ${approvals}건`,
       detail: "과납 인수·잔량 마감·실사 조정은 승인 전까지 재고에 반영되지 않습니다.",
-      target: { kind: "tab", id: "inventory" },
+      target: { kind: "tab", id: "audit" },
     });
   const blocked = new Set((state.location_blocks ?? []).map((row) => row.location_id)).size;
   if (blocked)

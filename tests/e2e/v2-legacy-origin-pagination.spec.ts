@@ -22,7 +22,7 @@ test('legacy correction picker searches and selects an original beyond the first
   else return route.fallback();
   await route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(result)});
  });
- await page.goto('/dashboard/v2');await page.getByRole('tab',{name:'재고·실사·승인',exact:true}).click();await page.getByRole('button',{name:'원장·정정',exact:true}).click();
+ await page.goto('/dashboard/v2');await page.getByRole('tab',{name:'재고',exact:true}).click();await page.getByRole('button',{name:'원장·정정',exact:true}).click();
  const picker=page.getByLabel('정정 원본 실적',{exact:true});await expect(picker).toBeEnabled();await expect(picker.locator('option')).toHaveCount(51);expect(await picker.locator(`option[value="${oldest.id}"]`).count()).toBe(0);
  await page.getByRole('button',{name:'이전 기존 전표 50개 더 불러오기'}).click();await expect(picker.locator('option')).toHaveCount(56);await picker.selectOption(oldest.id);await expect.poll(()=>inspected.at(-1)).toBe(oldest.id);
  await page.getByLabel('기존 전표번호·품목·메모 검색',{exact:true}).fill(oldest.document_number);await expect(picker.locator('option')).toHaveCount(2);await expect(picker).toHaveValue('');await picker.selectOption(oldest.id);await expect(picker).toHaveValue(oldest.id);

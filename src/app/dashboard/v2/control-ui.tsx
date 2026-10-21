@@ -77,7 +77,7 @@ export function ControlTower({ c, open }: { c: Context; open: Open }) {
     ["진행 중 주문", overview.open_orders, "orders", "건", false],
     ["오늘 납기", overview.due_today, "orders", "건", false],
     ["납기 초과", overview.overdue_orders, "orders", "건", overview.overdue_orders > 0],
-    ["승인 대기", overview.pending_approvals, "inventory", "건", overview.pending_approvals > 0],
+    ["승인 대기", overview.pending_approvals, "audit", "건", overview.pending_approvals > 0],
     ["보류 수량", overview.hold_quantity, "inventory", "EA", false],
     [
       "재고 대사",

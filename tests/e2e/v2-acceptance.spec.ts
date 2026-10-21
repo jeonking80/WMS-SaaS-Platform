@@ -144,7 +144,7 @@ test('업무 홈의 승인 대기는 현재 창고의 실제 대기 승인 목�
   const entry = page.getByRole('link',{name:'승인 대기 1건 검토',exact:true});
   await expect(entry).toHaveAttribute('href',`/dashboard/v2?warehouse_id=${w.warehouse}&tab=inventory&inventory_view=approval&approval_status=pending`);
   await entry.click();
-  await expect(page.getByRole('tab',{name:'재고·실사·승인',exact:true})).toHaveAttribute('aria-selected','true');
+  await expect(page.getByRole('tab',{name:'실사·승인',exact:true})).toHaveAttribute('aria-selected','true');
   await expect(page.getByRole('button',{name:'승인',exact:true})).toHaveAttribute('aria-selected','true');
   const state = page.getByRole('combobox',{name:'승인 상태',exact:true});
   await expect(state).toHaveValue('pending');

@@ -18,3 +18,11 @@ export function businessInputTimestamp(value: string): string | undefined {
   if (!Number.isFinite(date.getTime()) || businessInputTime(date.toISOString()) !== value) return undefined;
   return date.toISOString();
 }
+
+/** Quick-fill value for a datetime-local field: a Korea business day offset from now at a whole hour. */
+export function businessDayAt(offsetDays: number, hour: number, now = new Date()): string {
+  const today = businessInputTime(now.toISOString()).slice(0, 10);
+  const date = new Date(`${today}T00:00:00+09:00`);
+  date.setUTCDate(date.getUTCDate() + offsetDays);
+  return `${businessInputTime(date.toISOString()).slice(0, 10)}T${String(hour).padStart(2, '0')}:00`;
+}

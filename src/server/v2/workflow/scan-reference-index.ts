@@ -22,3 +22,19 @@ export function scanReferences(state:WorkflowState) {
   line:lazyFirst(()=>[...state.receipts,...state.returns,...state.orders].flatMap(row=>row.lines)),
  };
 }
+
+/** Resolve only the reference the physical command actually consumes. Parent-scoped
+ * lookups prevent duplicate line IDs or unrelated client hints selecting another SKU. */
+export function physicalScanReferences(state:WorkflowState,command:string,payload:Record<string,unknown>):(line:Record<string,unknown>)=>{item_id:string;location_id?:string}|undefined {
+ switch(command){
+  case 'receipt.receive': {const lookup=lazyFirst(()=>state.receipts.find(row=>row.id===payload.receipt_id)?.lines??[]);return line=>lookup(line.line_id);}
+  case 'return.receive': {const lookup=lazyFirst(()=>state.returns.find(row=>row.id===payload.return_id)?.lines??[]);return line=>lookup(line.line_id);}
+  case 'receipt.inspect':case 'receipt.putaway': {const lookup=lazyFirst(()=>state.receipts.find(row=>row.id===payload.receipt_id)?.lots??[]);return line=>lookup(line.lot_id);}
+  case 'return.inspect':case 'return.putaway': {const lookup=lazyFirst(()=>state.returns.find(row=>row.id===payload.return_id)?.lots??[]);return line=>lookup(line.lot_id);}
+  case 'stock.inspect':case 'stock.putaway': {const lookup=lazyFirst(()=>state.holds??[]);return line=>lookup(line.lot_id);}
+  case 'hold.release': {const lookup=scanReferences(state).lot;return line=>lookup(line.lot_id);}
+  case 'order.pick': {const lookup=lazyFirst(()=>state.orders.find(row=>row.id===payload.order_id)?.reservations??[]);return line=>lookup(line.reservation_id);}
+  case 'package.create':case 'order.return_picked':case 'order.damage': {const lookup=lazyFirst(()=>state.orders.find(row=>row.id===payload.order_id)?.picks??[]);return line=>lookup(line.pick_id);}
+  default:return()=>undefined;
+ }
+}

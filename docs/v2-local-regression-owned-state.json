@@ -1,0 +1,41 @@
+{
+  "verified_at": "2026-10-21T04:25:56.189499+00:00",
+  "build_id": "DsWNeYcKhO8by_QV1Sd2Z",
+  "scope": "local owned-state engine full regression; no public deployment or G3/G4/G5 completion",
+  "typecheck": "passed",
+  "unit": {
+    "passed": 357
+  },
+  "simulator": {
+    "passed": 55
+  },
+  "integration": {
+    "passed": 211,
+    "skipped": 0
+  },
+  "production_build": "passed (WMS_STANDALONE=1)",
+  "e2e": {
+    "full_suite_passed": 44,
+    "full_suite_failed": 0
+  },
+  "full_verify": {
+    "exit_code": 0,
+    "command": "WMS_STANDALONE=1 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run verify"
+  },
+  "migration_count": 21,
+  "evidence": [
+    {
+      "path": "/tmp/wms-v2-owned-engine-full-verify.log",
+      "sha256": "4b3d34e2fa4dfc790fdd5e77dde6ead1731a35d4ed348b98ecd5d9ce2839d4ff"
+    }
+  ],
+  "changes": [
+    "Fresh locked transaction state consumed once by internal engine; public pure contract preserved",
+    "Detached previous stock and ledger accounting plus immutable persistence baseline retained",
+    "Full differential command coverage and PostgreSQL rollback/fresh-retry tests"
+  ],
+  "performance_claim": "No measured benefit yet. All five official congestion failures preserved. Controlled baseline/candidate comparison pending.",
+  "restore_status": "passed synthetic local schema21 restore; provider/PITR/RPO/RTO not executed",
+  "congestion_evidence": "v2-congestion-fifth-final-recovery.json",
+  "restore_evidence": "restore-verification-schema21.json"
+}

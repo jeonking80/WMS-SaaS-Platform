@@ -828,3 +828,60 @@ describe('scan reference indexing preserves production normalization',()=>{
   await assertQuantities(w,item,{S:0,Q:4,H:4,A:0});await w.invariant();
  });
 });
+
+
+describe('physical scans use the command-owned item reference',()=>{
+ async function barcodes(w:Awaited<ReturnType<typeof world>>,items:string[]){
+  const codes=items.map(()=>`AUTH-${randomUUID()}`);
+  await withTenant(tenant,async client=>{for(let i=0;i<items.length;i++)await client.query("INSERT INTO master_barcodes(tenant_id,barcode,item_id,unit,quantity) VALUES($1,$2,$3,'EA',1)",[tenant,codes[i],items[i]]);});
+  return codes;
+ }
+ async function unchanged(w:Awaited<ReturnType<typeof world>>,operation:()=>Promise<unknown>,code='WRONG_ITEM_SCAN'){
+  const before=await w.effects();await expect(operation()).rejects.toMatchObject({code});expect(await w.effects()).toEqual(before);
+ }
+ it('scopes duplicate receipt line IDs and rejects both barcode and manual conflicting item hints',async()=>{
+  const w=await world(),a=await w.item(),b=await w.item(),[barcodeA,barcodeB]=await barcodes(w,[a,b]),line_id=randomUUID();
+  await w.command('receipt.create',{lines:[{id:line_id,item_id:b,quantity:2}]});
+  const created=await w.command('receipt.create',{lines:[{id:line_id,item_id:a,quantity:2}]}),receipt_id=created.result.id;
+  const base={line_id,quantity:1,location_id:w.location.receiving,input_mode:'barcode',scanned_location_id:w.location.receiving};
+  await unchanged(w,()=>w.command('receipt.receive',{receipt_id,lines:[{...base,item_id:b,scans:[{barcode:barcodeB,count:1}]}]}));
+  await unchanged(w,()=>w.command('receipt.receive',{receipt_id,lines:[{...base,scanned_item_id:b,scans:[{barcode:barcodeB,count:1}]}]}));
+  await unchanged(w,()=>w.command('receipt.receive',{receipt_id,lines:[{line_id,quantity:1,location_id:w.location.receiving,item_id:b}]}));
+  const received=await w.command('receipt.receive',{receipt_id,lines:[{...base,scans:[{barcode:barcodeA,count:1}]}]});
+  expect(received.snapshot.receipts.find(row=>row.id===receipt_id)!.lots[0]).toMatchObject({item_id:a,quantity:1});await w.invariant();
+ });
+ it('ignores unrelated line references for inspection and putaway, while explicit stock items remain authoritative',async()=>{
+  const w=await world(),a=await w.item(),b=await w.item(),[barcodeA,barcodeB]=await barcodes(w,[a,b]);
+  const ra=await w.receive(a,2),rb=await w.receive(b,2),lot=ra.lots[0];
+  const base={lot_id:lot.id,line_id:rb.lines[0].id,quantity:1,input_mode:'barcode',scanned_location_id:w.location.receiving,scans:[{barcode:barcodeB,count:1}]};
+  await unchanged(w,()=>w.command('receipt.inspect',{receipt_id:ra.id,lines:[{...base,outcome:'normal'}]}));
+  await unchanged(w,()=>w.command('receipt.inspect',{receipt_id:rb.id,lines:[{lot_id:lot.id,quantity:1,outcome:'normal'}]}),'NOT_FOUND');
+  await w.command('receipt.inspect',{receipt_id:ra.id,lines:[{...base,outcome:'normal',scans:[{barcode:barcodeA,count:1}]}]});
+  const put={...base,location_id:w.location.storage,scanned_location_id:w.location.storage};
+  await unchanged(w,()=>w.command('receipt.putaway',{receipt_id:ra.id,lines:[put]}));
+  await w.command('receipt.putaway',{receipt_id:ra.id,lines:[{...put,scans:[{barcode:barcodeA,count:1}]}]});
+  await w.command('stock.move',{lines:[{item_id:a,line_id:rb.lines[0].id,lot_id:rb.lots[0].id,quantity:1,from_location_id:w.location.storage,location_id:w.location.second,input_mode:'barcode',scanned_location_id:w.location.storage,scans:[{barcode:barcodeA,count:1}]}],reason:'Move actual scanned SKU'});await w.invariant();
+ });
+ it('resolves package scans from the selected order pick despite unrelated valid line, lot and reservation references',async()=>{
+  const w=await world(),a=await w.item(),b=await w.item(),[barcodeA,barcodeB]=await barcodes(w,[a,b]);await w.seed(a,2);await w.seed(b,2);
+  const oa=await w.pick(a,2),ob=await w.pick(b,2),rb=(await w.snapshot()).receipts.find(row=>row.lines[0].item_id===b)!;
+  const base={pick_id:oa.picks[0].id,line_id:rb.lines[0].id,lot_id:rb.lots[0].id,reservation_id:ob.reservations[0].id,quantity:1,input_mode:'barcode',scanned_location_id:w.location.staging};
+  await unchanged(w,()=>w.command('package.create',{order_id:oa.id,lines:[{...base,scans:[{barcode:barcodeB,count:1}]}]}));
+  await unchanged(w,()=>w.command('package.create',{order_id:oa.id,lines:[{...base,item_id:b,scans:[{barcode:barcodeB,count:1}]}]}));
+  await unchanged(w,()=>w.command('package.create',{order_id:ob.id,lines:[{pick_id:oa.picks[0].id,quantity:1}]}),'NOT_FOUND');
+  const packed=await w.command('package.create',{order_id:oa.id,lines:[{...base,scans:[{barcode:barcodeA,count:1}]}]});
+  expect(packed.snapshot.orders.find(row=>row.id===oa.id)!.picks[0].packed).toBe(1);expect(packed.snapshot.orders.find(row=>row.id===ob.id)!.picks[0].packed).toBe(0);await w.invariant();
+ });
+ it('derives return receiving and inspection items from the selected return',async()=>{
+  const w=await world(),a=await w.item(),b=await w.item(),[barcodeA,barcodeB]=await barcodes(w,[a,b]);await w.seed(a,2);const rb=await w.receive(b,1),o=await w.pick(a,2);
+  const packed=await w.command('package.create',{order_id:o.id,lines:[{pick_id:o.picks[0].id,quantity:2}]}),shipped=await w.command('shipment.create',{package_ids:[packed.result.id],handover_by:'Driver',carrier:'Test carrier'});
+  const shipment=shipped.snapshot.shipments.find(row=>row.id===shipped.result.id)!;
+  const requested=await w.command('return.request',{shipment_id:shipment.id,lines:[{shipment_line_id:shipment.lines[0].id,quantity:2}],reason:'Return scanned goods'}),ret=requested.snapshot.returns.find(row=>row.id===requested.result.id)!;
+  const base={line_id:ret.lines[0].id,lot_id:rb.lots[0].id,pick_id:o.picks[0].id,quantity:1,location_id:w.location.receiving,input_mode:'barcode',scanned_location_id:w.location.receiving};
+  await unchanged(w,()=>w.command('return.receive',{return_id:ret.id,lines:[{...base,item_id:b,scans:[{barcode:barcodeB,count:1}]}]}));
+  const received=await w.command('return.receive',{return_id:ret.id,lines:[{...base,scans:[{barcode:barcodeA,count:1}]}]}),lot=received.snapshot.returns.find(row=>row.id===ret.id)!.lots[0];
+  const inspect={lot_id:lot.id,line_id:rb.lines[0].id,quantity:1,outcome:'normal',input_mode:'barcode',scanned_location_id:w.location.receiving};
+  await unchanged(w,()=>w.command('return.inspect',{return_id:ret.id,lines:[{...inspect,scans:[{barcode:barcodeB,count:1}]}]}));
+  await w.command('return.inspect',{return_id:ret.id,lines:[{...inspect,scans:[{barcode:barcodeA,count:1}]}]});await w.invariant();
+ });
+});

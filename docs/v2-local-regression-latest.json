@@ -1,16 +1,16 @@
 {
-  "verified_at": "2026-10-21T04:25:56.189499+00:00",
-  "build_id": "DsWNeYcKhO8by_QV1Sd2Z",
-  "scope": "local owned-state engine full regression; no public deployment or G3/G4/G5 completion",
+  "verified_at": "2026-10-21T04:44:26.313548+00:00",
+  "build_id": "LukXG34LM9HHGd6cYWiMc",
+  "scope": "local command-owned scan validation full regression; G3/G4/G5 remain unqualified",
   "typecheck": "passed",
   "unit": {
-    "passed": 357
+    "passed": 359
   },
   "simulator": {
     "passed": 55
   },
   "integration": {
-    "passed": 211,
+    "passed": 215,
     "skipped": 0
   },
   "production_build": "passed (WMS_STANDALONE=1)",
@@ -25,16 +25,15 @@
   "migration_count": 21,
   "evidence": [
     {
-      "path": "/tmp/wms-v2-owned-engine-full-verify.log",
-      "sha256": "4b3d34e2fa4dfc790fdd5e77dde6ead1731a35d4ed348b98ecd5d9ce2839d4ff"
+      "path": "/tmp/wms-v2-scan-authority-full-verify.log",
+      "sha256": "b4b8fdf8a5f105eb2ed8da3a9d57bcfd954851190228ba03a6efbbd7645e8581"
     }
   ],
   "changes": [
-    "Fresh locked transaction state consumed once by internal engine; public pure contract preserved",
-    "Detached previous stock and ledger accounting plus immutable persistence baseline retained",
-    "Full differential command coverage and PostgreSQL rollback/fresh-retry tests"
+    "Physical scans resolve authoritative command-specific parent-scoped source instead of untrusted item and unrelated references",
+    "Four old-source PostgreSQL failures reproduce the bypass; fixed acceptance and whole verification passed"
   ],
-  "performance_claim": "No measured benefit yet. All five official congestion failures preserved. Controlled baseline/candidate comparison pending.",
+  "performance_claim": "Owned-engine predecessor diagnostic selected600 confirmation elapsed45.74% lower in one ordered pair; no official pass. Five official failures preserved.",
   "restore_status": "passed synthetic local schema21 restore; provider/PITR/RPO/RTO not executed",
   "congestion_evidence": "v2-congestion-fifth-final-recovery.json",
   "restore_evidence": "restore-verification-schema21.json"

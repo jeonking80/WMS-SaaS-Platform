@@ -12,7 +12,7 @@ import { emptyState, type Bucket, type WorkflowInput, type WorkflowState, type S
 import {readWorkflowState,writeWorkflowState,claimLoadedWorkflowState} from './object-storage';
 import {firstPositions} from './position-index';
 import {refreshStockLocations} from './location-projection';
-import {scanReferences} from './scan-reference-index';
+import {physicalScanReferences,scanReferences} from './scan-reference-index';
 import {genericHoldOwnership} from './hold-ownership';
 import {hydrateLegacyOverageQuality} from './overage-quality';
 import {nameHistoricalActors,nameSnapshotActors} from './actor-names';
@@ -157,16 +157,18 @@ async function normalizeScans(client:PoolClient,state:WorkflowState,input:Workfl
  if(automated&&(!('kind' in identity)||identity.kind!=='automation'||!('isTest' in identity.tenant)||identity.tenant.isTest!==true||process.env.WMS_ENVIRONMENT!=='test'))fail('AUTOMATION_FORBIDDEN',403);
 
  const inputLines=Array.isArray(input.payload.lines)?input.payload.lines:input.command==='hold.release'?[input.payload]:[];
- const references=scanReferences(state);
+ const references=scanReferences(state),physicalReferences=physicalScanReferences(state,input.command,input.payload);
  for(const value of inputLines){const line=object(value);if(physical&&!automated&&!['barcode','search'].includes(String(line.input_mode)))fail('INVALID_SCAN_MODE',400);
  if(line.input_mode==='search'){try{input.payload.manual_entry_reason=text(input.payload.manual_entry_reason);}catch{fail('MANUAL_ENTRY_REASON_REQUIRED',400);}}
- const lot=references.lot(line.lot_id);
- const reservation=references.reservation(line.reservation_id);
- const pick=references.pick(line.pick_id);
+ const source=physical?physicalReferences(line):undefined;
+ const lot=physical?source:references.lot(line.lot_id);
+ const reservation=physical?source:references.reservation(line.reservation_id);
+ const pick=physical?source:references.pick(line.pick_id);
  const expectedLocation=['stock.move','stock.hold'].includes(input.command)?line.from_location_id:input.command==='order.pick'?reservation?.location_id:['receipt.inspect','return.inspect','stock.inspect'].includes(input.command)?lot?.location_id:input.command==='package.create'?pick?.location_id:line.location_id;
  if(line.input_mode==='barcode'&&physical&&expectedLocation!==undefined&&line.scanned_location_id===undefined)fail('LOCATION_SCAN_REQUIRED',400);
  if(line.scanned_location_id!==undefined&&expectedLocation!==undefined&&line.scanned_location_id!==expectedLocation)fail('WRONG_LOCATION_SCAN');
- const expectedItem=typeof line.item_id==='string'?line.item_id:references.line(line.line_id)?.item_id??lot?.item_id??reservation?.item_id??pick?.item_id;
+ const expectedItem=physical?(['stock.move','stock.hold'].includes(input.command)?line.item_id:source?.item_id):typeof line.item_id==='string'?line.item_id:references.line(line.line_id)?.item_id??lot?.item_id??reservation?.item_id??pick?.item_id;
+ if(physical&&typeof line.item_id==='string'&&expectedItem!==undefined&&line.item_id!==expectedItem)fail('WRONG_ITEM_SCAN');
  if(line.scanned_item_id!==undefined&&expectedItem!==undefined&&line.scanned_item_id!==expectedItem)fail('WRONG_ITEM_SCAN');
  if(line.scans===undefined){if(line.input_mode==='barcode')fail('ITEM_SCAN_REQUIRED',400);continue;}
  if(!Array.isArray(line.scans)||!line.scans.length||line.scans.length>100)fail('INVALID_SCANS',400);

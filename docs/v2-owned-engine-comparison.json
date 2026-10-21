@@ -1,0 +1,555 @@
+{
+  "status": "completed_bounded_diagnostic",
+  "diagnostic_only": true,
+  "qualification": false,
+  "official_sixth_started": false,
+  "schema_version": 21,
+  "comparison": "Gg/39fa baseline versus independently verified owned-engine DsW/d5f candidate; both two workers/pools3+2",
+  "candidate_verified_counts": {
+    "unit": 357,
+    "simulator": 55,
+    "postgres": 211,
+    "e2e": 44
+  },
+  "candidate_verification_log": {
+    "path": "/tmp/wms-v2-owned-engine-full-verify.log",
+    "sha256": "4b3d34e2fa4dfc790fdd5e77dde6ead1731a35d4ed348b98ecd5d9ce2839d4ff"
+  },
+  "baseline_source": "39fa969ae03265051779d71be9e7581fd3c5d148",
+  "candidate_source": "d5f542c2b0de7b401853676f6b7f817c2985a1f9",
+  "source_changes": {
+    "core_change_sha256": {
+      "src/server/v2/workflow/engine.ts": "14d38e4d5349c154fe465e48fd841b82fce828a0def524b4967697a151d5d08c",
+      "src/server/v2/workflow/index.ts": "bdb5bd5dd6bdcb7b41d0c596636a55624842c608e8ab2a5c86fa6b789ea9c78f",
+      "src/server/v2/workflow/object-storage.ts": "3416a5269083b07a6c2ce30d0447178820cb1c5ecff2fa2dff1fee90d9e628f7",
+      "src/server/v2/workflow/owned-state.ts": "c40bbf4aee455eb7cff5177f36e918327f66f1ee78dd8e1e2078c96e8ac79d84"
+    },
+    "all_seven_non_document_source_difference_sha256": {
+      "scripts/v2-performance.mjs": "7929660084e2885aa52636fe17591543e2df213872ad687cd8b785620897d2f9",
+      "src/server/v2/workflow/engine.ts": "14d38e4d5349c154fe465e48fd841b82fce828a0def524b4967697a151d5d08c",
+      "src/server/v2/workflow/index.ts": "bdb5bd5dd6bdcb7b41d0c596636a55624842c608e8ab2a5c86fa6b789ea9c78f",
+      "src/server/v2/workflow/object-storage.ts": "3416a5269083b07a6c2ce30d0447178820cb1c5ecff2fa2dff1fee90d9e628f7",
+      "src/server/v2/workflow/owned-state.ts": "c40bbf4aee455eb7cff5177f36e918327f66f1ee78dd8e1e2078c96e8ac79d84",
+      "tests/integration/v2-object-storage-review.test.ts": "f88f3011b69a80eddbae2250426d82134ae75b10342b48e67139f6105f01f1f5",
+      "tests/unit/v2-workflow.test.ts": "6c8cdfc1f131ea399040a948c048be28e9731695edfb066344fc75ea68028569"
+    },
+    "documentation_change_paths": [
+      "\"docs/WMS-\\355\\230\\204\\354\\236\\245\\354\\232\\264\\354\\230\\201-\\352\\265\\254\\355\\230\\204\\354\\266\\224\\354\\240\\201\\355\\221\\234.md\"",
+      "docs/v2-congestion-fifth-active-manifest.json",
+      "docs/v2-congestion-fifth-active.json",
+      "docs/v2-congestion-fifth-final-recovery.json",
+      "docs/v2-congestion-fifth-final-recovery.md",
+      "docs/v2-local-regression-before-owned-state.json",
+      "docs/v2-local-regression-latest.json",
+      "docs/v2-owned-state-design.md",
+      "docs/v2-performance-options.md"
+    ],
+    "driver_environment_allowlist_change_separate_from_application_core": true,
+    "database_migration_changes": false
+  },
+  "freeze_manifest": {
+    "path": "/tmp/wms-owned-engine-ab-20261021/freeze-manifest.json",
+    "sha256": "f1cbabc7823daab482bc555d7ae51c5d37005ccaefde0f1f7decb2bc0faa5377",
+    "harness_script_count": 24
+  },
+  "input": {
+    "immutable_archive": "/tmp/wms-diagnostic-c835-20261020-two-copy/source.dump",
+    "archive_sha256": "40cc61a425e306991400d39a8bde88b5f7506415decb8284d279fa40b2f3c78a",
+    "fresh_database_copies": true,
+    "starting_schema": 18,
+    "measured_schema": 21,
+    "original_restore_business_parity": true,
+    "upgraded_pairwise_business_fingerprint_equality": true,
+    "cohort_total": 600,
+    "cohort_per_company": 300,
+    "cohort_sha256": "3cb883be9de01d1be652dda35ae92a3bba43dd44e0ba6fde0c8440a9762bbfc1",
+    "cohort_preaccepted": true,
+    "root_seed_archive_profile": 20261020,
+    "new_source_arrivals": 0,
+    "physical_workers": 0,
+    "failed_official_database_reused": false
+  },
+  "driver": {
+    "sha256": "2fc1368fec150ac7c6027e03d918d000d2868e93e84f392b7697f2cdf9ebcfab",
+    "provenance": {
+      "source": "/tmp/wms-cluster-comparison-plan-20261021-r2/fixed-cohort.mjs",
+      "source_sha256": "3eb0d2488c91698fb0bae263c5b6bf45a2b96aeef8b75bc187f9abbab4a5dd62",
+      "prepared_sha256": "2fc1368fec150ac7c6027e03d918d000d2868e93e84f392b7697f2cdf9ebcfab",
+      "normalized_equal_after_exact_metadata_substitutions": true,
+      "substitutions": [
+        "database_schema_version20\u219221",
+        "safety port3028\u21923032"
+      ],
+      "workload_settings_unchanged": true
+    },
+    "settings": {
+      "timeout_ms": 15000,
+      "pulse_ms": 50,
+      "poll_slots": 10,
+      "poll_backoff_ms": 250,
+      "processor_slots": 1,
+      "process_limit": 50,
+      "duration_cap_ms": 300000
+    }
+  },
+  "native_postgres": {
+    "version": "17.9",
+    "port": 55443,
+    "config": {
+      "version": 170009,
+      "jit": "on",
+      "jit_available": true,
+      "shared_buffers": "128MB",
+      "max_connections": "100",
+      "work_mem": "4MB",
+      "effective_cache_size": "4GB"
+    },
+    "corrected_same_image_jit_closure": "/tmp/wms-native-postgres-20261021-r2",
+    "common_actual_budget": "4CPU /32GiB namespace4026532206/root148/0::/",
+    "evidence": {
+      "path": "/tmp/wms-owned-engine-ab-20261021/preparation-resource-evidence.json",
+      "sha256": "29be8e3e82b8987fb107b4cb45e480d094ad89a83df02b6e2cc14b8bc3bc1648"
+    }
+  },
+  "api_port": 3032,
+  "arms": [
+    {
+      "arm": "baseline",
+      "build_id": "GgP2Fvn28yPhyBpYVJzWi",
+      "verified_commit": "39fa969ae03265051779d71be9e7581fd3c5d148",
+      "elapsed_ms": 104116.487132,
+      "client_status": "cohort_applied",
+      "client_applied": [
+        300,
+        300
+      ],
+      "committed_after_quiet": [
+        300,
+        300
+      ],
+      "company_completion_ms": [
+        104116.276995,
+        99437.721781
+      ],
+      "request_p95_ms": 279.0732019999996,
+      "technical_attempts": 0,
+      "http_429_attempts": 0,
+      "technical_categories": {},
+      "all_warehouse_outcomes": [
+        {
+          "target_index": 0,
+          "cohort_status_counts": [
+            {
+              "status": "applied",
+              "n": 300
+            }
+          ],
+          "all_warehouse_event_status_counts": [
+            {
+              "status": "accepted",
+              "n": 879
+            },
+            {
+              "status": "applied",
+              "n": 1954
+            },
+            {
+              "status": "business_rejected",
+              "n": 47
+            }
+          ]
+        },
+        {
+          "target_index": 1,
+          "cohort_status_counts": [
+            {
+              "status": "applied",
+              "n": 300
+            }
+          ],
+          "all_warehouse_event_status_counts": [
+            {
+              "status": "accepted",
+              "n": 880
+            },
+            {
+              "status": "applied",
+              "n": 1951
+            },
+            {
+              "status": "business_rejected",
+              "n": 49
+            }
+          ]
+        }
+      ],
+      "conservation_passed": true,
+      "runtime_stopped": true,
+      "evidence_sha256": {
+        "baseline-cohort-results.json": "b2c4e15df10ea550f97a0884cc9ec7178599325260628ed29b202bcdb0eaa6e1",
+        "baseline-final-observation.json": "b96f0119c7a3c2e11549556ef0efe9db62db2cfa926056715c89fd5844ce8b04",
+        "baseline-conservation.json": "d6d200886ef64c5fddc5b89d410beeb991733c9031429397104f456d22426362",
+        "baseline-actual-resource-evidence.json": "9e3483679d8f6bc16655fe0fa1e355bbb6c51c6633cf1a6a858065555ae17f19",
+        "baseline-stop.json": "27de7f0b65d96357e74e04b8bc78377897a5e91729b427eba5670a7e0d892b80"
+      },
+      "runtime_manifest_path": "/tmp/wms-official25-fifth-preparation-20261021-r2/freeze-manifest.json",
+      "runtime_manifest_sha256": "8a518d169fa22fc150ccb6e2a2eb1d6400e75ece00a15d4763806a2994a31de2",
+      "workers": 2,
+      "web_pool_partition": [
+        3,
+        2
+      ],
+      "diagnostics": "off",
+      "release": "2026-10-21T04:30:04.606Z",
+      "quiet_seconds": 10,
+      "full_exports": [
+        {
+          "target_index": 0,
+          "boundary": 7006,
+          "ledger_rows": 15326,
+          "pages": 31,
+          "snapshot_sha256": "e55b044e77b6bbeeb7c23a5d464061cd271a5aafc10e109d414716c72d0058d9",
+          "ledger_sha256": "2b4f0b6d9a77921da9361ca9f3d0f5b27dbc96be3bb994e2bcfc16751efc0b7b"
+        },
+        {
+          "target_index": 1,
+          "boundary": 7006,
+          "ledger_rows": 15308,
+          "pages": 31,
+          "snapshot_sha256": "be6979f66c2516e3d08009269a5932424874c4dd451a108f6a601c097f749085",
+          "ledger_sha256": "fb34c466fee3ee3127718f0d2a9b6137753b7bda23734726f796aa189e541a4e"
+        }
+      ],
+      "independent_conservation": {
+        "mode": "baseline",
+        "read_only_independent_python": true,
+        "companies": [
+          {
+            "target_index": 0,
+            "boundary": 7006,
+            "ledger_boundary": 7006,
+            "ledger_rows": 15326,
+            "stock_ledger_bucket_differences": 0,
+            "invalid_stock_or_reservations": 0,
+            "line_conservation_failures": 0,
+            "passed": true
+          },
+          {
+            "target_index": 1,
+            "boundary": 7006,
+            "ledger_boundary": 7006,
+            "ledger_rows": 15308,
+            "stock_ledger_bucket_differences": 0,
+            "invalid_stock_or_reservations": 0,
+            "line_conservation_failures": 0,
+            "passed": true
+          }
+        ],
+        "method": "Independent arithmetic over every stock S/R/P/Q/B bucket and complete matching-boundary ledger; nonnegative quantities, R<=S, and order/receipt line conservation. No new physical command-intent oracle claim."
+      },
+      "resource_proof": {
+        "common_namespace": "cgroup:[4026532206]",
+        "common_root_inode": 148,
+        "common_path": "0::/",
+        "cpu_cores": 4,
+        "memory_bytes": 34359738368,
+        "actual_web_workers": 2,
+        "driver_pre_main_at_release": true,
+        "harness_hashes_embedded_before_launch": true
+      },
+      "runtime_stop": {
+        "mode": "baseline",
+        "primary_pid": 804673,
+        "owned_processes": [
+          {
+            "pid": 804673,
+            "ppid": 804658,
+            "start": "6926854"
+          },
+          {
+            "pid": 804680,
+            "ppid": 804673,
+            "start": "6926859"
+          },
+          {
+            "pid": 804681,
+            "ppid": 804673,
+            "start": "6926859"
+          }
+        ],
+        "sigterm_sent_at": "2026-10-21T04:32:24.934Z",
+        "observed_at": "2026-10-21T04:32:25.943Z",
+        "all_owned_processes_exited": true,
+        "listener_present": false,
+        "shared_slot_releasable": true
+      },
+      "evidence": {
+        "baseline-cohort-results.json": {
+          "path": "/tmp/wms-owned-engine-ab-20261021/baseline-cohort-results.json",
+          "sha256": "b2c4e15df10ea550f97a0884cc9ec7178599325260628ed29b202bcdb0eaa6e1"
+        },
+        "baseline-final-observation.json": {
+          "path": "/tmp/wms-owned-engine-ab-20261021/baseline-final-observation.json",
+          "sha256": "b96f0119c7a3c2e11549556ef0efe9db62db2cfa926056715c89fd5844ce8b04"
+        },
+        "baseline-conservation.json": {
+          "path": "/tmp/wms-owned-engine-ab-20261021/baseline-conservation.json",
+          "sha256": "d6d200886ef64c5fddc5b89d410beeb991733c9031429397104f456d22426362"
+        },
+        "baseline-actual-resource-evidence.json": {
+          "path": "/tmp/wms-owned-engine-ab-20261021/baseline-actual-resource-evidence.json",
+          "sha256": "9e3483679d8f6bc16655fe0fa1e355bbb6c51c6633cf1a6a858065555ae17f19"
+        },
+        "baseline-placement-go.json": {
+          "path": "/tmp/wms-owned-engine-ab-20261021/baseline-placement-go.json",
+          "sha256": "74dd5b07f91a90d33ab1330abe25f4552a4121232e2b44b78b108a2df0bf6677"
+        },
+        "baseline-stop.json": {
+          "path": "/tmp/wms-owned-engine-ab-20261021/baseline-stop.json",
+          "sha256": "27de7f0b65d96357e74e04b8bc78377897a5e91729b427eba5670a7e0d892b80"
+        }
+      }
+    },
+    {
+      "arm": "candidate",
+      "build_id": "DsWNeYcKhO8by_QV1Sd2Z",
+      "verified_commit": "d5f542c2b0de7b401853676f6b7f817c2985a1f9",
+      "elapsed_ms": 56491.318369,
+      "client_status": "cohort_applied",
+      "client_applied": [
+        300,
+        300
+      ],
+      "committed_after_quiet": [
+        300,
+        300
+      ],
+      "company_completion_ms": [
+        54539.799363,
+        56491.114401
+      ],
+      "request_p95_ms": 161.80003800000122,
+      "technical_attempts": 0,
+      "http_429_attempts": 0,
+      "technical_categories": {},
+      "all_warehouse_outcomes": [
+        {
+          "target_index": 0,
+          "cohort_status_counts": [
+            {
+              "status": "applied",
+              "n": 300
+            }
+          ],
+          "all_warehouse_event_status_counts": [
+            {
+              "status": "accepted",
+              "n": 893
+            },
+            {
+              "status": "applied",
+              "n": 1940
+            },
+            {
+              "status": "business_rejected",
+              "n": 47
+            }
+          ]
+        },
+        {
+          "target_index": 1,
+          "cohort_status_counts": [
+            {
+              "status": "applied",
+              "n": 300
+            }
+          ],
+          "all_warehouse_event_status_counts": [
+            {
+              "status": "accepted",
+              "n": 906
+            },
+            {
+              "status": "applied",
+              "n": 1925
+            },
+            {
+              "status": "business_rejected",
+              "n": 49
+            }
+          ]
+        }
+      ],
+      "conservation_passed": true,
+      "runtime_stopped": true,
+      "evidence_sha256": {
+        "candidate-cohort-results.json": "0c5ff1a6fd5c0510c829864722e6587b9fd1ab1f0d69ab6cf654051cd2945b23",
+        "candidate-final-observation.json": "5eb5fa233f2fc5a12dd4a8a197d21b27e90ce7e06aba5bffd11f3b0b4fef38b4",
+        "candidate-conservation.json": "1cd445b0a24da5675caf02c8c16a70acaca18692355f68f3820f50a2309cca4d",
+        "candidate-actual-resource-evidence.json": "5b0aa3da03661dfc92aeb230e52e0bcc4ef9ef9891661df0eee4b8f0d9715eaa",
+        "candidate-stop.json": "ee7999775b6a292d30c4161af3c42c5bec037a3ee186fff7e22d53b9c6506088"
+      },
+      "runtime_manifest_path": "/tmp/wms-owned-engine-ab-20261021/candidate-freeze/freeze-manifest.json",
+      "runtime_manifest_sha256": "301d0943126a9c55327c636437890903de750983b4664d4cb78e4b1bfaa450f1",
+      "workers": 2,
+      "web_pool_partition": [
+        3,
+        2
+      ],
+      "diagnostics": "off",
+      "release": "2026-10-21T04:33:07.231Z",
+      "quiet_seconds": 10,
+      "full_exports": [
+        {
+          "target_index": 0,
+          "boundary": 6992,
+          "ledger_rows": 15326,
+          "pages": 31,
+          "snapshot_sha256": "46734bdcf20dd208802424dce706c8ac06f58999f4078e56135b2516d61bb201",
+          "ledger_sha256": "7f1e8de4a8c10424cc686e21ca1d5c913642aabe7a536960ce769bddf5744ff6"
+        },
+        {
+          "target_index": 1,
+          "boundary": 6980,
+          "ledger_rows": 15308,
+          "pages": 31,
+          "snapshot_sha256": "c210b850ec036cb93b48ee9a1d3d49cf58985811420d6ff8af4c47e329a61734",
+          "ledger_sha256": "f6f3a3e184be3975ad8fbbd7a8540154c25194366553d775a2f9db3a04ae2552"
+        }
+      ],
+      "independent_conservation": {
+        "mode": "candidate",
+        "read_only_independent_python": true,
+        "companies": [
+          {
+            "target_index": 0,
+            "boundary": 6992,
+            "ledger_boundary": 6992,
+            "ledger_rows": 15326,
+            "stock_ledger_bucket_differences": 0,
+            "invalid_stock_or_reservations": 0,
+            "line_conservation_failures": 0,
+            "passed": true
+          },
+          {
+            "target_index": 1,
+            "boundary": 6980,
+            "ledger_boundary": 6980,
+            "ledger_rows": 15308,
+            "stock_ledger_bucket_differences": 0,
+            "invalid_stock_or_reservations": 0,
+            "line_conservation_failures": 0,
+            "passed": true
+          }
+        ],
+        "method": "Independent arithmetic over every stock S/R/P/Q/B bucket and complete matching-boundary ledger; nonnegative quantities, R<=S, and order/receipt line conservation. No new physical command-intent oracle claim."
+      },
+      "resource_proof": {
+        "common_namespace": "cgroup:[4026532206]",
+        "common_root_inode": 148,
+        "common_path": "0::/",
+        "cpu_cores": 4,
+        "memory_bytes": 34359738368,
+        "actual_web_workers": 2,
+        "driver_pre_main_at_release": true,
+        "harness_hashes_embedded_before_launch": true
+      },
+      "runtime_stop": {
+        "mode": "candidate",
+        "primary_pid": 807353,
+        "owned_processes": [
+          {
+            "pid": 807353,
+            "ppid": 807340,
+            "start": "6944670"
+          },
+          {
+            "pid": 807360,
+            "ppid": 807353,
+            "start": "6944675"
+          },
+          {
+            "pid": 807361,
+            "ppid": 807353,
+            "start": "6944675"
+          }
+        ],
+        "sigterm_sent_at": "2026-10-21T04:34:44.544Z",
+        "observed_at": "2026-10-21T04:34:45.554Z",
+        "all_owned_processes_exited": true,
+        "listener_present": false,
+        "shared_slot_releasable": true
+      },
+      "evidence": {
+        "candidate-cohort-results.json": {
+          "path": "/tmp/wms-owned-engine-ab-20261021/candidate-cohort-results.json",
+          "sha256": "0c5ff1a6fd5c0510c829864722e6587b9fd1ab1f0d69ab6cf654051cd2945b23"
+        },
+        "candidate-final-observation.json": {
+          "path": "/tmp/wms-owned-engine-ab-20261021/candidate-final-observation.json",
+          "sha256": "5eb5fa233f2fc5a12dd4a8a197d21b27e90ce7e06aba5bffd11f3b0b4fef38b4"
+        },
+        "candidate-conservation.json": {
+          "path": "/tmp/wms-owned-engine-ab-20261021/candidate-conservation.json",
+          "sha256": "1cd445b0a24da5675caf02c8c16a70acaca18692355f68f3820f50a2309cca4d"
+        },
+        "candidate-actual-resource-evidence.json": {
+          "path": "/tmp/wms-owned-engine-ab-20261021/candidate-actual-resource-evidence.json",
+          "sha256": "5b0aa3da03661dfc92aeb230e52e0bcc4ef9ef9891661df0eee4b8f0d9715eaa"
+        },
+        "candidate-placement-go.json": {
+          "path": "/tmp/wms-owned-engine-ab-20261021/candidate-placement-go.json",
+          "sha256": "22ec8656e2e4921374530b0e4010bb9ee6dfe50d7c3599abf0a7cdb40bd75290"
+        },
+        "candidate-stop.json": {
+          "path": "/tmp/wms-owned-engine-ab-20261021/candidate-stop.json",
+          "sha256": "ee7999775b6a292d30c4161af3c42c5bec037a3ee186fff7e22d53b9c6506088"
+        }
+      }
+    }
+  ],
+  "candidate_over_baseline_elapsed_ratio": 0.5425780289473242,
+  "observed_fixed_cohort_elapsed_reduction_percent": 45.74219710526758,
+  "all_committed_conserved_stopped": true,
+  "native_stop": {
+    "status": "stopped",
+    "port": 55443,
+    "listener_present": false,
+    "postmaster_active": false,
+    "freeze_manifest_sha256": "f1cbabc7823daab482bc555d7ae51c5d37005ccaefde0f1f7decb2bc0faa5377",
+    "shared_slot_releasable": true,
+    "observed_at": "2026-10-21T04:34:53.802Z",
+    "retained_data_directory": "/tmp/wms-owned-engine-ab-20261021/native-postgres/data"
+  },
+  "shared_slot_released": true,
+  "native_data_and_all_original_reports_preserved": true,
+  "all_five_previous_official_failures_preserved": true,
+  "limitations": [
+    "One ordered pair has cache/order noise; no confidence interval or official sixth qualification.",
+    "No new source arrivals or physical-worker workload.",
+    "Outside-cohort work and per-company status distributions may differ after execution; complete outcomes retained.",
+    "Diagnostics are OFF in both arms, unlike the older schema20 single/dual diagnostic. Old absolute timings are not a controlled baseline.",
+    "Actual per-PID startup records embed the prelaunch harness hashes and common native resource proof; no instrumentation setting differences between arms.",
+    "HTTP timeout is separate from eventual committed outcome; only final quiet exports establish fixed-boundary conservation.",
+    "Final all-warehouse applied counts differ:baseline1954+1951=3905 versus candidate1940+1925=3865. Exactly the same selected600 were confirmed applied; do not interpret the ratio as equal-total-work throughput.",
+    "Mixed timed HTTP request p95 is diagnostic evidence and does not replace official source acceptance/application quality windows.",
+    "This comparison does not qualify the 25-minute congestion profile, 1M ledger benchmark or actual8-hour shift.",
+    "Post-client quiet full exports and independent conservation were completed before runtime stop; client timeouts would not be treated as rollback."
+  ],
+  "work_distribution_caveat": {
+    "all_warehouse_applied_including_selected600": {
+      "baseline": 3905,
+      "candidate": 3865
+    },
+    "outside_selected600_including_previously_applied_starting_state": {
+      "baseline": 3305,
+      "candidate": 3265
+    },
+    "candidate_fewer_additional_noncohort_applies": 40,
+    "timed_http_attempts": {
+      "baseline": 22241,
+      "candidate": 7904
+    },
+    "interpretation": "Selected600 confirmation elapsed was45.74%lower in one ordered pair. Total executed work differed; this does not isolate a pure engine effect."
+  }
+}

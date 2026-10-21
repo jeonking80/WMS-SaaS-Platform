@@ -1,0 +1,20 @@
+# Optional overlay. Requires a preconfigured parent cgroup shared by DB and web.
+services:
+  web:
+    command: [node, deploy/cluster-launcher.mjs]
+    environment:
+      WMS_WEB_WORKERS: "2"
+    cgroup_parent: ${WMS_CGROUP_PARENT:?Set the reviewed 4-CPU/32-GiB parent cgroup}
+    stop_grace_period: 90s
+    healthcheck:
+      test: [CMD, node, deploy/cluster-healthcheck.mjs]
+      interval: 15s
+      timeout: 30s
+      start_period: 30s
+      retries: 3
+  db:
+    cgroup_parent: ${WMS_CGROUP_PARENT:?Set the reviewed 4-CPU/32-GiB parent cgroup}
+  integration-worker:
+    cgroup_parent: ${WMS_CGROUP_PARENT:?Set the reviewed 4-CPU/32-GiB parent cgroup}
+  operations:
+    cgroup_parent: ${WMS_CGROUP_PARENT:?Set the reviewed 4-CPU/32-GiB parent cgroup}

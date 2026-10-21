@@ -1,4 +1,5 @@
 import { Pool } from "pg";
+import {poolMaximum} from "../../../deploy/web-process-options.mjs";
 import { getDatabaseUrl } from "../env";
 
 const dbGlobal = globalThis as typeof globalThis & { wmsPool?: Pool };
@@ -7,7 +8,7 @@ export function getPool(): Pool {
   if (!dbGlobal.wmsPool) {
     dbGlobal.wmsPool = new Pool({
       connectionString: getDatabaseUrl(),
-      max: 5,
+      max: poolMaximum(),
       connectionTimeoutMillis: 3000,
       idleTimeoutMillis: 10000,
       statement_timeout: 3000,

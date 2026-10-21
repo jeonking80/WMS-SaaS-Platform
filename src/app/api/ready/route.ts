@@ -1,5 +1,6 @@
 import { withRequestLog } from "@/server/request-log";
 import { getPool } from "@/server/db/pool";
+import {clusterReadiness} from "../../../../deploy/cluster-readiness.mjs";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,8 +16,10 @@ async function handleGET() {
       v2_identity_links l,master_barcodes m,v2_cutovers c,
       v2_integration_events e,api_request_metrics a,v2_opening_imports o,"rateLimit" r,
       v2_workflow_state_header h,v2_workflow_object_state b WHERE false`);
+    if(!(await clusterReadiness(true)))return Response.json({status:"unavailable",database:"ok"},{status:503,headers:{"Cache-Control":"no-store"}});
     return Response.json({ status: "ok", database: "ok" }, { headers: { "Cache-Control": "no-store" } });
   } catch {
+    await clusterReadiness(false);
     return Response.json(
       { status: "unavailable", database: "unavailable" },
       { status: 503, headers: { "Cache-Control": "no-store" } },

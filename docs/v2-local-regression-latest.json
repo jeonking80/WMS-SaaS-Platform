@@ -1,55 +1,63 @@
 {
-  "verified_at": "2026-10-21T02:24:21.810811+00:00",
-  "build_id": "0gMuzA7PCsHSM4boX4Y9d",
-  "scope": "local regression only; G3 congestion failed; G4/G5 unexecuted; overall proposal not complete",
+  "verified_at": "2026-10-21T02:42:36.060539+00:00",
+  "build_id": "ygoExTu2jqOW7riRXrCxw",
+  "scope": "local application regression plus post-full external supervisor checks; cluster runtime/image/performance qualification still pending; G3/G4/G5 not passed",
   "typecheck": "passed",
   "unit": {
-    "passed": 268
+    "passed": 315,
+    "full_verify_before_supervisor_followup": 309
   },
   "simulator": {
     "passed": 55
   },
   "integration": {
-    "passed": 206,
+    "passed": 208,
     "skipped": 0
   },
-  "production_build": "passed",
+  "production_build": "passed (WMS_STANDALONE=1)",
   "e2e": {
     "full_suite_passed": 44,
     "full_suite_failed": 0
   },
-  "verify_command_exit_code": 0,
+  "full_verify": {
+    "exit_code": 0,
+    "command": "WMS_STANDALONE=1 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium npm run verify",
+    "timing": "before external supervisor exit-accounting follow-up; compiled application source unchanged afterward"
+  },
+  "post_full_followup": {
+    "production_paths": [
+      "deploy/cluster-supervisor.mjs"
+    ],
+    "reason": "unexpected worker exit during planned drain must not report graceful success",
+    "focused_cluster_tests_passed": 39,
+    "entire_unit_suite_passed": 315,
+    "typecheck": "passed",
+    "app_bundle_change": false,
+    "note": "Supervisor is an external Docker COPY launcher module, not an application import or NFT dependency. New immutable runtime revision must include its updated file hash. Real Next and image qualification remain pending."
+  },
   "migration_count": 20,
   "evidence": [
     {
-      "path": "/tmp/wms-v2-remaining-handover-full-verify.log",
-      "sha256": "a3e75521d259b4f5dce26626afbb4f3547ec205333d0d5ac6b574bc9857ce556"
+      "path": "/tmp/wms-v2-cluster-index-full-verify.log",
+      "sha256": "0379d106033e66ff541665af6da78495b74f5324351511fa0958696e6f3f1739"
+    },
+    {
+      "path": "/tmp/wms-v2-cluster-shutdown-focused.log",
+      "sha256": "d17c1a4a0fc78d100a781f27b133539eb592ab84bb284f8b047c3423f6f3b421"
+    },
+    {
+      "path": "/tmp/wms-v2-cluster-final-unit.log",
+      "sha256": "20cfe9bebd79aa0a0d9266d88558db178495d78ff4053d0160b0abecc172205e"
     }
   ],
   "changes": [
-    "generic hold remaining-work assignment and inherited/split ownership",
-    "approval handover checks live independent authority and filters UI candidates",
-    "correction approval survives only contiguous inventory-neutral shift reports without rebasing target",
-    "real browser approval and generic hold assignment/handover coverage"
+    "request-local first-match location/block/count and scan-reference indexes; full state/auth/reconciliation preserved",
+    "optional one/two Node worker launcher with configured pool sum five",
+    "managed API/auth drain tracking, fresh-generation readiness and bounded shutdown/restarts",
+    "explicit outcome accounting for drain acknowledgement and installed Next graceful exit143",
+    "Korean hold-assignment recovery guidance and safe error-code logging"
   ],
-  "focused_checks": [
-    {
-      "unit_passed": 13,
-      "postgresql_passed": 38
-    },
-    {
-      "unit_passed": 21,
-      "postgresql_passed": 42
-    }
-  ],
-  "intermediate_failure": {
-    "path": "/tmp/wms-v2-generic-handover-verify.log",
-    "sha256": "a0f8585909f3a53170372ed480162bb41215c2420ca65fc3ee8b68f39a9d9add",
-    "integration_passed": 203,
-    "integration_failed": 1,
-    "cause": "exact identity response expectation omitted newly exposed scopes metadata",
-    "resolution": "updated exact expected metadata; subsequent full verify passed"
-  },
+  "performance_claim": "none; all four official congestion runs remain failed",
   "restore_evidence": "restore-verification-schema20.json",
   "congestion_evidence": "v2-congestion-fourth-final-recovery.json"
 }

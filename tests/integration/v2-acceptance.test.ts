@@ -797,3 +797,34 @@ describe('correction handover preserves the frozen approval target',()=>{
   await expect(w.command('approval.decide',{approval_id:approval.id,approve:true,reason:'Old correction must remain stale'},manager)).rejects.toMatchObject({code:'APPROVAL_STALE'});expect(await w.effects()).toEqual(before);await w.invariant();
  });
 });
+
+
+describe('scan reference indexing preserves production normalization',()=>{
+ it('preserves validation precedence and leaves every failed request effect-free',async()=>{
+  const w=await world(),item=await w.item(),created=await w.command('receipt.create',{lines:[{item_id:item,quantity:4}]});
+  const receipt=created.snapshot.receipts.find(row=>row.id===created.result.id)!,line_id=receipt.lines[0].id,wrong=randomUUID();
+  const base={line_id,quantity:1,location_id:w.location.receiving,input_mode:'barcode',scanned_location_id:w.location.receiving,scanned_item_id:item};
+  const cases:[string,Record<string,unknown>,Record<string,unknown>][]=[
+   ['INVALID_SCAN_MODE',{...base,input_mode:undefined,scanned_location_id:wrong,scanned_item_id:wrong},{}],
+   ['MANUAL_ENTRY_REASON_REQUIRED',{...base,input_mode:'search',scanned_location_id:wrong,scanned_item_id:wrong},{manual_entry_reason:''}],
+   ['LOCATION_SCAN_REQUIRED',{...base,scanned_location_id:undefined,scanned_item_id:wrong},{}],
+   ['WRONG_LOCATION_SCAN',{...base,scanned_location_id:wrong,scanned_item_id:wrong},{}],
+   ['WRONG_ITEM_SCAN',{...base,scanned_item_id:wrong},{}],
+   ['ITEM_SCAN_REQUIRED',base,{}],
+   ['INVALID_SCANS',{...base,scans:[]},{}],
+   ['NOT_FOUND',{quantity:1,location_id:w.location.receiving,input_mode:'search',scanned_item_id:wrong},{}],
+  ];
+  const before=await w.effects();for(const[code,line,extra]of cases){await expect(w.command('receipt.receive',{receipt_id:receipt.id,lines:[line],...extra})).rejects.toMatchObject({code});expect(await w.effects()).toEqual(before);}
+  await w.invariant();
+ });
+ it('normalizes each barcode line and sees newly committed lots in later requests',async()=>{
+  const w=await world(),item=await w.item(),barcode='INDEX-'+randomUUID();
+  await withTenant(tenant,client=>client.query("INSERT INTO master_barcodes(tenant_id,barcode,item_id,unit,quantity) VALUES($1,$2,$3,'BOX',2)",[tenant,barcode,item]));
+  const created=await w.command('receipt.create',{lines:[{item_id:item,quantity:4}]}),receipt=created.snapshot.receipts.find(row=>row.id===created.result.id)!;
+  const line={line_id:receipt.lines[0].id,location_id:w.location.receiving,input_mode:'barcode',scanned_location_id:w.location.receiving,scans:[{barcode,count:1}]};
+  const received=await w.command('receipt.receive',{receipt_id:receipt.id,lines:[line,{...line}]});const lots=received.snapshot.receipts.find(row=>row.id===receipt.id)!.lots;
+  expect(lots.map(lot=>lot.quantity)).toEqual([2,2]);
+  await w.command('receipt.inspect',{receipt_id:receipt.id,lines:lots.map(lot=>({lot_id:lot.id,quantity:2,outcome:'normal',scanned_item_id:item,scanned_location_id:w.location.receiving}))});
+  await assertQuantities(w,item,{S:0,Q:4,H:4,A:0});await w.invariant();
+ });
+});

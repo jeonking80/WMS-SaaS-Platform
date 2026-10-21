@@ -1,3 +1,4 @@
+import{trackClusterOperation,ClusterUnavailableError}from'../../../deploy/cluster-request-lifecycle.mjs';
 import { recordAuthenticatedUser, recordRequestIdentity, recordRequestResult } from "../request-log";
 import { getAuth } from "./config";
 import { getPool } from "../db/pool";
@@ -15,7 +16,9 @@ export class AccessError extends Error {
   }
 }
 
-export async function requireIdentity(headers: Headers): Promise<Identity> {
+export function requireIdentity(headers:Headers):Promise<Identity>{return trackClusterOperation(()=>resolveIdentity(headers),()=>{throw new ClusterUnavailableError();});}
+
+async function resolveIdentity(headers: Headers): Promise<Identity> {
   const session = await getAuth().api.getSession({ headers });
   if (!session) throw new AccessError(401, "UNAUTHENTICATED");
   recordAuthenticatedUser(session.user.id);

@@ -1,0 +1,23 @@
+{
+  "status": "passed",
+  "exit_code": 0,
+  "verification_scope": "synthetic_local_isolated_cluster",
+  "report": "docs/restore-verification-schema21.json",
+  "report_sha256": "34ef21c7bf48ea5325933b3eff3de9c043175003467e519a6ed800349400c3a8",
+  "private_log": "/tmp/wms-schema21-restore-20261021.log",
+  "log_sha256": "34ef21c7bf48ea5325933b3eff3de9c043175003467e519a6ed800349400c3a8",
+  "script_sha256": "650b0d7d21b844cb06ba3ad60ac28362b10dfb3a88a14369002029269b6eb10f",
+  "migration21_sha256": "84057a38b4eedcf19c9c211c0d6a1b6bc4394a834459572ec8b6892e8f02d7c4",
+  "remaining_drill_databases": 0,
+  "archive_cleanup": "Script successful finalizer removes its unique archive; no cleanup error reported.",
+  "fullverify_before_drill": {
+    "result": "PASS",
+    "unit": 315,
+    "simulator": 55,
+    "postgresql": 210,
+    "e2e": 44,
+    "build_id": "GgP2Fvn28yPhyBpYVJzWi"
+  },
+  "provider_recovery": "NOT_EXECUTED",
+  "observed_at": "2026-10-21T03:18:42.300Z"
+}

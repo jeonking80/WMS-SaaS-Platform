@@ -33,6 +33,8 @@ v2의 공급처 미완료 실물 보호는 추가 migration0021(총22개)에 포
 
 ## 프로젝트 문서
 
+- **[WMS Lite 사용자 매뉴얼](docs/WMS-현장운영-사용매뉴얼.md)**: 전체 메뉴·입고·출고·반품·재고·승인·계정 사용법 ([웹 문서](https://wms-saa-s-platform.vercel.app/help/operations-v2.html) · [PDF](public/help/operations-v2.pdf))
+
 - [WMS 현장 운영 고도화 기획서](docs/WMS-현장운영-고도화-기획서.md): 후속 WMS와 독립 가상 데이터 앱의 신규 요구사항·운영 시험·수락 기준. v1.1 기준으로 별도 기능 브랜치에서 구현·검증 중이며 전체 완료 상태가 아닙니다.
 - [현장 운영 개발계획서](docs/WMS-현장운영-개발계획서.md)
 - [현장 운영 배포·전환·장애 대응 절차](docs/WMS-현장운영-운영절차.md)

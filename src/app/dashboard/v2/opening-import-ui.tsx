@@ -2,28 +2,493 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiFailure, downloadCsv, Field, message, Note, Submit, time, type Context } from "./common";
 
-type OpeningRow={item_id:string;location_id:string;item_code:string;location_code:string;bucket:'S'|'Q'|'B';quantity:number};
-type Preview={source_system:string;extracted_at:string;reason:string;source_hash:string;csv?:string;rows:OpeningRow[];errors:{row:number;message:string}[]};
-type RecordRow={id:string;phase:'request'|'approve'|'reject';parent_id:string|null;payload:Partial<Preview>&{reason?:string};actor_id:string;actor_name?:string;created_at:string};
-type Operation={action:'submit'|'approve'|'reject';warehouse_id:string;request_id:string;source_system?:string;extracted_at?:string;reason:string;csv?:string;import_id?:string;confirmed?:boolean};
-const endpoint='/api/v2/operations/opening-import';
-const buckets={S:'정상 보관',Q:'검수·적치 대기',B:'보류'};
+type OpeningRow = {
+  item_id: string;
+  location_id: string;
+  item_code: string;
+  location_code: string;
+  bucket: "S" | "Q" | "B";
+  quantity: number;
+};
+type Preview = {
+  source_system: string;
+  extracted_at: string;
+  reason: string;
+  source_hash: string;
+  csv?: string;
+  rows: OpeningRow[];
+  errors: { row: number; message: string }[];
+};
+type RecordRow = {
+  id: string;
+  phase: "request" | "approve" | "reject";
+  parent_id: string | null;
+  payload: Partial<Preview> & { reason?: string };
+  actor_id: string;
+  actor_name?: string;
+  created_at: string;
+};
+type Operation = {
+  action: "submit" | "approve" | "reject";
+  warehouse_id: string;
+  request_id: string;
+  source_system?: string;
+  extracted_at?: string;
+  reason: string;
+  csv?: string;
+  import_id?: string;
+  confirmed?: boolean;
+};
+const endpoint = "/api/v2/operations/opening-import";
+const buckets = { S: "정상 보관", Q: "검수·적치 대기", B: "보류" };
 
-export function OpeningImport({c}:{c:Context}){
- const [source,setSource]=useState(''),[extracted,setExtracted]=useState(''),[reason,setReason]=useState(''),[csv,setCsv]=useState(''),[filename,setFilename]=useState(''),[preview,setPreview]=useState<Preview|null>(null),[records,setRecords]=useState<RecordRow[]>([]),[busy,setBusy]=useState(false),[pending,setPending]=useState<Operation|null>(null),[error,setError]=useState(''),[notice,setNotice]=useState('');
- const lock=useRef(false),pendingRef=useRef<Operation|null>(null),generation=useRef(0);
- const storage=`wms-v2:${c.userId}:${c.warehouse}:opening-import`;
- const refresh=useCallback(async()=>{const revision=++generation.current;const result=await api<{imports:RecordRow[]}>(`${endpoint}?warehouse_id=${c.warehouse}`);if(revision===generation.current)setRecords(result.imports);},[c.warehouse]);
- useEffect(()=>{setRecords([]);setPreview(null);setCsv('');setFilename('');setSource('');setExtracted('');setReason('');setError('');setNotice('');try{const saved=JSON.parse(localStorage.getItem(storage)||'null') as Operation|null;pendingRef.current=saved;setPending(saved);}catch{pendingRef.current=null;setPending(null);}void refresh().catch(e=>setError(message(e)));return()=>{generation.current++;};},[storage,refresh]);
- const resetPreview=()=>{setPreview(null);setNotice('');};
- const persist=(operation:Operation|null)=>{if(operation)localStorage.setItem(storage,JSON.stringify(operation));else localStorage.removeItem(storage);pendingRef.current=operation;setPending(operation);};
- async function inspect(){if(lock.current||pendingRef.current)return;lock.current=true;setBusy(true);setError('');try{const result=await api<Preview>(endpoint,'POST',{action:'preview',warehouse_id:c.warehouse,request_id:crypto.randomUUID(),source_system:source,extracted_at:new Date(extracted).toISOString(),reason,csv});setPreview(result);setNotice(result.errors.length?`${result.errors.length}개 오류가 있습니다. 오류를 포함한 검증 회차는 보존할 수 있으며 승인할 수 없습니다.`:'검증을 완료했습니다. 회차를 보존한 뒤 다른 관리자의 검토를 요청하세요.');}catch(e){setError(message(e));}finally{lock.current=false;setBusy(false);}}
- async function execute(operation:Operation){if(lock.current)return;lock.current=true;setBusy(true);setError('');try{persist(operation);const result=await api<{import:RecordRow;replayed?:boolean}>(endpoint,'POST',operation);persist(null);setNotice(result.replayed?'이전 요청의 처리 결과를 복구했습니다.':'검증 회차와 처리 이력을 저장했습니다.');if(operation.action==='submit'){setPreview(null);setCsv('');setFilename('');}await refresh();if(operation.action==='approve')await c.refresh();}catch(e){setError(message(e));if(e instanceof ApiFailure&&e.status<500&&e.status!==408&&e.status!==429){persist(null);void refresh().catch(()=>{});}else setNotice('결과 확인이 필요합니다. 원래 요청과 같은 내용으로 결과를 복구한 뒤 다음 업무를 진행하세요.');}finally{lock.current=false;setBusy(false);}}
- const blocked=busy||c.busy||Boolean(pending),requests=records.filter(record=>record.phase==='request');
- if(c.role!=='admin')return null;
- return <section className="v2-card"><div className="v2-toolbar"><h2>외부 자료 개시재고 · 별도 검토</h2><button type="button" disabled={busy} onClick={()=>void refresh().catch(e=>setError(message(e)))}>보존 회차 새로고침</button></div><Note>외부 시스템·엑셀에서 가져온 기준 시각의 실물 수량을 등록합니다. 기존 WMS 잔량 전환과 구분하며, 기존 전표·원장·재고와 v2 거래가 없는 빈 창고에만 승인할 수 있습니다. 수량은 승인 시 한 번만 원장에 반영됩니다.</Note>{c.snapshot.version>0&&<p className="v2-alert">현재 창고에 v2 업무 이력이 있습니다. 이 창고에 외부 개시재고를 추가 승인할 수 없습니다.</p>}{error&&<p role="alert" className="v2-alert">{error}</p>}{notice&&<p role="status" className="v2-note">{notice}</p>}{pending&&<div className="v2-alert"><h3>외부 개시재고 요청 결과 확인</h3><p>{pending.action==='submit'?'검증 회차 보존':pending.action==='approve'?'개시재고 승인':'회차 반려'} 결과가 아직 확인되지 않았습니다. 새 회차로 다시 등록하지 마세요.</p><button type="button" disabled={busy||c.busy} onClick={()=>void execute(pending)}>원래 요청 그대로 결과 확인·재전송</button></div>}<form onSubmit={e=>{e.preventDefault();void inspect();}}><div className="v2-grid"><Field label="외부 원천 시스템"><input value={source} disabled={blocked} required maxLength={200} placeholder="예: 기존 ERP · 실물 확인 엑셀" onChange={e=>{setSource(e.target.value);resetPreview();}}/></Field><Field label="원본 자료 추출 시각"><input type="datetime-local" value={extracted} disabled={blocked} required onChange={e=>{setExtracted(e.target.value);resetPreview();}}/></Field></div><Field label="개시재고 반입 근거·사유"><textarea value={reason} disabled={blocked} required maxLength={1000} onChange={e=>{setReason(e.target.value);resetPreview();}}/></Field><div className="v2-actions"><button type="button" onClick={()=>downloadCsv('external-opening-template.csv',[['item_code','location_code','bucket','quantity']])}>개시재고 CSV 양식</button></div><Note>UTF-8 CSV · 최대 1,000행. 품목 코드, 현재 창고 위치 코드, 상태(S/Q/B), 양의 정수 EA를 입력합니다. S는 보관, Q는 수령 대기, B는 보류 유형 위치와 일치해야 합니다.</Note><Field label="외부 개시재고 CSV 파일"><input type="file" accept=".csv,text/csv" disabled={blocked} required onChange={async e=>{resetPreview();setError('');const file=e.target.files?.[0];if(!file){setCsv('');setFilename('');return;}if(file.size>1_000_000){setCsv('');setFilename('');setError('1 MB 이하 CSV 파일을 선택하세요.');return;}setCsv(await file.text());setFilename(file.name);}}/></Field>{filename&&<p className="v2-note">선택 파일: {filename}</p>}<Submit disabled={blocked||!csv}>외부 자료 형식·코드·수량 검증</Submit></form>{preview&&<div className="v2-card"><h3>개시재고 검증 미리보기</h3><PreviewRows value={preview}/><button type="button" className="v2-primary" disabled={blocked} onClick={()=>void execute({action:'submit',warehouse_id:c.warehouse,request_id:crypto.randomUUID(),source_system:preview.source_system,extracted_at:preview.extracted_at,reason:preview.reason,csv})}>원본·오류 포함 회차 보존·검토 요청</button><Note>회차 보존은 재고 반영이 아닙니다. 오류가 있는 회차는 수정한 새 파일로 다시 검증해야 합니다.</Note></div>}<h3>보존된 원본과 검토 회차</h3>{requests.map((record,index)=><OpeningRequest key={record.id} c={c} record={record} number={requests.length-index} decision={records.find(row=>row.parent_id===record.id)} blocked={blocked} execute={execute}/>)}{!requests.length&&<p className="v2-empty">이 창고에 보존된 외부 개시재고 회차가 없습니다.</p>}</section>;
+export function OpeningImport({ c }: { c: Context }) {
+  const [source, setSource] = useState(""),
+    [extracted, setExtracted] = useState(""),
+    [reason, setReason] = useState(""),
+    [csv, setCsv] = useState(""),
+    [filename, setFilename] = useState(""),
+    [preview, setPreview] = useState<Preview | null>(null),
+    [records, setRecords] = useState<RecordRow[]>([]),
+    [busy, setBusy] = useState(false),
+    [pending, setPending] = useState<Operation | null>(null),
+    [error, setError] = useState(""),
+    [notice, setNotice] = useState("");
+  const lock = useRef(false),
+    pendingRef = useRef<Operation | null>(null),
+    generation = useRef(0);
+  const storage = `wms-v2:${c.userId}:${c.warehouse}:opening-import`;
+  const refresh = useCallback(async () => {
+    const revision = ++generation.current;
+    const result = await api<{ imports: RecordRow[] }>(`${endpoint}?warehouse_id=${c.warehouse}`);
+    if (revision === generation.current) setRecords(result.imports);
+  }, [c.warehouse]);
+  useEffect(() => {
+    setRecords([]);
+    setPreview(null);
+    setCsv("");
+    setFilename("");
+    setSource("");
+    setExtracted("");
+    setReason("");
+    setError("");
+    setNotice("");
+    try {
+      const saved = JSON.parse(localStorage.getItem(storage) || "null") as Operation | null;
+      pendingRef.current = saved;
+      setPending(saved);
+    } catch {
+      pendingRef.current = null;
+      setPending(null);
+    }
+    void refresh().catch((e) => setError(message(e)));
+    return () => {
+      generation.current++;
+    };
+  }, [storage, refresh]);
+  const resetPreview = () => {
+    setPreview(null);
+    setNotice("");
+  };
+  const persist = (operation: Operation | null) => {
+    if (operation) localStorage.setItem(storage, JSON.stringify(operation));
+    else localStorage.removeItem(storage);
+    pendingRef.current = operation;
+    setPending(operation);
+  };
+  async function inspect() {
+    if (lock.current || pendingRef.current) return;
+    lock.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      const result = await api<Preview>(endpoint, "POST", {
+        action: "preview",
+        warehouse_id: c.warehouse,
+        request_id: crypto.randomUUID(),
+        source_system: source,
+        extracted_at: new Date(extracted).toISOString(),
+        reason,
+        csv,
+      });
+      setPreview(result);
+      setNotice(
+        result.errors.length
+          ? `${result.errors.length}개 오류가 있습니다. 오류를 포함한 검증 회차는 보존할 수 있으며 승인할 수 없습니다.`
+          : "검증을 완료했습니다. 회차를 보존한 뒤 다른 관리자의 검토를 요청하세요.",
+      );
+    } catch (e) {
+      setError(message(e));
+    } finally {
+      lock.current = false;
+      setBusy(false);
+    }
+  }
+  async function execute(operation: Operation) {
+    if (lock.current) return;
+    lock.current = true;
+    setBusy(true);
+    setError("");
+    try {
+      persist(operation);
+      const result = await api<{ import: RecordRow; replayed?: boolean }>(endpoint, "POST", operation);
+      persist(null);
+      setNotice(result.replayed ? "이전 요청의 처리 결과를 복구했습니다." : "검증 회차와 처리 이력을 저장했습니다.");
+      if (operation.action === "submit") {
+        setPreview(null);
+        setCsv("");
+        setFilename("");
+      }
+      await refresh();
+      if (operation.action === "approve") await c.refresh();
+    } catch (e) {
+      setError(message(e));
+      if (e instanceof ApiFailure && e.status < 500 && e.status !== 408 && e.status !== 429) {
+        persist(null);
+        void refresh().catch(() => {});
+      } else setNotice("결과 확인이 필요합니다. 원래 요청과 같은 내용으로 결과를 복구한 뒤 다음 업무를 진행하세요.");
+    } finally {
+      lock.current = false;
+      setBusy(false);
+    }
+  }
+  const blocked = busy || c.busy || Boolean(pending),
+    requests = records.filter((record) => record.phase === "request");
+  if (c.role !== "admin") return null;
+  return (
+    <section className="v2-card">
+      <div className="v2-toolbar">
+        <h2>외부 자료 개시재고 · 별도 검토</h2>
+        <button type="button" disabled={busy} onClick={() => void refresh().catch((e) => setError(message(e)))}>
+          보존 회차 새로고침
+        </button>
+      </div>
+      <Note>
+        외부 시스템·엑셀에서 가져온 기준 시각의 실물 수량을 등록합니다. 기존 WMS 잔량 전환과 구분하며, 기존
+        전표·원장·재고와 v2 거래가 없는 빈 창고에만 승인할 수 있습니다. 수량은 승인 시 한 번만 원장에 반영됩니다.
+      </Note>
+      {c.snapshot.version > 0 && (
+        <p className="v2-alert">
+          현재 창고에 v2 업무 이력이 있습니다. 이 창고에 외부 개시재고를 추가 승인할 수 없습니다.
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="v2-alert">
+          {error}
+        </p>
+      )}
+      {notice && (
+        <p role="status" className="v2-note">
+          {notice}
+        </p>
+      )}
+      {pending && (
+        <div className="v2-alert">
+          <h3>외부 개시재고 요청 결과 확인</h3>
+          <p>
+            {pending.action === "submit"
+              ? "검증 회차 보존"
+              : pending.action === "approve"
+                ? "개시재고 승인"
+                : "회차 반려"}{" "}
+            결과가 아직 확인되지 않았습니다. 새 회차로 다시 등록하지 마세요.
+          </p>
+          <button type="button" disabled={busy || c.busy} onClick={() => void execute(pending)}>
+            원래 요청 그대로 결과 확인·재전송
+          </button>
+        </div>
+      )}
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void inspect();
+        }}
+      >
+        <div className="v2-grid">
+          <Field label="외부 원천 시스템">
+            <input
+              value={source}
+              disabled={blocked}
+              required
+              maxLength={200}
+              placeholder="예: 기존 ERP · 실물 확인 엑셀"
+              onChange={(e) => {
+                setSource(e.target.value);
+                resetPreview();
+              }}
+            />
+          </Field>
+          <Field label="원본 자료 추출 시각">
+            <input
+              type="datetime-local"
+              value={extracted}
+              disabled={blocked}
+              required
+              onChange={(e) => {
+                setExtracted(e.target.value);
+                resetPreview();
+              }}
+            />
+          </Field>
+        </div>
+        <Field label="개시재고 반입 근거·사유">
+          <textarea
+            value={reason}
+            disabled={blocked}
+            required
+            maxLength={1000}
+            onChange={(e) => {
+              setReason(e.target.value);
+              resetPreview();
+            }}
+          />
+        </Field>
+        <div className="v2-actions">
+          <button
+            type="button"
+            onClick={() =>
+              downloadCsv("external-opening-template.csv", [["item_code", "location_code", "bucket", "quantity"]])
+            }
+          >
+            개시재고 CSV 양식
+          </button>
+        </div>
+        <Note>
+          UTF-8 CSV · 최대 1,000행. 품목 코드, 현재 창고 위치 코드, 상태(S/Q/B), 양의 정수 EA를 입력합니다. S는 보관,
+          Q는 수령 대기, B는 보류 유형 위치와 일치해야 합니다.
+        </Note>
+        <Field label="외부 개시재고 CSV 파일">
+          <input
+            type="file"
+            accept=".csv,text/csv"
+            disabled={blocked}
+            required
+            onChange={async (e) => {
+              resetPreview();
+              setError("");
+              const file = e.target.files?.[0];
+              if (!file) {
+                setCsv("");
+                setFilename("");
+                return;
+              }
+              if (file.size > 1_000_000) {
+                setCsv("");
+                setFilename("");
+                setError("1 MB 이하 CSV 파일을 선택하세요.");
+                return;
+              }
+              setCsv(await file.text());
+              setFilename(file.name);
+            }}
+          />
+        </Field>
+        {filename && <p className="v2-note">선택 파일: {filename}</p>}
+        <Submit disabled={blocked || !csv}>외부 자료 형식·코드·수량 검증</Submit>
+      </form>
+      {preview && (
+        <div className="v2-card">
+          <h3>개시재고 검증 미리보기</h3>
+          <PreviewRows value={preview} />
+          <button
+            type="button"
+            className="v2-primary"
+            disabled={blocked}
+            onClick={() =>
+              void execute({
+                action: "submit",
+                warehouse_id: c.warehouse,
+                request_id: crypto.randomUUID(),
+                source_system: preview.source_system,
+                extracted_at: preview.extracted_at,
+                reason: preview.reason,
+                csv,
+              })
+            }
+          >
+            원본·오류 포함 회차 보존·검토 요청
+          </button>
+          <Note>회차 보존은 재고 반영이 아닙니다. 오류가 있는 회차는 수정한 새 파일로 다시 검증해야 합니다.</Note>
+        </div>
+      )}
+      <h3>보존된 원본과 검토 회차</h3>
+      {requests.map((record, index) => (
+        <OpeningRequest
+          key={record.id}
+          c={c}
+          record={record}
+          number={requests.length - index}
+          decision={records.find((row) => row.parent_id === record.id)}
+          blocked={blocked}
+          execute={execute}
+        />
+      ))}
+      {!requests.length && <p className="v2-empty">이 창고에 보존된 외부 개시재고 회차가 없습니다.</p>}
+    </section>
+  );
 }
 
-function PreviewRows({value}:{value:Partial<Preview>}){return <><p>{value.source_system} · 추출 {value.extracted_at?time(value.extracted_at):'확인 필요'} · 정상 명세 {value.rows?.length||0}행 · 오류 {value.errors?.length||0}행</p><Note>원본 식별: {value.source_hash} · 수량 단위 EA</Note><div className="v2-table"><table><thead><tr><th>품목 코드</th><th>위치 코드</th><th>실물 상태</th><th>수량 EA</th></tr></thead><tbody>{value.rows?.map((row,index)=><tr key={index}><td>{row.item_code}</td><td>{row.location_code}</td><td>{buckets[row.bucket]}</td><td>{row.quantity}</td></tr>)}</tbody></table></div>{Boolean(value.errors?.length)&&<div className="v2-alert"><h3>오류 행 · 승인 불가</h3><ul>{value.errors?.map((error,index)=><li key={index}>CSV {error.row}행: {error.message}</li>)}</ul></div>}</>;}
+function PreviewRows({ value }: { value: Partial<Preview> }) {
+  return (
+    <>
+      <p>
+        {value.source_system} · 추출 {value.extracted_at ? time(value.extracted_at) : "확인 필요"} · 정상 명세{" "}
+        {value.rows?.length || 0}행 · 오류 {value.errors?.length || 0}행
+      </p>
+      <Note>원본 식별: {value.source_hash} · 수량 단위 EA</Note>
+      <div className="v2-table">
+        <table>
+          <thead>
+            <tr>
+              <th>품목 코드</th>
+              <th>위치 코드</th>
+              <th>실물 상태</th>
+              <th>수량 EA</th>
+            </tr>
+          </thead>
+          <tbody>
+            {value.rows?.map((row, index) => (
+              <tr key={index}>
+                <td>{row.item_code}</td>
+                <td>{row.location_code}</td>
+                <td>{buckets[row.bucket]}</td>
+                <td>{row.quantity}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {Boolean(value.errors?.length) && (
+        <div className="v2-alert">
+          <h3>오류 행 · 승인 불가</h3>
+          <ul>
+            {value.errors?.map((error, index) => (
+              <li key={index}>
+                CSV {error.row}행: {error.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
+  );
+}
 
-function OpeningRequest({c,record,number,decision,blocked,execute}:{c:Context;record:RecordRow;number:number;decision?:RecordRow;blocked:boolean;execute:(operation:Operation)=>Promise<void>}){const [reason,setReason]=useState(''),[confirmed,setConfirmed]=useState(false);const own=record.actor_id===c.userId;const actor=(id:string)=>c.people.find(person=>person.userId===id)?.name||'회사 관리자';return <details className="v2-card"><summary>개시재고 회차 {number} · {record.payload.source_system} · {decision?decision.phase==='approve'?'승인됨':'반려됨':'검토 대기'}</summary><p>요청자 {record.actor_name||actor(record.actor_id)} · 회차 보존 {time(record.created_at)} · {record.payload.csv!==undefined?'원본 CSV 보존됨':'원본 보존 확인 필요'}</p><p>반입 근거: {record.payload.reason}</p><PreviewRows value={record.payload}/>{decision?<div className="v2-note"><p>{decision.phase==='approve'?'승인자':'반려자'} {decision.actor_name||actor(decision.actor_id)} · {time(decision.created_at)}</p><p>검토 사유: {decision.payload.reason}</p><p>{decision.phase==='approve'?'승인한 수량이 연결된 개시 원장에 반영되었습니다.':'재고 효과 없이 원본과 반려 이력을 보존합니다.'}</p></div>:own?<Note>요청자는 자신의 회차를 승인·반려할 수 없습니다. 이 창고 권한이 있는 다른 회사 관리자가 검토해야 합니다.</Note>:<form onSubmit={e=>e.preventDefault()}><Field label={`개시재고 회차 ${number} 검토 사유`}><textarea value={reason} disabled={blocked} required maxLength={1000} onChange={e=>{setReason(e.target.value);setConfirmed(false);}}/></Field><label className="v2-checkbox"><input type="checkbox" checked={confirmed} disabled={blocked} onChange={e=>setConfirmed(e.target.checked)}/>원본 추출 시각·실물 상태·위치·수량과 검토 사유를 확인했습니다. 승인 시에는 기존 재고와 거래가 없는 빈 창고임을 확인했습니다.</label><div className="v2-actions"><button type="button" className="v2-primary" disabled={blocked||!reason.trim()||!confirmed||Boolean(record.payload.errors?.length)||c.snapshot.version>0} onClick={()=>void execute({action:'approve',warehouse_id:c.warehouse,request_id:crypto.randomUUID(),import_id:record.id,reason,confirmed:true})}>검토한 외부 개시재고 승인</button><button type="button" disabled={blocked||!reason.trim()||!confirmed} onClick={()=>void execute({action:'reject',warehouse_id:c.warehouse,request_id:crypto.randomUUID(),import_id:record.id,reason,confirmed:true})}>사유 남기고 회차 반려</button></div></form>}</details>;}
+function OpeningRequest({
+  c,
+  record,
+  number,
+  decision,
+  blocked,
+  execute,
+}: {
+  c: Context;
+  record: RecordRow;
+  number: number;
+  decision?: RecordRow;
+  blocked: boolean;
+  execute: (operation: Operation) => Promise<void>;
+}) {
+  const [reason, setReason] = useState(""),
+    [confirmed, setConfirmed] = useState(false);
+  const own = record.actor_id === c.userId;
+  const actor = (id: string) => c.people.find((person) => person.userId === id)?.name || "회사 관리자";
+  return (
+    <details className="v2-card">
+      <summary>
+        개시재고 회차 {number} · {record.payload.source_system} ·{" "}
+        {decision ? (decision.phase === "approve" ? "승인됨" : "반려됨") : "검토 대기"}
+      </summary>
+      <p>
+        요청자 {record.actor_name || actor(record.actor_id)} · 회차 보존 {time(record.created_at)} ·{" "}
+        {record.payload.csv !== undefined ? "원본 CSV 보존됨" : "원본 보존 확인 필요"}
+      </p>
+      <p>반입 근거: {record.payload.reason}</p>
+      <PreviewRows value={record.payload} />
+      {decision ? (
+        <div className="v2-note">
+          <p>
+            {decision.phase === "approve" ? "승인자" : "반려자"} {decision.actor_name || actor(decision.actor_id)} ·{" "}
+            {time(decision.created_at)}
+          </p>
+          <p>검토 사유: {decision.payload.reason}</p>
+          <p>
+            {decision.phase === "approve"
+              ? "승인한 수량이 연결된 개시 원장에 반영되었습니다."
+              : "재고 효과 없이 원본과 반려 이력을 보존합니다."}
+          </p>
+        </div>
+      ) : own ? (
+        <Note>
+          요청자는 자신의 회차를 승인·반려할 수 없습니다. 이 창고 권한이 있는 다른 회사 관리자가 검토해야 합니다.
+        </Note>
+      ) : (
+        <form onSubmit={(e) => e.preventDefault()}>
+          <Field label={`개시재고 회차 ${number} 검토 사유`}>
+            <textarea
+              value={reason}
+              disabled={blocked}
+              required
+              maxLength={1000}
+              onChange={(e) => {
+                setReason(e.target.value);
+                setConfirmed(false);
+              }}
+            />
+          </Field>
+          <label className="v2-checkbox">
+            <input
+              type="checkbox"
+              checked={confirmed}
+              disabled={blocked}
+              onChange={(e) => setConfirmed(e.target.checked)}
+            />
+            원본 추출 시각·실물 상태·위치·수량과 검토 사유를 확인했습니다. 승인 시에는 기존 재고와 거래가 없는 빈
+            창고임을 확인했습니다.
+          </label>
+          <div className="v2-actions">
+            <button
+              type="button"
+              className="v2-primary"
+              disabled={
+                blocked ||
+                !reason.trim() ||
+                !confirmed ||
+                Boolean(record.payload.errors?.length) ||
+                c.snapshot.version > 0
+              }
+              onClick={() =>
+                void execute({
+                  action: "approve",
+                  warehouse_id: c.warehouse,
+                  request_id: crypto.randomUUID(),
+                  import_id: record.id,
+                  reason,
+                  confirmed: true,
+                })
+              }
+            >
+              검토한 외부 개시재고 승인
+            </button>
+            <button
+              type="button"
+              disabled={blocked || !reason.trim() || !confirmed}
+              onClick={() =>
+                void execute({
+                  action: "reject",
+                  warehouse_id: c.warehouse,
+                  request_id: crypto.randomUUID(),
+                  import_id: record.id,
+                  reason,
+                  confirmed: true,
+                })
+              }
+            >
+              사유 남기고 회차 반려
+            </button>
+          </div>
+        </form>
+      )}
+    </details>
+  );
+}

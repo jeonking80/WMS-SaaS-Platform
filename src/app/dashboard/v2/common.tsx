@@ -2,23 +2,266 @@
 import { barcodeSvg } from "./barcode";
 import { useId, useState, type ReactNode } from "react";
 import type { WorkflowState } from "@/server/v2/workflow/types";
-export type Row = {id:string;code?:string;name?:string;active?:boolean;[key:string]:unknown};
-export type Person = {userId:string;name:string;email:string;role:string;status:string;warehouseIds:string[];scopes?:string[]};
-export type Snapshot = Omit<WorkflowState,'stock'> & {stock:(WorkflowState["stock"][number] & {A?:number;H?:number;locked?:boolean})[];reconciliation?:{ok?:boolean;consistent?:boolean;mismatches?:unknown[]}};
-export type Context = {warehouse:string;role:string;userId:string;userName?:string;company:string;warehouseName:string;warehouseCode:string;asOf:string;idleLockMinutes:number;updateIdlePolicy:(minutes:number)=>void;items:Row[];locations:Row[];partners:Row[];destinations:Row[];barcodes:Row[];people:Person[];snapshot:Snapshot;busy:boolean;run:(command:string,payload:Record<string,unknown>)=>Promise<Record<string,unknown>|undefined>;refresh:()=>Promise<void>};
-const messages:Record<string,string>={SEPARATE_APPROVER_REQUIRED:"요청자가 직접 승인·반려할 수 없습니다. 다른 회사 관리자에게 검토를 요청하세요.",IMPORT_HAS_ERRORS:"오류가 있는 개시재고 회차는 승인할 수 없습니다. 수정한 파일로 새 회차를 제출하세요.",EXTERNAL_OPENING_REQUIRES_EMPTY_WAREHOUSE:"기존 재고·전표·원장·v2 거래가 있는 창고입니다. 외부 개시재고를 더할 수 없습니다.",ALREADY_DECIDED:"이미 검토가 끝난 회차입니다. 보존 회차를 새로고침하세요.",INVALID_EXTRACTION_TIME:"원본 자료 추출 시각은 현재 시각 이전의 유효한 날짜여야 합니다.",CORRECTION_FOLLOWUP_WORK_EXISTS:"원본 이후 예약·피킹·이동·출하 등 후속 실적이 있습니다. 연결 업무와 실물 점유를 먼저 해소하세요.",CORRECTION_REQUIRES_WORKFLOW:"이 원본은 예약·피킹 등 업무 단계에 연결되어 있습니다. 해당 업무의 취소·반납·반품 경로로 정정하세요.",CORRECTION_SOURCE_MISMATCH:"정정 명세는 선택한 원본과 같은 품목·위치·상태의 반대 수량이어야 합니다.",CORRECTION_PAIRED_LINES_REQUIRED:"출발·도착 명세를 함께 같은 비율로 보상하세요.",CORRECTION_LIMIT_EXCEEDED:"이미 보상한 수량을 포함하면 원본 수량을 초과합니다.",LEGACY_CUTOVER_REQUIRED:"기존 재고가 있는 창고입니다. 회사 관리자가 기존 창고 전환과 대사를 먼저 완료해야 합니다.",APPROVAL_STALE:"승인 요청 이후 대상이 바뀌었습니다. 최신 수량으로 다시 요청하세요.",RECOUNT_REQUIRED:"차이가 있습니다. 재계수와 차이 사유를 기록한 후 승인을 요청하세요.",UNPACK_REQUIRED:"완료 포장을 먼저 해제하고 실물과 잔량을 다시 확인하세요.",CANCELLATION_PENDING:"취소 대기 물품은 포장·출하할 수 없습니다. 실물 반납을 먼저 처리하세요.",SPLIT_REQUIRED:"최대 20명세입니다. 선택 명세나 완료 포장을 나누어 처리하세요.",CLOSE_APPROVAL_REQUIRED:"일부 수령한 예정의 잔량 마감은 다른 책임자의 승인이 필요합니다.",MASTER_IN_USE:"재고·예약·미완료 업무에서 사용 중입니다. 연결 업무를 해소한 후 비활성화하세요.",ASSIGNEE_UNAVAILABLE:"담당자의 활성 상태와 이 창고 권한을 확인하세요. 승인 대기는 요청자·원실적자·계수자를 제외한 다른 승인권자를 선택하세요. 자동 계정은 승인 역할과 권한도 확인하세요.",HOLD_TASK_UNAVAILABLE:"선택한 일반 보류 후속 업무가 없거나 이미 완료되었습니다. 새로고침 후 남은 보류·검수·적치 업무를 선택하세요.",HOLD_ASSIGNMENT_REQUIRED:"원주문 연결을 확인할 수 없습니다. 운영 책임자가 일반 보류 후속 담당자를 배정한 뒤 다시 처리하세요.",INVALID_LINK:"만료·취소되었거나 이미 사용한 링크입니다. 관리자에게 재발급을 요청하세요.",BARCODE_IMMUTABLE:"등록한 바코드의 대상·환산값은 변경할 수 없습니다. 새 라벨을 등록하세요.",MANUAL_ENTRY_REASON_REQUIRED:"검색으로 실물을 확인한 대체 입력 사유를 기록하세요.",SCAN_QUANTITY_MISMATCH:"스캔한 포장 환산 합계와 입력 수량이 다릅니다. 재스캔하거나 대체 사유를 기록하세요.",WRONG_ITEM_SCAN:"선택한 품목과 바코드가 다릅니다. 실물을 확인하세요.",WRONG_LOCATION_SCAN:"현재 단계의 위치와 바코드가 다릅니다. 출발·도착 위치를 확인하세요.",VERSION_CONFLICT:"다른 작업자가 내용을 변경했습니다. 새로고침 후 잔량을 확인하세요.",STOCK_SHORTAGE:"가용재고가 부족합니다. 가능 수량만 예약하거나 재입고 후 다시 예약하세요.",INSUFFICIENT_STOCK:"가용재고가 부족합니다.",SELF_APPROVAL:"요청자는 직접 승인할 수 없습니다. 다른 승인권자에게 인계하세요.",SELF_APPROVAL_FORBIDDEN:"요청자는 직접 승인할 수 없습니다.",LOCATION_LOCKED:"실사 또는 점검으로 잠긴 위치입니다. 다른 위치를 선택하세요.",ROLE_FORBIDDEN:"현재 역할에는 이 작업 권한이 없습니다.",WAREHOUSE_FORBIDDEN:"이 창고의 작업 권한이 없습니다.",UNAUTHENTICATED:"세션이 만료되었습니다. 다시 로그인하세요.",VALIDATION_ERROR:"입력한 수량·위치·잔량을 확인하세요.",INVALID_INPUT:"입력값을 확인하세요.",INVALID_STATE:"현재 업무 상태에서는 실행할 수 없습니다. 최신 작업과 선행 단계를 확인하세요.",SCAN_MISMATCH:"선택한 품목 또는 위치와 스캔 결과가 다릅니다.",IDEMPOTENCY_CONFLICT:"기존 확정과 내용이 다릅니다. 미확인 요청 결과를 먼저 확인하세요.",PACK_LIMIT:"20명세를 초과합니다. 포장을 나누거나 선택 포장을 줄이세요.",NOT_FOUND:"선택한 업무를 찾을 수 없습니다.",ASSISTANT_UNCONFIGURED:"AI 연결이 설정되지 않았습니다. 빠른 질문은 시스템 조회로 답합니다.",ASSISTANT_BUSY:"AI 도우미 요청이 많습니다. 잠시 후 다시 질문하세요.",ASSISTANT_UNAVAILABLE:"AI 도우미에 연결할 수 없습니다. 잠시 후 다시 시도하세요.",SERVICE_UNAVAILABLE:"일시적으로 연결할 수 없습니다. 처리 결과를 확인한 뒤 같은 요청으로 재시도하세요."};
-export class ApiFailure extends Error {constructor(public status:number,public code:string,detail?:string){super(messages[code]||detail||"처리할 수 없습니다. 현재 권한·잔량과 선행 작업을 확인하세요.");}}
-export async function api<T>(url:string,method="GET",body?:unknown):Promise<T>{const response=await fetch(url,{method,credentials:"same-origin",cache:"no-store",...(body===undefined?{}:{headers:{"Content-Type":"application/json"},body:JSON.stringify(body)})});const data=await response.json();if(!response.ok){const err=data.error;throw new ApiFailure(response.status,typeof err==="string"?err:err?.code||"UNKNOWN",typeof err?.message==="string"?err.message:undefined);}return data;}
-export const message=(e:unknown)=>e instanceof Error?e.message:"서버에 연결할 수 없습니다.";
-export const label=(row:Row|undefined)=>row?`${row.code?row.code+" · ":""}${row.name||row.code||"선택 항목"}`:"선택 항목";
-export const personLabel=(person:Person)=>`${person.userId.startsWith('machine:')?'자동 작업':'사람'} · ${person.name}${person.userId.startsWith('machine:')&&person.role==='supervisor'?' · 승인 책임자':''}`;
-export const nameOf=(rows:Row[],id:string)=>label(rows.find(row=>row.id===id));
-export const time=(value:string)=>new Date(value).toLocaleString("ko-KR",{timeZone:"Asia/Seoul"});
-export function Field({label:caption,children}:{label:string;children:ReactNode}){return <label className="v2-field"><span>{caption}</span>{children}</label>;}
-export function Select({label:caption,value,onChange,options,required=false,disabled=false}:{label:string;value:string;onChange:(value:string)=>void;options:{id:string;label:string}[];required?:boolean;disabled?:boolean}){const id=useId();const [query,setQuery]=useState("");const rows=options.filter(row=>row.id===value||row.label.toLocaleLowerCase().includes(query.toLocaleLowerCase()));const searchable=options.length>8||Boolean(query);return <div className="v2-field"><label htmlFor={id}>{caption}</label>{searchable&&<input aria-label={`${caption} 검색`} placeholder="코드·이름 검색 후 Enter" value={query} disabled={disabled} onChange={e=>setQuery(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();const first=rows.find(row=>row.id!==value)||rows[0];if(first)onChange(first.id);}}}/>}<select id={id} value={value} onChange={e=>onChange(e.target.value)} required={required} disabled={disabled}><option value="">{options.length?'선택하세요':'선택할 항목이 없습니다'}</option>{rows.map(row=><option value={row.id} key={row.id}>{row.label}</option>)}</select>{searchable&&<small>{rows.length}개 후보</small>}</div>;}
-export const options=(rows:Row[])=>rows.filter(row=>row.active!==false).map(row=>({id:row.id,label:label(row)}));
-export function Quantity({value,onChange,max,min=1,disabled=false,label:caption="처리 수량 (EA)"}:{value:number;onChange:(n:number)=>void;max?:number;min?:number;disabled?:boolean;label?:string}){return <Field label={caption}><input type="number" disabled={disabled} inputMode="numeric" min={min} max={max} step="1" value={Number.isFinite(value)?value:0} required onChange={e=>onChange(Number(e.target.value))}/></Field>;}
-export function Submit({children,disabled=false}:{children:ReactNode;disabled?:boolean}){return <button className="v2-primary" type="submit" disabled={disabled}>{children}</button>;}
-export function Note({children}:{children:ReactNode}){return <p className="v2-note">{children}</p>;}
-export function downloadCsv(filename:string,rows:unknown[][]){const value=rows.map(row=>row.map(cell=>{let text=String(cell??"");if(/^[\s]*[=+@-]/.test(text))text="'"+text;return '"'+text.replaceAll('"','""')+'"';}).join(",")).join("\r\n");const url=URL.createObjectURL(new Blob(["\ufeff",value],{type:"text/csv;charset=utf-8"}));const anchor=document.createElement("a");anchor.href=url;anchor.download=filename;anchor.click();URL.revokeObjectURL(url);}
-export function printSheet(title:string,heading:string,rows:unknown[][],barcode?:string){const popup=window.open("","_blank","width=900,height=700");if(!popup)return;const escape=(v:unknown)=>String(v??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");popup.document.write(`<!doctype html><html lang="ko"><head><title>${escape(title)}</title><style>body{font:15px sans-serif;padding:24px}table{width:100%;border-collapse:collapse}td{border:1px solid #aaa;padding:8px}small{display:block;margin-bottom:20px}</style></head><body><h1>${escape(title)}</h1><small>${escape(heading)}</small>${barcode?barcodeSvg(barcode):''}<table>${rows.map(row=>`<tr>${row.map(cell=>`<td>${escape(cell)}</td>`).join("")}</tr>`).join("")}</table></body></html>`);popup.document.close();popup.focus();popup.print();}
+export type Row = { id: string; code?: string; name?: string; active?: boolean; [key: string]: unknown };
+export type Person = {
+  userId: string;
+  name: string;
+  email: string;
+  role: string;
+  status: string;
+  warehouseIds: string[];
+  scopes?: string[];
+};
+export type Snapshot = Omit<WorkflowState, "stock"> & {
+  stock: (WorkflowState["stock"][number] & { A?: number; H?: number; locked?: boolean })[];
+  reconciliation?: { ok?: boolean; consistent?: boolean; mismatches?: unknown[] };
+};
+export type Context = {
+  warehouse: string;
+  role: string;
+  userId: string;
+  userName?: string;
+  company: string;
+  warehouseName: string;
+  warehouseCode: string;
+  asOf: string;
+  idleLockMinutes: number;
+  updateIdlePolicy: (minutes: number) => void;
+  items: Row[];
+  locations: Row[];
+  partners: Row[];
+  destinations: Row[];
+  barcodes: Row[];
+  people: Person[];
+  snapshot: Snapshot;
+  busy: boolean;
+  run: (command: string, payload: Record<string, unknown>) => Promise<Record<string, unknown> | undefined>;
+  refresh: () => Promise<void>;
+};
+const messages: Record<string, string> = {
+  SEPARATE_APPROVER_REQUIRED: "요청자가 직접 승인·반려할 수 없습니다. 다른 회사 관리자에게 검토를 요청하세요.",
+  IMPORT_HAS_ERRORS: "오류가 있는 개시재고 회차는 승인할 수 없습니다. 수정한 파일로 새 회차를 제출하세요.",
+  EXTERNAL_OPENING_REQUIRES_EMPTY_WAREHOUSE:
+    "기존 재고·전표·원장·v2 거래가 있는 창고입니다. 외부 개시재고를 더할 수 없습니다.",
+  ALREADY_DECIDED: "이미 검토가 끝난 회차입니다. 보존 회차를 새로고침하세요.",
+  INVALID_EXTRACTION_TIME: "원본 자료 추출 시각은 현재 시각 이전의 유효한 날짜여야 합니다.",
+  CORRECTION_FOLLOWUP_WORK_EXISTS:
+    "원본 이후 예약·피킹·이동·출하 등 후속 실적이 있습니다. 연결 업무와 실물 점유를 먼저 해소하세요.",
+  CORRECTION_REQUIRES_WORKFLOW:
+    "이 원본은 예약·피킹 등 업무 단계에 연결되어 있습니다. 해당 업무의 취소·반납·반품 경로로 정정하세요.",
+  CORRECTION_SOURCE_MISMATCH: "정정 명세는 선택한 원본과 같은 품목·위치·상태의 반대 수량이어야 합니다.",
+  CORRECTION_PAIRED_LINES_REQUIRED: "출발·도착 명세를 함께 같은 비율로 보상하세요.",
+  CORRECTION_LIMIT_EXCEEDED: "이미 보상한 수량을 포함하면 원본 수량을 초과합니다.",
+  LEGACY_CUTOVER_REQUIRED: "기존 재고가 있는 창고입니다. 회사 관리자가 기존 창고 전환과 대사를 먼저 완료해야 합니다.",
+  APPROVAL_STALE: "승인 요청 이후 대상이 바뀌었습니다. 최신 수량으로 다시 요청하세요.",
+  RECOUNT_REQUIRED: "차이가 있습니다. 재계수와 차이 사유를 기록한 후 승인을 요청하세요.",
+  UNPACK_REQUIRED: "완료 포장을 먼저 해제하고 실물과 잔량을 다시 확인하세요.",
+  CANCELLATION_PENDING: "취소 대기 물품은 포장·출하할 수 없습니다. 실물 반납을 먼저 처리하세요.",
+  SPLIT_REQUIRED: "최대 20명세입니다. 선택 명세나 완료 포장을 나누어 처리하세요.",
+  CLOSE_APPROVAL_REQUIRED: "일부 수령한 예정의 잔량 마감은 다른 책임자의 승인이 필요합니다.",
+  MASTER_IN_USE: "재고·예약·미완료 업무에서 사용 중입니다. 연결 업무를 해소한 후 비활성화하세요.",
+  ASSIGNEE_UNAVAILABLE:
+    "담당자의 활성 상태와 이 창고 권한을 확인하세요. 승인 대기는 요청자·원실적자·계수자를 제외한 다른 승인권자를 선택하세요. 자동 계정은 승인 역할과 권한도 확인하세요.",
+  HOLD_TASK_UNAVAILABLE:
+    "선택한 일반 보류 후속 업무가 없거나 이미 완료되었습니다. 새로고침 후 남은 보류·검수·적치 업무를 선택하세요.",
+  HOLD_ASSIGNMENT_REQUIRED:
+    "원주문 연결을 확인할 수 없습니다. 운영 책임자가 일반 보류 후속 담당자를 배정한 뒤 다시 처리하세요.",
+  INVALID_LINK: "만료·취소되었거나 이미 사용한 링크입니다. 관리자에게 재발급을 요청하세요.",
+  BARCODE_IMMUTABLE: "등록한 바코드의 대상·환산값은 변경할 수 없습니다. 새 라벨을 등록하세요.",
+  MANUAL_ENTRY_REASON_REQUIRED: "검색으로 실물을 확인한 대체 입력 사유를 기록하세요.",
+  SCAN_QUANTITY_MISMATCH: "스캔한 포장 환산 합계와 입력 수량이 다릅니다. 재스캔하거나 대체 사유를 기록하세요.",
+  WRONG_ITEM_SCAN: "선택한 품목과 바코드가 다릅니다. 실물을 확인하세요.",
+  WRONG_LOCATION_SCAN: "현재 단계의 위치와 바코드가 다릅니다. 출발·도착 위치를 확인하세요.",
+  VERSION_CONFLICT: "다른 작업자가 내용을 변경했습니다. 새로고침 후 잔량을 확인하세요.",
+  STOCK_SHORTAGE: "가용재고가 부족합니다. 가능 수량만 예약하거나 재입고 후 다시 예약하세요.",
+  INSUFFICIENT_STOCK: "가용재고가 부족합니다.",
+  SELF_APPROVAL: "요청자는 직접 승인할 수 없습니다. 다른 승인권자에게 인계하세요.",
+  SELF_APPROVAL_FORBIDDEN: "요청자는 직접 승인할 수 없습니다.",
+  LOCATION_LOCKED: "실사 또는 점검으로 잠긴 위치입니다. 다른 위치를 선택하세요.",
+  ROLE_FORBIDDEN: "현재 역할에는 이 작업 권한이 없습니다.",
+  WAREHOUSE_FORBIDDEN: "이 창고의 작업 권한이 없습니다.",
+  UNAUTHENTICATED: "세션이 만료되었습니다. 다시 로그인하세요.",
+  VALIDATION_ERROR: "입력한 수량·위치·잔량을 확인하세요.",
+  INVALID_INPUT: "입력값을 확인하세요.",
+  INVALID_STATE: "현재 업무 상태에서는 실행할 수 없습니다. 최신 작업과 선행 단계를 확인하세요.",
+  SCAN_MISMATCH: "선택한 품목 또는 위치와 스캔 결과가 다릅니다.",
+  IDEMPOTENCY_CONFLICT: "기존 확정과 내용이 다릅니다. 미확인 요청 결과를 먼저 확인하세요.",
+  PACK_LIMIT: "20명세를 초과합니다. 포장을 나누거나 선택 포장을 줄이세요.",
+  NOT_FOUND: "선택한 업무를 찾을 수 없습니다.",
+  ASSISTANT_UNCONFIGURED: "AI 연결이 설정되지 않았습니다. 빠른 질문은 시스템 조회로 답합니다.",
+  ASSISTANT_BUSY: "AI 도우미 요청이 많습니다. 잠시 후 다시 질문하세요.",
+  ASSISTANT_UNAVAILABLE: "AI 도우미에 연결할 수 없습니다. 잠시 후 다시 시도하세요.",
+  SERVICE_UNAVAILABLE: "일시적으로 연결할 수 없습니다. 처리 결과를 확인한 뒤 같은 요청으로 재시도하세요.",
+};
+export class ApiFailure extends Error {
+  constructor(
+    public status: number,
+    public code: string,
+    detail?: string,
+  ) {
+    super(messages[code] || detail || "처리할 수 없습니다. 현재 권한·잔량과 선행 작업을 확인하세요.");
+  }
+}
+export async function api<T>(url: string, method = "GET", body?: unknown): Promise<T> {
+  const response = await fetch(url, {
+    method,
+    credentials: "same-origin",
+    cache: "no-store",
+    ...(body === undefined ? {} : { headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    const err = data.error;
+    throw new ApiFailure(
+      response.status,
+      typeof err === "string" ? err : err?.code || "UNKNOWN",
+      typeof err?.message === "string" ? err.message : undefined,
+    );
+  }
+  return data;
+}
+export const message = (e: unknown) => (e instanceof Error ? e.message : "서버에 연결할 수 없습니다.");
+export const label = (row: Row | undefined) =>
+  row ? `${row.code ? row.code + " · " : ""}${row.name || row.code || "선택 항목"}` : "선택 항목";
+export const personLabel = (person: Person) =>
+  `${person.userId.startsWith("machine:") ? "자동 작업" : "사람"} · ${person.name}${person.userId.startsWith("machine:") && person.role === "supervisor" ? " · 승인 책임자" : ""}`;
+export const nameOf = (rows: Row[], id: string) => label(rows.find((row) => row.id === id));
+export const time = (value: string) => new Date(value).toLocaleString("ko-KR", { timeZone: "Asia/Seoul" });
+export function Field({ label: caption, children }: { label: string; children: ReactNode }) {
+  return (
+    <label className="v2-field">
+      <span>{caption}</span>
+      {children}
+    </label>
+  );
+}
+export function Select({
+  label: caption,
+  value,
+  onChange,
+  options,
+  required = false,
+  disabled = false,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: { id: string; label: string }[];
+  required?: boolean;
+  disabled?: boolean;
+}) {
+  const id = useId();
+  const [query, setQuery] = useState("");
+  const rows = options.filter(
+    (row) => row.id === value || row.label.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
+  );
+  const searchable = options.length > 8 || Boolean(query);
+  return (
+    <div className="v2-field">
+      <label htmlFor={id}>{caption}</label>
+      {searchable && (
+        <input
+          aria-label={`${caption} 검색`}
+          placeholder="코드·이름 검색 후 Enter"
+          value={query}
+          disabled={disabled}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              const first = rows.find((row) => row.id !== value) || rows[0];
+              if (first) onChange(first.id);
+            }
+          }}
+        />
+      )}
+      <select id={id} value={value} onChange={(e) => onChange(e.target.value)} required={required} disabled={disabled}>
+        <option value="">{options.length ? "선택하세요" : "선택할 항목이 없습니다"}</option>
+        {rows.map((row) => (
+          <option value={row.id} key={row.id}>
+            {row.label}
+          </option>
+        ))}
+      </select>
+      {searchable && <small>{rows.length}개 후보</small>}
+    </div>
+  );
+}
+export const options = (rows: Row[]) =>
+  rows.filter((row) => row.active !== false).map((row) => ({ id: row.id, label: label(row) }));
+export function Quantity({
+  value,
+  onChange,
+  max,
+  min = 1,
+  disabled = false,
+  label: caption = "처리 수량 (EA)",
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  max?: number;
+  min?: number;
+  disabled?: boolean;
+  label?: string;
+}) {
+  return (
+    <Field label={caption}>
+      <input
+        type="number"
+        disabled={disabled}
+        inputMode="numeric"
+        min={min}
+        max={max}
+        step="1"
+        value={Number.isFinite(value) ? value : 0}
+        required
+        onChange={(e) => onChange(Number(e.target.value))}
+      />
+    </Field>
+  );
+}
+export function Submit({ children, disabled = false }: { children: ReactNode; disabled?: boolean }) {
+  return (
+    <button className="v2-primary" type="submit" disabled={disabled}>
+      {children}
+    </button>
+  );
+}
+export function Note({ children }: { children: ReactNode }) {
+  return <p className="v2-note">{children}</p>;
+}
+export function downloadCsv(filename: string, rows: unknown[][]) {
+  const value = rows
+    .map((row) =>
+      row
+        .map((cell) => {
+          let text = String(cell ?? "");
+          if (/^[\s]*[=+@-]/.test(text)) text = "'" + text;
+          return '"' + text.replaceAll('"', '""') + '"';
+        })
+        .join(","),
+    )
+    .join("\r\n");
+  const url = URL.createObjectURL(new Blob(["\ufeff", value], { type: "text/csv;charset=utf-8" }));
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  anchor.click();
+  URL.revokeObjectURL(url);
+}
+export function printSheet(title: string, heading: string, rows: unknown[][], barcode?: string) {
+  const popup = window.open("", "_blank", "width=900,height=700");
+  if (!popup) return;
+  const escape = (v: unknown) =>
+    String(v ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;");
+  popup.document.write(
+    `<!doctype html><html lang="ko"><head><title>${escape(title)}</title><style>body{font:15px sans-serif;padding:24px}table{width:100%;border-collapse:collapse}td{border:1px solid #aaa;padding:8px}small{display:block;margin-bottom:20px}</style></head><body><h1>${escape(title)}</h1><small>${escape(heading)}</small>${barcode ? barcodeSvg(barcode) : ""}<table>${rows.map((row) => `<tr>${row.map((cell) => `<td>${escape(cell)}</td>`).join("")}</tr>`).join("")}</table></body></html>`,
+  );
+  popup.document.close();
+  popup.focus();
+  popup.print();
+}

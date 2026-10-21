@@ -1,0 +1,129 @@
+{
+  "status": "passed_packaging_smoke",
+  "sourceCommit": "42331d65f7d03f966736ffadcaee6cc03bf54efa",
+  "modes": [
+    {
+      "mode": "default",
+      "readinessPassed": true,
+      "aggregateHealthcheckPassed": false,
+      "workers": [],
+      "stop": {
+        "exitCode": 143,
+        "oomKilled": false,
+        "elapsedMs": 164,
+        "running": false
+      }
+    },
+    {
+      "mode": "one_worker",
+      "readinessPassed": true,
+      "aggregateHealthcheckPassed": true,
+      "workers": [
+        {
+          "slot": "0",
+          "pool": "5",
+          "operationsCredentialsPresent": false
+        }
+      ],
+      "stop": {
+        "exitCode": 0,
+        "oomKilled": false,
+        "elapsedMs": 181,
+        "running": false
+      }
+    },
+    {
+      "mode": "two_workers",
+      "readinessPassed": true,
+      "aggregateHealthcheckPassed": true,
+      "workers": [
+        {
+          "slot": "0",
+          "pool": "3",
+          "operationsCredentialsPresent": false
+        },
+        {
+          "slot": "1",
+          "pool": "2",
+          "operationsCredentialsPresent": false
+        }
+      ],
+      "stop": {
+        "exitCode": 0,
+        "oomKilled": false,
+        "elapsedMs": 349,
+        "running": false
+      }
+    }
+  ],
+  "limits": {
+    "webCpus": 4,
+    "webMemoryBytes": 34359738368,
+    "commonEffectiveAncestorVerified": false,
+    "postgresLimitsVerified": false
+  },
+  "G3Passed": false,
+  "imageId": "sha256:e351063cc92994b83f0038f7d2595ad2f3e7461583dc94b2049cddceccaaaf77",
+  "imageUser": "node",
+  "defaultCommand": [
+    "node",
+    "server.js"
+  ],
+  "imageAudit": {
+    "files": 1982,
+    "symlinks": 1,
+    "forbiddenFiles": 0,
+    "buildId": "f_DWG69-PYlFqbx_VooP5",
+    "deployFiles": [
+      "cluster-healthcheck.mjs",
+      "cluster-launcher.mjs",
+      "cluster-readiness.mjs",
+      "cluster-request-lifecycle.mjs",
+      "cluster-supervisor.mjs",
+      "cluster-worker-preload.mjs",
+      "web-process-options.mjs"
+    ],
+    "supervisorSha256": "bbfe4b97e935a77f842d229354ca12c053f3d1442bebd5a935fd974bfe147192",
+    "runtimeSecretKeys": [],
+    "externalSymlinks": 0
+  },
+  "saturationReplacement": {
+    "readOnlyRequests": 10,
+    "configuredPoolMaximum": 5,
+    "saturatedToFive": true,
+    "maximumSampledApplicationBackends": 5,
+    "sampleIntervalMs": 25,
+    "samples": 88,
+    "observedAbsoluteCapExceeded": false,
+    "absoluteCapProven": false,
+    "replacementHealthy": true,
+    "responseStatusCounts": {
+      "0": 6,
+      "200": 4
+    }
+  },
+  "finishedAt": "2026-10-21T02:53:44.023Z",
+  "secretScan": {
+    "knownPrivateBindingValuesChecked": 35,
+    "matchedPrivateBindingValues": 0,
+    "regularFilesScanned": 7713,
+    "externalSymlinks": 0,
+    "method": "Final container filesystem byte scan against private runtime and test API binding values; values and matching content never published. Not an exhaustive unknown-secret proof."
+  },
+  "sourceArchiveSha256": "de4660c3cfa88770df07d74ecc7d2a0203408d73643a3b1feb6e29525a7e492a",
+  "dockerfileSha256": "d29d5bf28a688345904e64e22776d200700f3112a0397f530fef2ea1db6bf9f9",
+  "packagingBuildSeparateFromVerifiedStandalone": true,
+  "verifiedSourceStandaloneBuildId": "ygoExTu2jqOW7riRXrCxw",
+  "defaultDeploymentChanged": false,
+  "productionDeploymentQualified": false,
+  "composeDeploymentExecuted": false,
+  "limitations": [
+    "Packaging smoke on schema20/source42331d6 only; later schema21 source changes are not included.",
+    "Actual image rebuild has a distinct build ID from the earlier standalone full verification; no image E2E suite was run.",
+    "Pool saturation/replacement used only read-only workflow GET requests, not physical stock mutation.",
+    "25ms sampling observed at most5 live application backends across88samples; no instantaneous absolute cap proof.",
+    "Web container had4CPU/32GiB limits, but PostgreSQL and common ancestor placement were unproven. No throughput or G3 claim.",
+    "The production Compose deployment and HTTPS/reverse proxy were not launched.",
+    "Initial qualification-only filename and internal-network setup failures were corrected and preserved separately."
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "verified_at": "2026-10-21T06:13:40.794532+00:00",
+  "status": "local_deployment_check_passed",
+  "public_deployment": "pending_neon_sql_execution_then_main_deployment",
+  "application_source": "2aa2774",
+  "application_build": "Lb3NKb1lCgfxlUs60Wy1T",
+  "migration_count": 22,
+  "sql": "deploy/neon-field-operations.sql",
+  "sql_sha256": "42ce822c28c37505dbc96d3b2f219662801f1f6f1b0e06aaa9bede4c8ddfe6ec",
+  "verification_command": "node scripts/verify-neon-field-operations.mjs",
+  "verification_log": "/tmp/wms-field-operations-deployment-check-final.log",
+  "verification_log_sha256": "29fd95f79a7bda89dac89db59808a55dacaff467b998dbcb5d8f4b599a1ca2d3",
+  "checks": [
+    "Fresh isolated PostgreSQL17 with nonsuperuser CREATEROLE DB owner",
+    "Existing migration10 demo upgraded through canonical22",
+    "All original account/password/document/stock/ledger and other legacy rows preserved",
+    "Separate operational test warehouse, five location types, partner/destination/item/barcodes and original-user grants",
+    "Rerun preserves every row",
+    "Unknown migration history and wrong database refused",
+    "Application role remains restricted",
+    "Original admin login and v2 page accessible",
+    "Actual receipt10 results in Q10 in the separate test warehouse"
+  ],
+  "external_admin_connection_available": false,
+  "github_actions_used": false
+}

@@ -1,0 +1,346 @@
+{
+  "run_id": "c2267197-a92a-4374-bae0-fc0b3b920199",
+  "generated_at": "2026-10-21T00:55:57.203295+00:00",
+  "original_report_generated_at": "2026-10-21T00:51:06.554Z",
+  "execution": "interrupted",
+  "overall_verdict": "failed",
+  "exact_25_minute_qualification": "failed",
+  "fallback_35_minute_drain": "did_not_finish_before_deadline",
+  "source_report": "artifacts/v2-congestion-schema20-20261021-full/c2267197-a92a-4374-bae0-fc0b3b920199.json",
+  "source_report_sha256": "5b57dc14245406facf75a56990798c20743ce850a115f0ffb304f3a66c3175bd",
+  "checkpoint": "artifacts/v2-congestion-schema20-20261021-full/at-25-minutes.json",
+  "checkpoint_sha256": "3d04edf68073e9098fa387a9e59c6b12d4f3a6801e52100149656bcc1aac60f4",
+  "evidence_index": "artifacts/v2-congestion-schema20-20261021-full/evidence-index.json",
+  "evidence_index_sha256": "f6e7facd68b9561be84bea38cfbd1b8dee69bb5e283737ab6c5b6c0d7451f96f",
+  "build_id": "2rKXP8Qbi54h8gu6e8KB5",
+  "verified_source_commit": "54ce702",
+  "measured_start": "2026-10-21T00:15:49.717Z",
+  "exact25_deadline": "2026-10-21T00:40:49.717Z",
+  "fallback35_deadline": "2026-10-21T00:50:49.717Z",
+  "companies": [
+    {
+      "company_id": "93584d6d-e9dc-4bab-a84d-a849f4158da6",
+      "verdict": "failed",
+      "integrity_passed": false,
+      "original_report_boundary": 7861,
+      "original_final_reconciliation": {
+        "status": "completed",
+        "boundary": 7861,
+        "independent_match": false,
+        "read_retries": 0
+      },
+      "difference_kinds": {
+        "original_quantity": 2484
+      },
+      "source_quantity_mismatches_in_original_quantity_differences": 0,
+      "original_quantity_unfinished_lines": 2484,
+      "incomplete_operations": 1068,
+      "delivered_unique_events": 2700,
+      "completed_shipments": 895,
+      "measured_orders": 1890,
+      "completed_measured_receipts": 484,
+      "measured_receipts": 540,
+      "technical_error_count": 84,
+      "maximum_delivery_lateness_ms": 2724,
+      "legacy_quality_checks": {
+        "physical_confirmation_p95": {
+          "observed_ms": 2692,
+          "maximum_ms": 1500,
+          "samples": 4074
+        },
+        "external_acceptance_p95": {
+          "observed_ms": 1820,
+          "maximum_ms": 1000,
+          "samples": 2699
+        },
+        "external_application_p95": {
+          "observed_ms": 841005,
+          "maximum_ms": 5000,
+          "samples": 2381
+        },
+        "technical_failure_rate": {
+          "numerator": 51,
+          "denominator": 18368,
+          "observed": 0.0027765679442508713,
+          "strict_maximum": 0.001
+        },
+        "recovery": {
+          "observed_ms": 600005,
+          "maximum_ms": 600000,
+          "unresolved": 1068
+        }
+      },
+      "exact25_checkpoint": {
+        "sample_delay_ms": 331,
+        "source_accepted": 2699,
+        "operation_incomplete": 1394,
+        "physical_incomplete": 574,
+        "normal_acceptance": {
+          "p95_ms": 1986,
+          "maximum_ms": 1000,
+          "samples": 1199,
+          "met": false
+        },
+        "normal_technical_failures": {
+          "numerator": 33,
+          "denominator": 13103,
+          "rate": 0.0025185072120888345,
+          "strict_maximum": 0.001,
+          "met": false
+        },
+        "received_unresolved": 218,
+        "source_unresolved": 2,
+        "peak_recovery_met": false,
+        "profile_quality_met": false
+      },
+      "final_fixed_peak_recovery": {
+        "received_backlog": {
+          "count": 959,
+          "unresolved": 0,
+          "late_ids": 215,
+          "met": false
+        },
+        "source_backlog": {
+          "count": 2,
+          "unresolved": 0,
+          "late_ids": 2,
+          "met": false
+        }
+      },
+      "post_run_export": {
+        "company_id": "93584d6d-e9dc-4bab-a84d-a849f4158da6",
+        "report_boundary": 7861,
+        "boundary": 7874,
+        "snapshot_basis": "post_run_comparison_original_snapshot_unavailable",
+        "ledger_rows": 15145,
+        "pages": 31,
+        "snapshot_sha256": "05fb7374400987d8e650aca86d91664cc7cc634b1f1241f082501947d6fd065e",
+        "ledger_sha256": "96a04cdf607a8c649ca538eddaab5c966fadd455fd9420727640af2dd9f66e98",
+        "client_independent_reconciliation": {
+          "status": "completed",
+          "boundary": 7861,
+          "independent_match": false,
+          "read_retries": 0
+        }
+      },
+      "independent_physical_conservation": {
+        "company_id": "93584d6d-e9dc-4bab-a84d-a849f4158da6",
+        "original_report_boundary": 7861,
+        "snapshot_basis": "post_run_comparison_original_snapshot_unavailable",
+        "boundary": 7874,
+        "ledger_boundary": 7874,
+        "ledger_rows": 15145,
+        "physical_stock_ledger_command_delta_conservation": true,
+        "difference_count": 0,
+        "differences": []
+      }
+    },
+    {
+      "company_id": "04ebcf24-3c8c-451a-8b5c-eaeea0dbe78b",
+      "verdict": "failed",
+      "integrity_passed": false,
+      "original_report_boundary": 7883,
+      "original_final_reconciliation": {
+        "status": "completed",
+        "boundary": 7883,
+        "independent_match": false,
+        "read_retries": 0
+      },
+      "difference_kinds": {
+        "original_quantity": 2567
+      },
+      "source_quantity_mismatches_in_original_quantity_differences": 0,
+      "original_quantity_unfinished_lines": 2567,
+      "incomplete_operations": 1061,
+      "delivered_unique_events": 2700,
+      "completed_shipments": 888,
+      "measured_orders": 1890,
+      "completed_measured_receipts": 490,
+      "measured_receipts": 540,
+      "technical_error_count": 82,
+      "maximum_delivery_lateness_ms": 2675,
+      "legacy_quality_checks": {
+        "physical_confirmation_p95": {
+          "observed_ms": 2738,
+          "maximum_ms": 1500,
+          "samples": 4067
+        },
+        "external_acceptance_p95": {
+          "observed_ms": 1818,
+          "maximum_ms": 1000,
+          "samples": 2699
+        },
+        "external_application_p95": {
+          "observed_ms": 810976,
+          "maximum_ms": 5000,
+          "samples": 2414
+        },
+        "technical_failure_rate": {
+          "numerator": 51,
+          "denominator": 18337,
+          "observed": 0.002781261929432295,
+          "strict_maximum": 0.001
+        },
+        "recovery": {
+          "observed_ms": 600005,
+          "maximum_ms": 600000,
+          "unresolved": 1061
+        }
+      },
+      "exact25_checkpoint": {
+        "sample_delay_ms": 666,
+        "source_accepted": 2699,
+        "operation_incomplete": 1398,
+        "physical_incomplete": 602,
+        "normal_acceptance": {
+          "p95_ms": 1993,
+          "maximum_ms": 1000,
+          "samples": 1199,
+          "met": false
+        },
+        "normal_technical_failures": {
+          "numerator": 33,
+          "denominator": 13071,
+          "rate": 0.0025246729400963965,
+          "strict_maximum": 0.001,
+          "met": false
+        },
+        "received_unresolved": 194,
+        "source_unresolved": 2,
+        "peak_recovery_met": false,
+        "profile_quality_met": false
+      },
+      "final_fixed_peak_recovery": {
+        "received_backlog": {
+          "count": 950,
+          "unresolved": 0,
+          "late_ids": 192,
+          "met": false
+        },
+        "source_backlog": {
+          "count": 2,
+          "unresolved": 0,
+          "late_ids": 2,
+          "met": false
+        }
+      },
+      "post_run_export": {
+        "company_id": "04ebcf24-3c8c-451a-8b5c-eaeea0dbe78b",
+        "report_boundary": 7883,
+        "boundary": 7883,
+        "snapshot_basis": "matches_original_report_boundary",
+        "ledger_rows": 15039,
+        "pages": 31,
+        "snapshot_sha256": "996841374defc593616895e01deef7084d156690e35920ba3a2a7d5e4e712ae5",
+        "ledger_sha256": "f47053a8bfedabe25f0cdc9ef61078fda45cf73e402cf3bc682256397ca2f4a2",
+        "client_independent_reconciliation": {
+          "status": "completed",
+          "boundary": 7883,
+          "independent_match": false,
+          "read_retries": 0
+        }
+      },
+      "independent_physical_conservation": {
+        "company_id": "04ebcf24-3c8c-451a-8b5c-eaeea0dbe78b",
+        "original_report_boundary": 7883,
+        "snapshot_basis": "matches_original_report_boundary",
+        "boundary": 7883,
+        "ledger_boundary": 7883,
+        "ledger_rows": 15039,
+        "physical_stock_ledger_command_delta_conservation": true,
+        "difference_count": 0,
+        "differences": []
+      }
+    }
+  ],
+  "post_client_quiet": {
+    "client_absent": true,
+    "consecutive_stable_seconds": 10,
+    "sample_count": 11,
+    "first_sample": {
+      "at": "2026-10-21T00:54:13.571Z",
+      "versions": [
+        {
+          "tenant_id": "04ebcf24-3c8c-451a-8b5c-eaeea0dbe78b",
+          "warehouse_id": "e54d38a9-88d2-462a-b091-21be3ca5c0e5",
+          "version": 7883
+        },
+        {
+          "tenant_id": "93584d6d-e9dc-4bab-a84d-a849f4158da6",
+          "warehouse_id": "fe6a3ffb-02cc-4e6e-b73f-2fda9bbb64fc",
+          "version": 7874
+        }
+      ],
+      "nonidle_application_database_sessions": 0,
+      "consecutive_stable_seconds": 0
+    },
+    "last_sample": {
+      "at": "2026-10-21T00:54:23.613Z",
+      "versions": [
+        {
+          "tenant_id": "04ebcf24-3c8c-451a-8b5c-eaeea0dbe78b",
+          "warehouse_id": "e54d38a9-88d2-462a-b091-21be3ca5c0e5",
+          "version": 7883
+        },
+        {
+          "tenant_id": "93584d6d-e9dc-4bab-a84d-a849f4158da6",
+          "warehouse_id": "fe6a3ffb-02cc-4e6e-b73f-2fda9bbb64fc",
+          "version": 7874
+        }
+      ],
+      "nonidle_application_database_sessions": 0,
+      "consecutive_stable_seconds": 10
+    },
+    "limitation": "Observed unchanged workflow versions and no non-idle application DB sessions for10consecutive1s samples after client exit; later export rechecks versions. This does not rewrite the original report boundary."
+  },
+  "runtime_stop": {
+    "runtime_pid": 590313,
+    "stop_signal": "SIGTERM",
+    "signal_sent_at": "2026-10-21T00:55:09.319441+00:00",
+    "observed_at": "2026-10-21T00:55:09.569877+00:00",
+    "observed_state": "absent",
+    "client_pid": 591018,
+    "quiet_evidence": "/tmp/wms-official25-schema20-preparation-20261021/post-client-quiet.json",
+    "exports_completed_before_stop": true,
+    "original_sqlite_resumed": false
+  },
+  "shared_slot_released": true,
+  "preservation": {
+    "prior_runs_preserved": true,
+    "official_client_resumed": false,
+    "original_report_changed": false,
+    "private_bindings_printed": false,
+    "eight_hour_profile_started": false
+  },
+  "limitation": "Company0 original report-boundary raw snapshot is unavailable; exported later snapshot7874 is only a post-run comparison. Company1 raw snapshot exactly matches original report boundary7883. Independent physical conservation does not convert unfinished originals or failed performance/recovery to passing.",
+  "technical_attempt_classification": {
+    "categories": [
+      {
+        "path": "/api/v2/integration/process",
+        "method": "POST",
+        "status": 0,
+        "http_status": null,
+        "response_body_complete": 0,
+        "count": 165,
+        "first_at": "2026-10-21T00:26:04.803Z",
+        "last_at": "2026-10-21T00:51:01.604Z",
+        "minimum_latency_ms": 15000,
+        "maximum_latency_ms": 15250
+      },
+      {
+        "path": "/api/v2/workflow",
+        "method": "GET",
+        "status": 0,
+        "http_status": null,
+        "response_body_complete": 0,
+        "count": 1,
+        "first_at": "2026-10-21T00:50:49.719Z",
+        "last_at": "2026-10-21T00:50:49.719Z",
+        "minimum_latency_ms": 731,
+        "maximum_latency_ms": 731
+      }
+    ],
+    "basis": "Original durable client API observations, full seed/measured/fallback execution. status0 means aborted/network unavailable; no complete HTTP response. Counts are attempts, not unique business events."
+  },
+  "checkpoint_interpretation": "Exact25 checkpoint unresolved counts describe client knowledge at sample time. Later authoritative server processed_at timestamps resolve some already-on-time events; final fixed-cohort late counts215/192 plus source2/2 remain failures."
+}

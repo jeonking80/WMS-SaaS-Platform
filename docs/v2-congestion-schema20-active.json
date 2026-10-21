@@ -1,0 +1,95 @@
+{
+  "historical_prior_runs_unchanged": true,
+  "run_id": "c2267197-a92a-4374-bae0-fc0b3b920199",
+  "profile": "congestion",
+  "status": "interrupted",
+  "qualification_pending_final_report": false,
+  "observed_at": "2026-10-21T00:51:22.785490+00:00",
+  "runs": [
+    {
+      "id": "c2267197-a92a-4374-bae0-fc0b3b920199:0",
+      "status": "paused",
+      "seed_start_ms": 1792541725422,
+      "measured_start_ms": 1792541749717,
+      "measured_elapsed_ms": 2132993,
+      "control_retry": null,
+      "peak_cohort": {
+        "received": 959,
+        "source": 2,
+        "excluded": 0,
+        "frozen_at_ms": 1792542651626
+      }
+    },
+    {
+      "id": "c2267197-a92a-4374-bae0-fc0b3b920199:1",
+      "status": "paused",
+      "seed_start_ms": 1792541725553,
+      "measured_start_ms": 1792541749717,
+      "measured_elapsed_ms": 2132993,
+      "control_retry": {
+        "status": "retry_wait",
+        "attempts": 1,
+        "next_at": 1792543850966.018,
+        "total_failures": 1,
+        "last_failure_at_ms": 1792543849720,
+        "last_failure": {
+          "status": 503,
+          "code": "NETWORK_UNAVAILABLE"
+        }
+      },
+      "peak_cohort": {
+        "received": 950,
+        "source": 2,
+        "excluded": 0,
+        "frozen_at_ms": 1792542653628
+      }
+    }
+  ],
+  "statuses": [
+    [
+      "command",
+      "done",
+      10681
+    ],
+    [
+      "command",
+      "superseded",
+      172
+    ],
+    [
+      "command",
+      "unsent",
+      1644
+    ],
+    [
+      "event",
+      "done",
+      4995
+    ],
+    [
+      "event",
+      "expected_business_rejected",
+      120
+    ],
+    [
+      "event",
+      "unconfirmed",
+      485
+    ]
+  ],
+  "measured_source": {
+    "planned": 5400,
+    "accepted": 5400,
+    "applied": 4795,
+    "expected_rejected": 120,
+    "in_flight": 485
+  },
+  "technical_or_429_attempts": 166,
+  "http429_attempts": 0,
+  "final_report_present": true,
+  "verdict": "failed",
+  "superseded_by": "docs/v2-congestion-schema20-final-recovery.json",
+  "runtime_stopped": true,
+  "shared_slot_released": true,
+  "running_snapshot_is_historical": true
+}

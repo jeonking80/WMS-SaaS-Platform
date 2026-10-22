@@ -90,7 +90,7 @@ export default function Stock({role = "viewer", initialFilters = {}}: {role?: st
       {!pending && !error && stock.length === 0 ? <p>등록된 재고가 없습니다.</p> : <table className="w-full min-w-[680px] text-left text-sm [&_th]:whitespace-nowrap [&_th]:pb-3 [&_th]:pr-4 [&_td]:pr-4">
         <thead><tr><th>창고</th><th>로케이션</th><th>품목 코드</th><th>품목명</th><th>수량</th><th>작업</th></tr></thead>
         <tbody>{stock.map(row => <tr className="border-t" key={`${row.location_id}:${row.item_id}`}>
-          <td className="py-3">{row.warehouse_name}</td><td>{row.location_code}</td><td>{row.item_code}</td><td>{row.item_name}</td><td>{row.quantity}</td><td><button className="text-blue-800 underline" onClick={()=>{setSelection(row);setLedgerPage(1)}} aria-label={`${row.item_code} · ${row.location_code} 변동 이력 보기`}>이력 보기</button>{role!=="viewer"&&<Link className="ml-3 text-blue-800 underline" href={`/dashboard/documents?kind=OUTBOUND&item_id=${row.item_id}&warehouse_id=${row.warehouse_id}&location_id=${row.location_id}`}>출고 작성</Link>}</td>
+          <td className="py-3">{row.warehouse_name}</td><td>{row.location_code}</td><td>{row.item_code}</td><td>{row.item_name}</td><td>{row.quantity}</td><td><button className="text-blue-800 underline" onClick={()=>{setSelection(row);setLedgerPage(1)}} aria-label={`${row.item_code} · ${row.location_code} 변동 이력 보기`}>이력 보기</button>{role!=="viewer"&&<Link prefetch={false} className="ml-3 text-blue-800 underline" href={`/dashboard/documents?kind=OUTBOUND&item_id=${row.item_id}&warehouse_id=${row.warehouse_id}&location_id=${row.location_id}`}>출고 작성</Link>}</td>
         </tr>)}</tbody>
       </table>}
       <Pager value={stockPagination} onChange={setStockPage} pending={pending}/>
@@ -102,7 +102,7 @@ export default function Stock({role = "viewer", initialFilters = {}}: {role?: st
       {!pending && !error && entries.length === 0 ? <p>재고 변동 이력이 없습니다.</p> : <table className="w-full min-w-[680px] text-left text-sm [&_th]:whitespace-nowrap [&_th]:pb-3 [&_th]:pr-4 [&_td]:pr-4">
         <thead><tr><th>처리 시각</th><th>전표 번호</th><th>창고</th><th>로케이션</th><th>품목</th><th>변동 수량</th><th>작업</th><th>작업자</th></tr></thead>
         <tbody>{entries.map(row => <tr className="border-t" key={row.id}>
-          <td className="py-3">{seoulTime(row.created_at)}</td><td><Link className="text-blue-800 underline" href={`/dashboard/history?id=${row.document_id}`}>{row.document_number || "전표 상세 보기"}</Link></td><td>{row.warehouse_name}</td><td>{row.location_code}</td><td>{row.item_code} · {row.item_name}</td><td>{row.quantity_delta.startsWith("-") || row.quantity_delta === "0" ? row.quantity_delta : `+${row.quantity_delta}`}</td><td>{{INBOUND:"입고",OUTBOUND:"출고",TRANSFER:"이동",REVERSAL:"확정 취소"}[row.human_kind??""]??"재고 변동"}</td><td>{row.actor_name||"작업자 정보 없음"}</td>
+          <td className="py-3">{seoulTime(row.created_at)}</td><td><Link prefetch={false} className="text-blue-800 underline" href={`/dashboard/history?id=${row.document_id}`}>{row.document_number || "전표 상세 보기"}</Link></td><td>{row.warehouse_name}</td><td>{row.location_code}</td><td>{row.item_code} · {row.item_name}</td><td>{row.quantity_delta.startsWith("-") || row.quantity_delta === "0" ? row.quantity_delta : `+${row.quantity_delta}`}</td><td>{{INBOUND:"입고",OUTBOUND:"출고",TRANSFER:"이동",REVERSAL:"확정 취소"}[row.human_kind??""]??"재고 변동"}</td><td>{row.actor_name||"작업자 정보 없음"}</td>
         </tr>)}</tbody>
       </table>}
       <Pager value={ledgerPagination} onChange={setLedgerPage} pending={pending}/>

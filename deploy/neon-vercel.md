@@ -25,6 +25,10 @@ node scripts/verify-neon-init.mjs
 Vercel 웹 앱에는 neondb_owner 또는 wms_migrator 연결을 넣지 않는다. DATABASE_URL은 wms_app, BETTER_AUTH_SECRET은 별도 난수, BETTER_AUTH_URL은 실제 HTTPS 배포 주소를 사용한다. Neon의 pooled 연결은 웹용, direct 연결은 마이그레이션용으로 구분한다. Vercel 서버리스의 인증 요청 제한 저장 방식과 DB 유휴 복귀는 실제 연결 후 검증해야 한다.
 
 
+## 서버 지역
+
+Neon DB는 AWS Asia Pacific 1 (Singapore)에 있다. 저장소 루트의 `vercel.json`이 Vercel 서버 함수 지역을 같은 싱가포르(`sin1`)로 고정한다. 보호 API 한 번은 로그인 확인·창고 권한·조회·요청 기록 트랜잭션으로 DB를 20~30회 순서대로 오가므로, 서버와 DB가 다른 대륙(기본값 미국 동부 `iad1`)에 있으면 왕복 지연이 그 횟수만큼 곱해져 API 하나가 수 초씩 걸린다. Neon 지역을 옮기면 `vercel.json`의 지역도 같이 바꾼다.
+
 ## 초기 앱 계정·데모 데이터
 
 빌드된 앱이 있는 작업공간에서 다음 명령으로 비공개 파일을 생성한다.

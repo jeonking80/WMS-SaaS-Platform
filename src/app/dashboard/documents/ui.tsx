@@ -759,7 +759,7 @@ export default function Documents({
           </button>
         </div>
       </header>
-      {(converted || (warehouses.length>0&&!canCreateLegacy)) && <section role="status" className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-950"><strong>현장 운영 v2 전환 창고 · 기존 전표 조회 전용</strong><p className="mt-2 text-sm">기존 번호·확정 시각·원장 이력은 보존합니다. 전환 창고에서는 새 전표, 확정과 역분개를 실행할 수 없습니다. 신규 업무와 연결된 정정은 현장 운영에서 처리하세요.</p><Link className="mt-2 inline-block font-semibold underline" href="/dashboard/v2">현장 운영 v2로 이동</Link></section>}
+      {(converted || (warehouses.length>0&&!canCreateLegacy)) && <section role="status" className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-blue-950"><strong>현장 운영 v2 전환 창고 · 기존 전표 조회 전용</strong><p className="mt-2 text-sm">기존 번호·확정 시각·원장 이력은 보존합니다. 전환 창고에서는 새 전표, 확정과 역분개를 실행할 수 없습니다. 신규 업무와 연결된 정정은 현장 운영에서 처리하세요.</p><Link prefetch={false} className="mt-2 inline-block font-semibold underline" href="/dashboard/v2">현장 운영 v2로 이동</Link></section>}
       {error && (
         <p
           role="alert"

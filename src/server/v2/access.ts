@@ -54,26 +54,19 @@ export async function requireV2Access(
     return;
   }
   await withTenant(identity.tenant.id, async (client) => {
-    const result = await client.query<{ role: Role }>(
-      `SELECT m.role FROM memberships m JOIN tenants t ON t.id=m.tenant_id
+    // Membership and the warehouse grant are read in one statement to save a database round trip.
+    const result = await client.query<{ role: Role; granted: boolean }>(
+      `SELECT m.role, $3::uuid IS NULL OR EXISTS(
+         SELECT 1 FROM v2_warehouse_grants g JOIN warehouses w ON w.tenant_id=g.tenant_id AND w.id=g.warehouse_id
+          WHERE g.tenant_id=$1 AND g.user_id=$2 AND g.warehouse_id=$3) AS granted
+       FROM memberships m JOIN tenants t ON t.id=m.tenant_id
       WHERE m.tenant_id=$1 AND m.user_id=$2 AND m.status='active' AND t.active`,
-      [identity.tenant.id, identity.user.id],
+      [identity.tenant.id, identity.user.id, warehouseId],
     );
     const current = result.rows[0];
     if (!current) throw new AccessError(403, "MEMBERSHIP_REQUIRED");
     if (!permitted(current.role, permission)) throw new AccessError(403, "ROLE_FORBIDDEN");
-    if (
-      warehouseId !== null &&
-      !(
-        await client.query(
-          `SELECT 1 FROM v2_warehouse_grants g JOIN warehouses w ON w.tenant_id=g.tenant_id AND w.id=g.warehouse_id
-      WHERE g.tenant_id=$1 AND g.user_id=$2 AND g.warehouse_id=$3`,
-          [identity.tenant.id, identity.user.id, warehouseId],
-        )
-      ).rowCount
-    ) {
-      throw new AccessError(403, "WAREHOUSE_FORBIDDEN");
-    }
+    if (!current.granted) throw new AccessError(403, "WAREHOUSE_FORBIDDEN");
   });
   if (warehouseId !== null) recordAuthorizedWarehouse(identity.tenant.id, warehouseId);
 }

@@ -60,6 +60,7 @@ const menu = [
   },
 ];
 const tabs = menu.flatMap((section) => section.tabs);
+const catalogKinds = ["items", "locations", "partners", "destinations", "barcodes"];
 // Approval and count views moved from 재고 to their own 실사·승인 menu; old links keep working.
 const auditViews = ["approval", "count"];
 export default function Operations({ identity }: { identity: Identity }) {
@@ -91,8 +92,27 @@ export default function Operations({ identity }: { identity: Identity }) {
   const pendingRef = useRef<Pending | null>(null),
     generation = useRef(0),
     masterGeneration = useRef(0),
+    // Complete catalogs already loaded in this tab, per warehouse. Switching back shows them at once
+    // and refreshes in the background; a partial catalog is never stored or shown.
+    catalogs = useRef(new Map<string, Record<string, Row[]>>()),
     lock = useRef(false);
+  const loadCatalog = useCallback(async (id: string) => {
+    const rows = await Promise.all(
+      catalogKinds.map(
+        async (kind) =>
+          [kind, await loadAllMasters<Row>(`/api/v2/masters/${kind}?warehouse_id=${encodeURIComponent(id)}`)] as const,
+      ),
+    );
+    const catalog = Object.fromEntries(rows);
+    catalogs.current.set(id, catalog);
+    return catalog;
+  }, []);
   const storage = `wms-v2:${identity.tenant.id}:${identity.user.id}:request`;
+  useEffect(() => {
+    // Remember only a warehouse the server listed for this user, so the next visit can start loading it at once.
+    if (warehouse && runtime?.warehouses.some((w) => w.id === warehouse))
+      localStorage.setItem(`${storage}:last-warehouse`, warehouse);
+  }, [warehouse, runtime, storage]);
   const terminal = useTerminalLock(runtime?.idleLockMinutes || 15, storage);
   const persist = useCallback(
     (value: Pending | null) => {
@@ -105,6 +125,16 @@ export default function Operations({ identity }: { identity: Identity }) {
   );
   useEffect(() => {
     let current = true;
+    // A linked warehouse starts loading together with the identity context instead of after it.
+    // The server re-checks the grant on every call; a wrong guess is corrected below.
+    const linked = new URLSearchParams(window.location.search).get("warehouse_id") || "";
+    const last = localStorage.getItem(`${storage}:last-warehouse`) || "";
+    let guessed = "";
+    const candidate = linked || last;
+    if (/^[0-9a-f-]{36}$/i.test(candidate) && !localStorage.getItem(storage)) {
+      guessed = candidate;
+      setWarehouse(candidate);
+    }
     api<Runtime>("/api/v2/identity/context")
       .then((data) => {
         if (!current) return;
@@ -122,11 +152,13 @@ export default function Operations({ identity }: { identity: Identity }) {
         } else {
           localStorage.removeItem(storage);
           const requestedWarehouse = new URLSearchParams(window.location.search).get("warehouse_id");
-          setWarehouse(
+          const chosen =
             data.warehouses.find((w) => w.id === requestedWarehouse)?.id ||
-              data.warehouses.find((w) => w.active !== false)?.id ||
-              "",
-          );
+            (!requestedWarehouse && data.warehouses.find((w) => w.id === last && w.active !== false)?.id) ||
+            data.warehouses.find((w) => w.active !== false)?.id ||
+            "";
+          if (guessed && chosen !== guessed) setError("");
+          setWarehouse(chosen);
         }
       })
       .catch((e) => setError(message(e)))
@@ -154,8 +186,9 @@ export default function Operations({ identity }: { identity: Identity }) {
   }, [warehouse]);
   useEffect(() => {
     setSnapshot(null);
-    setMasters({});
-    setMastersLoading(Boolean(warehouse));
+    const cached = warehouse ? catalogs.current.get(warehouse) : undefined;
+    setMasters(cached ?? {});
+    setMastersLoading(Boolean(warehouse) && !cached);
     setSelected({ receipt: "", order: "", return: "" });
     const catalogRevision = ++masterGeneration.current;
     if (!warehouse) return;
@@ -183,17 +216,9 @@ export default function Operations({ identity }: { identity: Identity }) {
     }
     void refresh();
     let current = true;
-    Promise.all(
-      ["items", "locations", "partners", "destinations", "barcodes"].map(
-        async (kind) =>
-          [
-            kind,
-            await loadAllMasters<Row>(`/api/v2/masters/${kind}?warehouse_id=${encodeURIComponent(warehouse)}`),
-          ] as const,
-      ),
-    )
-      .then((rows) => {
-        if (current && catalogRevision === masterGeneration.current) setMasters(Object.fromEntries(rows));
+    loadCatalog(warehouse)
+      .then((catalog) => {
+        if (current && catalogRevision === masterGeneration.current) setMasters(catalog);
       })
       .catch((e) => {
         if (current && catalogRevision === masterGeneration.current) setError(message(e));
@@ -206,33 +231,19 @@ export default function Operations({ identity }: { identity: Identity }) {
       generation.current++;
       masterGeneration.current++;
     };
-  }, [warehouse, refresh, storage]);
+  }, [warehouse, refresh, storage, loadCatalog]);
   async function reloadAll() {
+    // Keep the current screen while fresh data loads; only the first load of a warehouse shows a placeholder.
     const revision = ++masterGeneration.current;
-    setMastersLoading(true);
     await refresh();
     try {
-      const [context, ...records] = await Promise.all([
-        api<Runtime>("/api/v2/identity/context"),
-        ...["items", "locations", "partners", "destinations", "barcodes"].map((kind) =>
-          loadAllMasters<Row>(`/api/v2/masters/${kind}?warehouse_id=${warehouse}`),
-        ),
-      ]);
+      const [context, catalog] = await Promise.all([api<Runtime>("/api/v2/identity/context"), loadCatalog(warehouse)]);
       if (masterGeneration.current !== revision) return;
-      setRuntime(context as Runtime);
-      setMasters(
-        Object.fromEntries(
-          ["items", "locations", "partners", "destinations", "barcodes"].map((kind, index) => [
-            kind,
-            records[index] as Row[],
-          ]),
-        ),
-      );
+      setRuntime(context);
+      setMasters(catalog);
       setError("");
     } catch (e) {
       setError(message(e));
-    } finally {
-      if (masterGeneration.current === revision) setMastersLoading(false);
     }
   }
   async function transmit(input: Pending) {
@@ -326,9 +337,7 @@ export default function Operations({ identity }: { identity: Identity }) {
       setBusy(false);
     }
   }
-  const mastersReady = ["items", "locations", "partners", "destinations", "barcodes"].every((kind) =>
-    Array.isArray(masters[kind]),
-  );
+  const mastersReady = catalogKinds.every((kind) => Array.isArray(masters[kind]));
   const context: Context | null =
     snapshot && mastersReady && !mastersLoading
       ? {
@@ -421,12 +430,30 @@ export default function Operations({ identity }: { identity: Identity }) {
         ))}
         <details className="v2-side-legacy">
           <summary>이전 화면</summary>
-          <Link href="/dashboard">업무 홈</Link>
-          <Link href="/dashboard/stock">재고 조회</Link>
-          <Link href="/dashboard/history">확정 이력</Link>
-          {identity.role !== "viewer" && <Link href="/dashboard/documents">기존 전표</Link>}
-          {identity.role !== "viewer" && <Link href="/dashboard/delivery-destinations">배송지 관리</Link>}
-          {identity.role === "admin" && <Link href="/dashboard/audit">감사 로그</Link>}
+          <Link prefetch={false} href="/dashboard">
+            업무 홈
+          </Link>
+          <Link prefetch={false} href="/dashboard/stock">
+            재고 조회
+          </Link>
+          <Link prefetch={false} href="/dashboard/history">
+            확정 이력
+          </Link>
+          {identity.role !== "viewer" && (
+            <Link prefetch={false} href="/dashboard/documents">
+              기존 전표
+            </Link>
+          )}
+          {identity.role !== "viewer" && (
+            <Link prefetch={false} href="/dashboard/delivery-destinations">
+              배송지 관리
+            </Link>
+          )}
+          {identity.role === "admin" && (
+            <Link prefetch={false} href="/dashboard/audit">
+              감사 로그
+            </Link>
+          )}
         </details>
       </nav>
       <div className="v2-main">
@@ -531,20 +558,10 @@ export default function Operations({ identity }: { identity: Identity }) {
                   c={context}
                   reload={async () => {
                     const revision = ++masterGeneration.current;
-                    setMastersLoading(true);
-                    try {
-                      const values = await Promise.all(
-                        ["items", "locations", "partners", "destinations", "barcodes"].map(async (kind) => [
-                          kind,
-                          await loadAllMasters<Row>(`/api/v2/masters/${kind}?warehouse_id=${warehouse}`),
-                        ]),
-                      );
-                      if (revision !== masterGeneration.current) return;
-                      setMasters(Object.fromEntries(values));
-                      await refresh();
-                    } finally {
-                      if (revision === masterGeneration.current) setMastersLoading(false);
-                    }
+                    const catalog = await loadCatalog(warehouse);
+                    if (revision !== masterGeneration.current) return;
+                    setMasters(catalog);
+                    await refresh();
                   }}
                 />
               )}

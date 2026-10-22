@@ -865,6 +865,20 @@
   color: #c9d4e3;
   font-size: 12px;
 }
+/* The scan input and its confirm button share one row; the button lines up with the input, not the label. */
+.v2-scanner {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 12px;
+}
+.v2-scanner > :not(.v2-field, .v2-scan-button) {
+  grid-column: 1 / -1;
+}
+.v2 .v2-scanner > .v2-scan-button {
+  align-self: end;
+  min-height: 56px;
+  padding: 0 24px;
+}
 .v2-scanner input:not([type="checkbox"]) {
   font-size: 20px;
   font-weight: 700;
@@ -1476,6 +1490,260 @@
     grid-column: 1/-1;
   }
 }
+/* Vertical rhythm: every block inside a card is 16px from the previous one (12px under a heading),
+   so buttons, tables, notes and the next heading never touch. Grid and flex cards keep their own gap. */
+.v2-card:not(.v2-grid, .v2-assistant) > * + * {
+  margin-top: 16px;
+}
+.v2-card:not(.v2-grid, .v2-assistant) > :is(h2, h3) + * {
+  margin-top: 8px;
+}
+.v2-card > :is(h2, h3):not(:first-child) {
+  margin-top: 24px;
+}
+.v2-page > * + * {
+  margin-top: 16px;
+}
+/* Buttons size to their label. Only the main confirm of a work step (form.v2-work) spans the panel. */
+.v2 form > button,
+.v2 form > .v2-actions > button {
+  align-self: flex-start;
+  min-width: 160px;
+}
+.v2 form.v2-work > button.v2-primary {
+  align-self: stretch;
+}
+.v2 form > .v2-actions {
+  margin-top: 4px;
+}
+/* One field even when searchable: a small search box and the select share one bordered control. */
+.v2-select-combo {
+  display: grid;
+  grid-template-columns: minmax(84px, 36%) minmax(0, 1fr);
+  min-width: 0;
+  border: 1px solid var(--v2-input);
+  border-radius: 6px;
+  background: white;
+  overflow: hidden;
+}
+.v2-select-combo:focus-within {
+  outline: 3px solid #6ea2ff;
+  outline-offset: 2px;
+}
+.v2 .v2-select-combo input,
+.v2 .v2-select-combo select {
+  min-height: 42px;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+}
+.v2 .v2-select-combo input {
+  border-right: 1px solid var(--v2-inner);
+  background: var(--v2-soft);
+  font-size: 12px;
+}
+.v2 .v2-context .v2-select-combo {
+  width: 360px;
+}
+.v2 .v2-context .v2-select-combo input,
+.v2 .v2-context .v2-select-combo select {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  height: 34px;
+  min-height: 36px;
+}
+/* An empty result sits inside the table frame instead of floating under a bare header. */
+.v2-table:has(+ .v2-empty) {
+  border-bottom: 0;
+  border-radius: 8px 8px 0 0;
+}
+.v2 .v2-table + .v2-empty {
+  margin-top: 0;
+  border: 1px solid var(--v2-line);
+  border-top: 0;
+  border-radius: 0 0 8px 8px;
+  background: white;
+}
+.v2 form > .v2-table + .v2-empty {
+  margin-top: -16px;
+}
+.v2-file {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  border: 1px solid var(--v2-input);
+  border-radius: 6px;
+  background: white;
+  overflow: hidden;
+  cursor: pointer;
+}
+.v2-file input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  cursor: pointer;
+}
+.v2-file:focus-within {
+  outline: 3px solid #6ea2ff;
+  outline-offset: 2px;
+}
+.v2-file[data-disabled] {
+  background: #f1f3f6;
+  cursor: not-allowed;
+}
+.v2-file-button {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  border-right: 1px solid var(--v2-input);
+  background: var(--v2-soft);
+  color: var(--v2-ink);
+  font-size: 14px;
+  font-weight: 600;
+}
+.v2-file-name {
+  padding: 0 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--v2-muted);
+  font-size: 14px;
+  font-weight: 400;
+}
+/* A download link that looks like a secondary button. */
+.v2 .v2-button-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--v2-input);
+  border-radius: 6px;
+  background: white;
+  color: var(--v2-ink);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.v2 .v2-button-link:hover {
+  background: var(--v2-soft);
+}
+/* Row actions stay compact and keep a gap between neighbours. */
+.v2 td button + :is(button, a),
+.v2 td a + button {
+  margin-left: 8px;
+}
+.v2 td button {
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+}
+/* A form heading sits closer to its first field than the 16px gap between fields. */
+.v2 form > :is(h2, h3) {
+  margin: 0 0 -6px;
+}
+.v2-pager[hidden] {
+  display: none;
+}
+/* Search filters on one row: fields share the width, buttons stay label-sized and sit on the input baseline. */
+.v2 form.v2-filter-row,
+.v2-filter-row {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 16px;
+  background: var(--v2-soft);
+  border: 1px solid var(--v2-inner);
+  border-radius: 8px;
+}
+.v2-filter-row > .v2-field {
+  flex: 1 1 200px;
+}
+.v2 .v2-filter-row > :is(button, .v2-button-link),
+.v2 form.v2-filter-row > button.v2-primary[type="submit"] {
+  align-self: flex-end;
+  min-width: 0;
+  min-height: 44px;
+  font-size: 14px;
+}
+/* Result summary between the filters and the table: totals left, status counts right. */
+.v2-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-size: 14px;
+  color: var(--v2-muted);
+}
+.v2-summary strong {
+  color: var(--v2-ink);
+}
+.v2-summary .v2-badges {
+  margin: 0;
+}
+.v2-badge-warn {
+  background: var(--v2-amber-soft);
+  border-color: transparent;
+  color: var(--v2-amber);
+  font-weight: 600;
+}
+/* Paging sits under the table, centred, separated from it. */
+.v2-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--v2-muted);
+}
+.v2-pager button {
+  min-width: 112px;
+}
+.v2-state {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  background: var(--v2-soft);
+  color: var(--v2-muted);
+}
+.v2-state-ok {
+  background: var(--v2-green-soft);
+  color: var(--v2-green);
+}
+.v2-state-warning {
+  background: var(--v2-amber-soft);
+  color: var(--v2-amber);
+}
+.v2-state-critical {
+  background: #fde8e8;
+  color: var(--v2-red);
+}
+/* A single setting and its save button on one line. */
+.v2-setting {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+.v2-setting > .v2-field {
+  flex: 0 1 280px;
+}
+.v2-setting-wide > .v2-field {
+  flex: 0 1 520px;
+}
 /* Narrow screens: the side menu becomes a scrollable strip above the page. */
 @media (max-width: 900px) {
   .v2-side {
@@ -1608,11 +1876,56 @@
 }
 .v2 .v2-account {
   padding: 0 16px;
-  margin-bottom: 8px;
-  border-top: 1px solid var(--v2-inner);
+  margin: 0;
+  border-radius: 0;
+  background: white;
+  border-width: 0 0 1px;
+  border-color: var(--v2-inner);
+}
+.v2 .v2-account:hover {
+  background: var(--v2-soft);
+}
+.v2-card:not(.v2-grid, .v2-assistant) > .v2-account + .v2-account {
+  margin-top: 0;
 }
 .v2 .v2-account summary {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.2fr) minmax(0, 2fr) 110px 90px auto;
+  align-items: center;
+  gap: 12px;
   padding: 12px 0;
+  list-style: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--v2-ink);
+}
+.v2 .v2-account summary::-webkit-details-marker {
+  display: none;
+}
+.v2 .v2-account summary strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.v2-account-mail {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--v2-muted);
+}
+.v2-account-edit {
+  color: var(--v2-blue);
+  font-size: 12px;
+  font-weight: 600;
+}
+.v2-account-edit::after {
+  content: " ▸";
+}
+.v2 .v2-account[open] .v2-account-edit::after {
+  content: " ▾";
+}
+.v2 .v2-account summary .v2-state {
+  justify-self: start;
 }
 .v2 .v2-account[open] {
   padding-bottom: 16px;
@@ -1624,5 +1937,22 @@
   .v2-multi-row {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+@media (max-width: 900px) {
+  .v2 .v2-context .v2-select-combo {
+    width: 100%;
+  }
+}
+@media (max-width: 700px) {
+  .v2 .v2-account summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .v2-account-mail {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+  .v2-account-edit {
+    display: none;
   }
 }

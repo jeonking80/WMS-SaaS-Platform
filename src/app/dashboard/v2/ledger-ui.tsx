@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
-import { api, Field, message, nameOf, Note, options, Select, time, type Context } from "./common";
+import { api, Field, message, nameOf, Note, options, Select, stockTitles, time, type Context } from "./common";
 type Entry = {
   id: string;
   item_id: string;
@@ -271,7 +271,7 @@ export function Ledger({
                 <td>{time(row.created_at)}</td>
                 <td>{nameOf(c.items, row.item_id)}</td>
                 <td>{nameOf(c.locations, row.location_id)}</td>
-                <td>{row.bucket}</td>
+                <td>{stockTitles[row.bucket] ?? row.bucket}</td>
                 <td>{row.delta}</td>
                 <td>
                   {row.actor_name ||
@@ -284,7 +284,8 @@ export function Ledger({
           </tbody>
         </table>
       </div>
-      <div className="v2-actions">
+      {!busy && page && !page.rows.length && <p className="v2-empty">조회 조건에 해당하는 원장 실적이 없습니다.</p>}
+      <div className="v2-pager" hidden={index === 0 && !page?.has_more}>
         <button
           disabled={busy || index === 0}
           onClick={() => {
@@ -431,7 +432,7 @@ export function OriginPicker({
           })),
           ...rows.map((row, index) => ({
             id: row.id,
-            label: `실적 ${index + 1} · ${nameOf(c.items, row.item_id)} · ${nameOf(c.locations, row.location_id)} · ${row.bucket} ${row.delta} EA · ${time(row.created_at)} · ${row.reason || row.command}`,
+            label: `실적 ${index + 1} · ${nameOf(c.items, row.item_id)} · ${nameOf(c.locations, row.location_id)} · ${stockTitles[row.bucket] ?? row.bucket} ${row.delta} EA · ${time(row.created_at)} · ${row.reason || row.command}`,
           })),
         ]}
         required

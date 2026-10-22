@@ -238,6 +238,7 @@ export function ActionEditor({
   }
   return (
     <form
+      className="v2-work"
       onSubmit={(e) => {
         e.preventDefault();
         void submit();
@@ -280,7 +281,7 @@ export function ActionEditor({
               autoComplete="off"
             />
           </Field>
-          <button type="button" onClick={onScan}>
+          <button type="button" className="v2-scan-button" onClick={onScan}>
             스캔 확인
           </button>
           <p role="status" className="v2-note">
@@ -354,7 +355,15 @@ export function ActionEditor({
       )}
       {locationKinds && (
         <Select
-          label={sourceScan ? "피킹 후 대기 위치" : "처리 도착 위치 · 우선순위 추천순"}
+          label={
+            !sourceScan
+              ? "처리 도착 위치 · 우선순위 추천순"
+              : locationKinds.includes("STAGING")
+                ? "피킹 후 대기 위치"
+                : locationKinds.includes("HOLD")
+                  ? "보류 보관 위치"
+                  : "도착 보관 위치"
+          }
           value={location}
           onChange={(id) => {
             setLocation(id);
@@ -1011,6 +1020,7 @@ export function Workflow({
                 {order && stage === "ship" && (
                   <>
                     <form
+                      className="v2-work"
                       onSubmit={(e) => {
                         e.preventDefault();
                         void c
@@ -1481,6 +1491,7 @@ function Create({ c, kind, done }: { c: Context; kind: string; done: (id: string
   return (
     <div className="v2-card">
       <form
+        className="v2-work"
         onSubmit={(e) => {
           e.preventDefault();
           const dueAt = businessInputTimestamp(due);

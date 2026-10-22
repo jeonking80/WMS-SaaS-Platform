@@ -266,7 +266,7 @@ export function Accounts({ c, warehouses }: { c: Context; warehouses: Row[] }) {
           />
         ))}
         {accountPages > 1 && (
-          <div className="v2-actions">
+          <div className="v2-pager">
             <button type="button" disabled={accountPage <= 1} onClick={() => setAccountPage(accountPage - 1)}>
               이전
             </button>
@@ -465,7 +465,15 @@ function User({
   return (
     <details className="v2-card v2-account">
       <summary>
-        {person.name} · {person.email} · {roles.find(([id]) => id === person.role)?.[1]} · {statusNames[person.status]}
+        <strong>{person.name}</strong>
+        <span className="v2-account-mail">{person.email}</span>
+        <span>{roles.find(([id]) => id === person.role)?.[1]}</span>
+        <span
+          className={`v2-state v2-state-${person.status === "active" ? "ok" : person.status === "invited" ? "warning" : "off"}`}
+        >
+          {statusNames[person.status]}
+        </span>
+        <span className="v2-account-edit">권한 변경</span>
       </summary>
       <form
         onSubmit={(e) => {
@@ -542,8 +550,10 @@ function TerminalPolicy({ c }: { c: Context }) {
           끊기면 잠금을 유지하고, 미확인 확정의 복구 키는 보존합니다. 다른 단말은 다음 업무 화면 진입 시 새 정책을
           적용합니다.
         </Note>
-        <Quantity label="자동 잠금까지 무활동 시간 (분)" value={minutes} onChange={setMinutes} max={240} />
-        <Submit disabled={busy}>회사 자동 잠금 정책 저장</Submit>
+        <div className="v2-setting">
+          <Quantity label="자동 잠금까지 무활동 시간 (분)" value={minutes} onChange={setMinutes} max={240} />
+          <Submit disabled={busy}>회사 자동 잠금 정책 저장</Submit>
+        </div>
         {notice && (
           <p role="status" className="v2-note">
             {notice}
@@ -574,6 +584,27 @@ const states: Record<string, string> = {
   business_rejected: "업무 거절",
   retry_wait: "재처리 대기",
   quarantined: "격리",
+};
+const monitorStates: Record<string, string> = {
+  ok: "정상",
+  warning: "주의",
+  critical: "위험",
+  unknown: "확인 불가",
+};
+const monitorChecks: Record<string, string> = {
+  database: "데이터베이스 연결",
+  warehouse_scope: "창고 접근 범위",
+  readiness: "업무 구성 준비",
+  inventory_reconciliation: "재고·이력 대사",
+  integration_queue: "연계 대기열",
+  long_reservations: "장기 예약 재고",
+  low_available_stock: "최소 가용재고",
+  operational_kpis: "현장 운영 지표",
+  database_lock_wait: "데이터베이스 잠금 대기",
+  backup: "백업",
+  restore_rehearsal: "복구 훈련",
+  provider_recovery: "제공사 장애 복구",
+  alert_recipient: "알림 수신처",
 };
 export function Integration({ c }: { c: Context }) {
   const [events, setEvents] = useState<Event[]>([]),
@@ -692,15 +723,25 @@ export function Integration({ c }: { c: Context }) {
       <section className="v2-card" aria-busy={loading}>
         <div className="v2-toolbar">
           <h2>원천 사건 · 접수와 업무 반영</h2>
-          <button
-            disabled={busy || loading}
-            onClick={() => {
-              setCursors([null]);
-              void load();
-            }}
-          >
-            사건 새로고침
-          </button>
+          <div className="v2-actions">
+            {manager && (
+              <button
+                disabled={busy || loading}
+                onClick={() => void act("/api/v2/integration/process", { warehouse_id: c.warehouse, limit: 50 })}
+              >
+                대기 사건 처리 실행 (최대 50건)
+              </button>
+            )}
+            <button
+              disabled={busy || loading}
+              onClick={() => {
+                setCursors([null]);
+                void load();
+              }}
+            >
+              사건 새로고침
+            </button>
+          </div>
         </div>
         <Note>접수 성공과 재고 반영은 다릅니다. 의존성 대기·업무 거절·격리를 구분하고 원래 사건으로 재처리합니다.</Note>
         {error && (
@@ -709,79 +750,78 @@ export function Integration({ c }: { c: Context }) {
           </p>
         )}
         {focusedEvent && (
-          <div className="v2-note">
-            알림에서 선택한 사건을 조회하고 있습니다.{" "}
+          <div className="v2-note v2-actions">
+            알림에서 선택한 사건을 조회하고 있습니다.
             <button disabled={busy || loading} onClick={() => setIgnoreFocus(true)}>
               사건 전체 목록으로
             </button>
           </div>
         )}
         <form
+          className="v2-filter-row"
           onSubmit={(e) => {
             e.preventDefault();
             setSearch({ external: externalInput.trim(), source: sourceInput.trim() });
           }}
         >
-          <div className="v2-grid">
-            <Field label="외부 업무번호 검색 (정확히)">
-              <input
-                value={externalInput}
-                onChange={(e) => setExternalInput(e.target.value)}
-                placeholder="외부 주문·입고 번호"
-                maxLength={160}
-              />
-            </Field>
-            <Field label="원천 시스템 검색 (정확히)">
-              <input value={sourceInput} onChange={(e) => setSourceInput(e.target.value)} maxLength={100} />
-            </Field>
-          </div>
-          <div className="v2-actions">
-            <Submit disabled={busy || loading}>전체 사건에서 검색</Submit>
-            <button
-              type="button"
-              disabled={busy || loading}
-              onClick={() => {
-                setExternalInput("");
-                setSourceInput("");
-                setSearch({ external: "", source: "" });
-                setFilter("");
-              }}
-            >
-              검색·상태 초기화
-            </button>
-          </div>
+          <Field label="외부 업무번호 검색 (정확히)">
+            <input
+              value={externalInput}
+              onChange={(e) => setExternalInput(e.target.value)}
+              placeholder="외부 주문·입고 번호"
+              maxLength={160}
+            />
+          </Field>
+          <Field label="원천 시스템 검색 (정확히)">
+            <input
+              value={sourceInput}
+              onChange={(e) => setSourceInput(e.target.value)}
+              placeholder="예: ERP, 쇼핑몰"
+              maxLength={100}
+            />
+          </Field>
+          <Field label="사건 상태">
+            <select value={filter} disabled={busy} onChange={(e) => setFilter(e.target.value)}>
+              <option value="">전체</option>
+              <option value="problems">오류·대기 전체</option>
+              {Object.entries(states).map(([key, title]) => (
+                <option key={key} value={key}>
+                  {title}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Submit disabled={busy || loading}>전체 사건에서 검색</Submit>
+          <button
+            type="button"
+            disabled={busy || loading}
+            onClick={() => {
+              setExternalInput("");
+              setSourceInput("");
+              setSearch({ external: "", source: "" });
+              setFilter("");
+            }}
+          >
+            검색·상태 초기화
+          </button>
         </form>
-        <Field label="사건 상태">
-          <select value={filter} disabled={busy} onChange={(e) => setFilter(e.target.value)}>
-            <option value="">전체</option>
-            <option value="problems">오류·대기 전체</option>
+        <div className="v2-summary">
+          <span>
+            검색 범위 전체 <strong>{total ?? "확인 중"}</strong>건 · 선택 상태{" "}
+            <strong>{filteredTotal ?? "확인 중"}</strong>건
+          </span>
+          <div className="v2-badges">
             {Object.entries(states).map(([key, title]) => (
-              <option key={key} value={key}>
-                {title}
-              </option>
+              <span
+                className={`v2-badge${counts[key] && key !== "applied" && key !== "accepted" ? " v2-badge-warn" : ""}`}
+                key={key}
+              >
+                {title} {counts[key] ?? 0}
+              </span>
             ))}
-          </select>
-        </Field>
-        <Note>
-          회사·창고와 외부번호·원천 검색 범위 전체 {total ?? "확인 중"}건 · 선택 상태 {filteredTotal ?? "확인 중"}건.
-          상태별 건수는 페이지와 관계없이 서버가 집계합니다.
-        </Note>
-        <div className="v2-badges">
-          {Object.entries(states).map(([key, title]) => (
-            <span className="v2-badge" key={key}>
-              {title} {counts[key] ?? 0}
-            </span>
-          ))}
+          </div>
         </div>
         {loading && <p role="status">전체 사건 범위에서 조회하고 있습니다…</p>}
-        {manager && (
-          <button
-            disabled={busy || loading}
-            onClick={() => void act("/api/v2/integration/process", { warehouse_id: c.warehouse, limit: 50 })}
-          >
-            대기 사건 처리 실행 (최대 50건)
-          </button>
-        )}
         <div className="v2-table">
           <table>
             <thead>
@@ -831,7 +871,7 @@ export function Integration({ c }: { c: Context }) {
           </table>
         </div>
         {!loading && !events.length && <p className="v2-empty">현재 검색·상태에 해당하는 연계 사건이 없습니다.</p>}
-        <div className="v2-actions">
+        <div className="v2-pager">
           <button disabled={busy || loading || page === 0} onClick={() => void load(cursors[page - 1], page - 1)}>
             이전 사건
           </button>
@@ -852,7 +892,12 @@ export function Integration({ c }: { c: Context }) {
       </section>
       {monitor && (
         <section className="v2-card">
-          <h2>운영 모니터 · {monitor.status}</h2>
+          <h2>
+            운영 모니터 ·{" "}
+            <span className={`v2-state v2-state-${monitor.status}`}>
+              {monitorStates[monitor.status] ?? monitor.status}
+            </span>
+          </h2>
           <Note>{time(monitor.checked_at)} 기준 · 백업·알림 구성 여부는 운영 준비에서 별도 확인합니다.</Note>
           <div className="v2-table">
             <table>
@@ -865,8 +910,12 @@ export function Integration({ c }: { c: Context }) {
               <tbody>
                 {monitor.checks.map((check, index) => (
                   <tr key={index}>
-                    <td>{check.name}</td>
-                    <td>{check.status}</td>
+                    <td>{monitorChecks[check.name] ?? check.name}</td>
+                    <td>
+                      <span className={`v2-state v2-state-${check.status}`}>
+                        {monitorStates[check.status] ?? check.status}
+                      </span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

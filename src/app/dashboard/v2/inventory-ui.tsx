@@ -14,6 +14,7 @@ import {
   label,
   nameOf,
   personLabel,
+  stockTitles,
   Note,
   options,
   Quantity,
@@ -24,7 +25,6 @@ import {
 } from "./common";
 type Open = (kind: string, id: string) => void;
 const buckets = ["H", "S", "A", "R", "P", "Q", "B"] as const;
-const stockTitles = { H: "총실물", S: "정상보관", A: "가용", R: "예약", P: "피킹대기", Q: "검수·적치", B: "보류" };
 const stockPageSize = 100;
 function currentAssignee(c: Context, objectId: string) {
   const lot = (c.snapshot.holds ?? []).find((lot) => lot.id === objectId);
@@ -768,7 +768,7 @@ export function Inventory({
                         <tr key={i}>
                           <td>{nameOf(c.items, line.item_id)}</td>
                           <td>{nameOf(c.locations, line.location_id)}</td>
-                          <td>{line.bucket}</td>
+                          <td>{stockTitles[line.bucket] ?? line.bucket}</td>
                           <td>{line.quantity}</td>
                         </tr>
                       ))}
@@ -892,34 +892,38 @@ function Counts({ c }: { c: Context }) {
           미완료 피킹·이동과 예약을 먼저 해소하세요. 잠금 중에는 해당 위치만 작업이 차단됩니다. P 위치는 정기 실사에서
           제외합니다.
         </Note>
-        <Select
-          label="실사할 위치"
-          value={location}
-          onChange={setLocation}
-          options={options(c.locations.filter((l) => ["STORAGE", "RECEIVING", "HOLD"].includes(String(l.kind))))}
-        />
-        <button
-          disabled={c.busy || !location || c.role === "viewer"}
-          onClick={() =>
-            void c.run("count.start", { location_id: location }).then((result) => {
-              if (result?.id) setCurrent(String(result.id));
-            })
-          }
-        >
-          조건 확인·위치 잠금·실사 시작
-        </button>
-        <Select
-          label="진행 중인 실사"
-          value={current}
-          onChange={(id) => {
-            setCurrent(id);
-            setLines([{ item_id: "", bucket: "S", quantity: 0 }]);
-          }}
-          options={c.snapshot.counts.map((count, index) => ({
-            id: count.id,
-            label: `실사 ${index + 1} · ${nameOf(c.locations, count.location_id)} · ${countStates[count.status] || count.status}`,
-          }))}
-        />
+        <div className="v2-setting v2-setting-wide">
+          <Select
+            label="실사할 위치"
+            value={location}
+            onChange={setLocation}
+            options={options(c.locations.filter((l) => ["STORAGE", "RECEIVING", "HOLD"].includes(String(l.kind))))}
+          />
+          <button
+            disabled={c.busy || !location || c.role === "viewer"}
+            onClick={() =>
+              void c.run("count.start", { location_id: location }).then((result) => {
+                if (result?.id) setCurrent(String(result.id));
+              })
+            }
+          >
+            조건 확인·위치 잠금·실사 시작
+          </button>
+        </div>
+        <div className="v2-setting v2-setting-wide">
+          <Select
+            label="진행 중인 실사"
+            value={current}
+            onChange={(id) => {
+              setCurrent(id);
+              setLines([{ item_id: "", bucket: "S", quantity: 0 }]);
+            }}
+            options={c.snapshot.counts.map((count, index) => ({
+              id: count.id,
+              label: `실사 ${index + 1} · ${nameOf(c.locations, count.location_id)} · ${countStates[count.status] || count.status}`,
+            }))}
+          />
+        </div>
       </section>
       {selected && (
         <section className="v2-card">

@@ -1519,3 +1519,110 @@
     min-width: 0;
   }
 }
+/* Type-to-add picker (warehouse grants): candidates float under the input, picks become chips. */
+.v2-multi-row {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+.v2-combo {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.v2-combo-list {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  top: calc(100% + 4px);
+  width: max-content;
+  min-width: 100%;
+  max-width: min(28rem, calc(100vw - 32px));
+  max-height: 288px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: white;
+  border: 1px solid var(--v2-line);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px #0e1b2c1f;
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--v2-ink);
+}
+.v2-combo-list li {
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.v2-combo-list li[aria-selected="true"] {
+  background: var(--v2-blue-soft);
+  color: var(--v2-blue-dark);
+}
+.v2-combo-list .v2-combo-empty {
+  cursor: default;
+  color: var(--v2-muted);
+  font-size: 12px;
+}
+.v2-chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.v2-chip-pick {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 28px;
+  max-width: 100%;
+  padding: 0 4px 0 10px;
+  border-radius: 14px;
+  background: var(--v2-blue-soft);
+  color: var(--v2-blue-dark);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.v2 .v2-chip-pick button {
+  width: 24px;
+  height: 24px;
+  min-height: 24px;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: inherit;
+}
+.v2 .v2-chip-pick button:hover {
+  background: #d3e2f8;
+}
+.v2 .v2-text-button {
+  min-height: 28px;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  color: var(--v2-blue);
+  font-size: 12px;
+}
+.v2 .v2-account {
+  padding: 0 16px;
+  margin-bottom: 8px;
+  border-top: 1px solid var(--v2-inner);
+}
+.v2 .v2-account summary {
+  padding: 12px 0;
+}
+.v2 .v2-account[open] {
+  padding-bottom: 16px;
+}
+.v2-account-filters {
+  margin-bottom: 8px;
+}
+@media (max-width: 480px) {
+  .v2-multi-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

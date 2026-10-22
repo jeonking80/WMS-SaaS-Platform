@@ -1,12 +1,20 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { api, Field, message, Note, Quantity, Submit, time, type Context, type Person, type Row } from "./common";
+import { WarehousePicker } from "./warehouse-picker";
 const roles = [
   ["admin", "회사 관리자"],
   ["supervisor", "운영 책임자"],
   ["worker", "작업자"],
   ["viewer", "조회자"],
 ];
+const statusNames: Record<string, string> = {
+    active: "활성",
+    invited: "초대 대기",
+    suspended: "일시 중지",
+    departed: "퇴사",
+  },
+  accountsPerPage = 20;
 type Key = {
   id: string;
   name: string;
@@ -38,7 +46,23 @@ export function Accounts({ c, warehouses }: { c: Context; warehouses: Row[] }) {
     [secret, setSecret] = useState<{ caption: string; value: string } | null>(null),
     [busy, setBusy] = useState(false),
     [error, setError] = useState(""),
-    [notice, setNotice] = useState("");
+    [notice, setNotice] = useState(""),
+    [accountQuery, setAccountQuery] = useState(""),
+    [roleFilter, setRoleFilter] = useState(""),
+    [statusFilter, setStatusFilter] = useState(""),
+    [accountPage, setAccountPage] = useState(1);
+  const needle = accountQuery.trim().toLocaleLowerCase();
+  const matchedUsers = users.filter(
+    (row) =>
+      (!needle || `${row.name} ${row.email}`.toLocaleLowerCase().includes(needle)) &&
+      (!roleFilter || row.role === roleFilter) &&
+      (!statusFilter || row.status === statusFilter),
+  );
+  const accountPages = Math.max(1, Math.ceil(matchedUsers.length / accountsPerPage));
+  const pagedUsers = matchedUsers.slice(
+    (Math.min(accountPage, accountPages) - 1) * accountsPerPage,
+    Math.min(accountPage, accountPages) * accountsPerPage,
+  );
   async function refresh() {
     const [people, tokens] = await Promise.all([
       api<{ users: Person[] }>("/api/v2/identity/users"),
@@ -66,25 +90,7 @@ export function Accounts({ c, warehouses }: { c: Context; warehouses: Row[] }) {
       setBusy(false);
     }
   }
-  const grantFields = (
-    <div>
-      <h3>허용 창고</h3>
-      <div className="v2-actions">
-        {warehouses.map((w) => (
-          <label key={w.id} className="v2-checkbox">
-            <input
-              type="checkbox"
-              checked={grants.includes(w.id)}
-              onChange={(e) =>
-                setGrants((values) => (e.target.checked ? [...values, w.id] : values.filter((id) => id !== w.id)))
-              }
-            />
-            {w.code} · {w.name}
-          </label>
-        ))}
-      </div>
-    </div>
-  );
+  const grantFields = <WarehousePicker label="허용 창고" warehouses={warehouses} value={grants} onChange={setGrants} />;
   return (
     <>
       <div className="v2-toolbar">
@@ -183,7 +189,57 @@ export function Accounts({ c, warehouses }: { c: Context; warehouses: Row[] }) {
       </section>
       <section className="v2-card">
         <h2>계정 역할 · 창고 범위 · 중지</h2>
-        {users.map((person) => (
+        <div className="v2-grid v2-account-filters">
+          <Field label="계정 검색">
+            <input
+              value={accountQuery}
+              placeholder="이름·이메일"
+              onChange={(e) => {
+                setAccountQuery(e.target.value);
+                setAccountPage(1);
+              }}
+            />
+          </Field>
+          <Field label="역할">
+            <select
+              value={roleFilter}
+              onChange={(e) => {
+                setRoleFilter(e.target.value);
+                setAccountPage(1);
+              }}
+            >
+              <option value="">전체 역할</option>
+              {roles.map(([id, caption]) => (
+                <option key={id} value={id}>
+                  {caption}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label="상태">
+            <select
+              value={statusFilter}
+              onChange={(e) => {
+                setStatusFilter(e.target.value);
+                setAccountPage(1);
+              }}
+            >
+              <option value="">전체 상태</option>
+              {Object.entries(statusNames).map(([id, caption]) => (
+                <option key={id} value={id}>
+                  {caption}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
+        <p className="v2-note">
+          전체 {users.length}명 · 활성 {users.filter((row) => row.status === "active").length} · 초대 대기{" "}
+          {users.filter((row) => row.status === "invited").length}
+          {matchedUsers.length !== users.length ? ` · 조건에 맞는 계정 ${matchedUsers.length}명` : ""}
+        </p>
+        {matchedUsers.length === 0 && <p className="v2-empty">조건에 맞는 계정이 없습니다.</p>}
+        {pagedUsers.map((person) => (
           <User
             key={`${person.userId}:${person.role}:${person.status}:${person.warehouseIds.join(",")}`}
             person={person}
@@ -209,6 +265,23 @@ export function Accounts({ c, warehouses }: { c: Context; warehouses: Row[] }) {
             revoke={() => void act(() => api(`/api/v2/identity/users/${person.userId}/link`, "DELETE"))}
           />
         ))}
+        {accountPages > 1 && (
+          <div className="v2-actions">
+            <button type="button" disabled={accountPage <= 1} onClick={() => setAccountPage(accountPage - 1)}>
+              이전
+            </button>
+            <span>
+              {accountPage} / {accountPages}쪽
+            </span>
+            <button
+              type="button"
+              disabled={accountPage >= accountPages}
+              onClick={() => setAccountPage(accountPage + 1)}
+            >
+              다음
+            </button>
+          </div>
+        )}
         <Note>
           마지막 관리자를 중지·퇴사·강등하려면 후임 관리자를 먼저 지정해야 합니다. 퇴사자의 과거 작업자 표시는
           보존됩니다.
@@ -390,14 +463,9 @@ function User({
     [status, setStatus] = useState(person.status),
     [grants, setGrants] = useState(person.warehouseIds);
   return (
-    <details className="v2-card">
+    <details className="v2-card v2-account">
       <summary>
-        {person.name} · {person.email} · {roles.find(([id]) => id === person.role)?.[1]} ·{" "}
-        {
-          (
-            { active: "활성", invited: "초대 대기", suspended: "일시 중지", departed: "퇴사" } as Record<string, string>
-          )[person.status]
-        }
+        {person.name} · {person.email} · {roles.find(([id]) => id === person.role)?.[1]} · {statusNames[person.status]}
       </summary>
       <form
         onSubmit={(e) => {
@@ -428,20 +496,7 @@ function User({
             </select>
           </Field>
         </div>
-        <div className="v2-actions">
-          {warehouses.map((w) => (
-            <label key={w.id} className="v2-checkbox">
-              <input
-                type="checkbox"
-                checked={grants.includes(w.id)}
-                onChange={(e) =>
-                  setGrants((values) => (e.target.checked ? [...values, w.id] : values.filter((id) => id !== w.id)))
-                }
-              />
-              {w.name}
-            </label>
-          ))}
-        </div>
+        <WarehousePicker label="허용 창고" warehouses={warehouses} value={grants} onChange={setGrants} />
         <div className="v2-actions">
           <Submit disabled={busy || person.status === "departed"}>권한·상태 저장</Submit>
           {["invited", "active"].includes(person.status) && (

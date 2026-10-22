@@ -30,13 +30,18 @@ export async function persistApiMetric(metric: ApiMetric): Promise<void> {
     });
     endHeld = beginTiming("telemetry.connection_held");
     const connection = client;
-    await timeAsync("telemetry.begin", () => connection.query("BEGIN"));
+    // BEGIN, the timeout and the RLS context share one round trip; this write sits on every request's path.
+    const context = [
+      ["app.tenant_id", metric.tenantId],
+      ["app.user_id", metric.actorId],
+      ["app.environment", process.env.WMS_ENVIRONMENT === "test" ? "test" : "production"],
+    ]
+      .map(([name, value]) => `set_config(${connection.escapeLiteral(name)},${connection.escapeLiteral(value)},true)`)
+      .join(",");
     const endContext = beginTiming("telemetry.context");
     try {
-      await client.query("SET LOCAL statement_timeout='500ms'");
-      await client.query(
-        "SELECT set_config('app.tenant_id',$1,true),set_config('app.user_id',$2,true),set_config('app.environment',$3,true)",
-        [metric.tenantId, metric.actorId, process.env.WMS_ENVIRONMENT === "test" ? "test" : "production"],
+      await timeAsync("telemetry.begin", () =>
+        connection.query(`BEGIN;SET LOCAL statement_timeout='500ms';SELECT ${context}`),
       );
       endContext();
     } catch (error) {

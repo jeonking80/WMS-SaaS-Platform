@@ -17,22 +17,25 @@ export async function withTenant<T>(
   const endHeld=beginTiming('db.connection_held');
   let discard = false;
   try {
-    await timeAsync('db.begin',()=>client.query("BEGIN"));
-    const endContext=beginTiming('db.context');
-    try{
-    await client.query("SELECT set_config('app.tenant_id', $1, true)", [tenantId]);
+    // BEGIN and the whole RLS context go in one simple-protocol round trip: every protected request
+    // opens two or three of these transactions, and each extra round trip costs the full DB latency.
     const actor = requestActor();
-    if (actor) {
-      if (actor.tenantId !== tenantId) throw new Error("Authenticated tenant context mismatch.");
-      await client.query("SELECT set_config('app.user_id', $1, true),set_config('app.environment',$2,true)", [
-        actor.userId, process.env.WMS_ENVIRONMENT === "test" ? "test" : "production",
-      ]);
-    }
+    if (actor && actor.tenantId !== tenantId) throw new Error("Authenticated tenant context mismatch.");
     // The warehouse tag comes only from a successful live authorization in ALS.
     // Background/tenant-only transactions use a separate unclassified tag.
-    await client.query("SELECT set_config('application_name',$1,true)",[
-      transactionApplicationName(tenantId,actor?requestWarehouse():null),
-    ]);
+    const settings: [string, string][] = [["app.tenant_id", tenantId]];
+    if (actor)
+      settings.push(
+        ["app.user_id", actor.userId],
+        ["app.environment", process.env.WMS_ENVIRONMENT === "test" ? "test" : "production"],
+      );
+    settings.push(["application_name", transactionApplicationName(tenantId, actor ? requestWarehouse() : null)]);
+    const context = settings
+      .map(([name, value]) => `set_config(${client.escapeLiteral(name)},${client.escapeLiteral(value)},true)`)
+      .join(",");
+    const endContext=beginTiming('db.context');
+    try{
+    await timeAsync('db.begin',()=>client.query(`BEGIN;SELECT ${context}`));
     endContext();}catch(error){endContext(true);throw error;}
     const result = await timeAsync('db.operation',()=>operation(client));
     await timeAsync('db.commit',()=>client.query("COMMIT"));

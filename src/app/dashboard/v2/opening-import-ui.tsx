@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, ApiFailure, downloadCsv, Field, message, Note, Submit, time, type Context } from "./common";
+import { api, ApiFailure, downloadCsv, Field, FilePicker, message, Note, Submit, time, type Context } from "./common";
 
 type OpeningRow = {
   item_id: string;
@@ -257,33 +257,29 @@ export function OpeningImport({ c }: { c: Context }) {
           UTF-8 CSV · 최대 1,000행. 품목 코드, 현재 창고 위치 코드, 상태(S/Q/B), 양의 정수 EA를 입력합니다. S는 보관,
           Q는 수령 대기, B는 보류 유형 위치와 일치해야 합니다.
         </Note>
-        <Field label="외부 개시재고 CSV 파일">
-          <input
-            type="file"
-            accept=".csv,text/csv"
-            disabled={blocked}
-            required
-            onChange={async (e) => {
-              resetPreview();
-              setError("");
-              const file = e.target.files?.[0];
-              if (!file) {
-                setCsv("");
-                setFilename("");
-                return;
-              }
-              if (file.size > 1_000_000) {
-                setCsv("");
-                setFilename("");
-                setError("1 MB 이하 CSV 파일을 선택하세요.");
-                return;
-              }
-              setCsv(await file.text());
-              setFilename(file.name);
-            }}
-          />
-        </Field>
-        {filename && <p className="v2-note">선택 파일: {filename}</p>}
+        <FilePicker
+          label="외부 개시재고 CSV 파일"
+          accept=".csv,text/csv"
+          disabled={blocked}
+          required
+          onChange={async (file) => {
+            resetPreview();
+            setError("");
+            if (!file) {
+              setCsv("");
+              setFilename("");
+              return;
+            }
+            if (file.size > 1_000_000) {
+              setCsv("");
+              setFilename("");
+              setError("1 MB 이하 CSV 파일을 선택하세요.");
+              return;
+            }
+            setCsv(await file.text());
+            setFilename(file.name);
+          }}
+        />
         <Submit disabled={blocked || !csv}>외부 자료 형식·코드·수량 검증</Submit>
       </form>
       {preview && (

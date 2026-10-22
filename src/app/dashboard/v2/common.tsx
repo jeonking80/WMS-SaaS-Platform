@@ -156,34 +156,48 @@ export function Select({
     (row) => row.id === value || row.label.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
   );
   const searchable = options.length > 8 || Boolean(query);
+  const picker = (
+    <select id={id} value={value} onChange={(e) => onChange(e.target.value)} required={required} disabled={disabled}>
+      <option value="">
+        {!options.length
+          ? "선택할 항목이 없습니다"
+          : query
+            ? `선택하세요 · ${rows.filter((row) => row.id !== value).length}개 일치`
+            : searchable
+              ? `선택하세요 · ${options.length}개`
+              : "선택하세요"}
+      </option>
+      {rows.map((row) => (
+        <option value={row.id} key={row.id}>
+          {row.label}
+        </option>
+      ))}
+    </select>
+  );
   return (
     <div className="v2-field">
       <label htmlFor={id}>{caption}</label>
-      {searchable && (
-        <input
-          aria-label={`${caption} 검색`}
-          placeholder="코드·이름 검색 후 Enter"
-          value={query}
-          disabled={disabled}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              const first = rows.find((row) => row.id !== value) || rows[0];
-              if (first) onChange(first.id);
-            }
-          }}
-        />
+      {searchable ? (
+        <div className="v2-select-combo">
+          <input
+            aria-label={`${caption} 검색`}
+            placeholder="검색"
+            value={query}
+            disabled={disabled}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                const first = rows.find((row) => row.id !== value) || rows[0];
+                if (first) onChange(first.id);
+              }
+            }}
+          />
+          {picker}
+        </div>
+      ) : (
+        picker
       )}
-      <select id={id} value={value} onChange={(e) => onChange(e.target.value)} required={required} disabled={disabled}>
-        <option value="">{options.length ? "선택하세요" : "선택할 항목이 없습니다"}</option>
-        {rows.map((row) => (
-          <option value={row.id} key={row.id}>
-            {row.label}
-          </option>
-        ))}
-      </select>
-      {searchable && <small>{rows.length}개 후보</small>}
     </div>
   );
 }
@@ -220,6 +234,53 @@ export function Quantity({
     </Field>
   );
 }
+// Native file inputs show browser-language text ("Choose File"); this keeps the real input for keyboard,
+// screen readers and tests, and draws a Korean button with the chosen file name.
+export function FilePicker({
+  label: caption,
+  accept,
+  disabled = false,
+  required = false,
+  onChange,
+}: {
+  label: string;
+  accept: string;
+  disabled?: boolean;
+  required?: boolean;
+  onChange: (file: File | undefined) => void | Promise<void>;
+}) {
+  const [name, setName] = useState("");
+  return (
+    <div className="v2-field">
+      <span>{caption}</span>
+      <label className="v2-file" data-disabled={disabled || undefined}>
+        <input
+          type="file"
+          aria-label={caption}
+          accept={accept}
+          disabled={disabled}
+          required={required}
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            setName(file?.name ?? "");
+            void onChange(file);
+          }}
+        />
+        <span className="v2-file-button">파일 선택</span>
+        <span className="v2-file-name">{name || "선택한 파일 없음"}</span>
+      </label>
+    </div>
+  );
+}
+export const stockTitles: Record<string, string> = {
+  H: "총실물",
+  S: "정상보관",
+  A: "가용",
+  R: "예약",
+  P: "피킹대기",
+  Q: "검수·적치",
+  B: "보류",
+};
 export function Submit({ children, disabled = false }: { children: ReactNode; disabled?: boolean }) {
   return (
     <button className="v2-primary" type="submit" disabled={disabled}>

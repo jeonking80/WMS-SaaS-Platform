@@ -5,6 +5,7 @@ import {
   ApiFailure,
   downloadCsv,
   Field,
+  FilePicker,
   label,
   message,
   nameOf,
@@ -17,7 +18,9 @@ import {
   type Context,
   type Row,
 } from "./common";
-import { loadAllMasters } from "./master-pages";
+import type { MasterPage } from "./master-pages";
+
+const mastersPerPage = 50;
 const kinds = [
   ["items", "품목"],
   ["locations", "위치"],
@@ -85,25 +88,42 @@ export function Masters({ c, reload }: { c: Context; reload: () => Promise<void>
     [error, setError] = useState(""),
     [success, setSuccess] = useState(""),
     [csvKind, setCsvKind] = useState("items"),
-    [revision, setRevision] = useState(0);
+    [revision, setRevision] = useState(0),
+    [cursors, setCursors] = useState<(string | null)[]>([null]),
+    [pageIndex, setPageIndex] = useState(0),
+    [nextCursor, setNextCursor] = useState<string | null>(null),
+    [loading, setLoading] = useState(false);
   const writable = ["admin", "supervisor"].includes(c.role);
   const route = `/api/v2/masters/${kind}?warehouse_id=${c.warehouse}`;
+  const listing = `${route}&q=${encodeURIComponent(query)}${active ? `&active=${active}` : ""}&limit=${mastersPerPage}`;
+  useEffect(() => {
+    setCursors([null]);
+    setPageIndex(0);
+  }, [listing]);
+  const cursor = cursors[pageIndex] ?? null;
   useEffect(() => {
     let current = true;
+    setLoading(true);
+    // The table shows one server page at a time; pickers and scanning keep loading the full catalog.
     const timer = setTimeout(() => {
-      loadAllMasters<Row>(`${route}&q=${encodeURIComponent(query)}${active ? `&active=${active}` : ""}`)
+      api<MasterPage<Row>>(`${listing}${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ""}`)
         .then((data) => {
-          if (current) setRows(data);
+          if (!current) return;
+          setRows(data.rows);
+          setNextCursor(data.has_more ? data.next_cursor : null);
         })
         .catch((e) => {
           if (current) setError(message(e));
+        })
+        .finally(() => {
+          if (current) setLoading(false);
         });
     }, 160);
     return () => {
       current = false;
       clearTimeout(timer);
     };
-  }, [route, query, active, revision]);
+  }, [listing, cursor, revision]);
   function start(row: Row | null) {
     setEditing(row);
     setCreating(true);
@@ -179,7 +199,7 @@ export function Masters({ c, reload }: { c: Context; reload: () => Promise<void>
             </button>
           ))}
         </div>
-        <div className="v2-grid">
+        <div className="v2-filter-row">
           <Field label="기준정보 검색">
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="코드·명칭·검색어" />
           </Field>
@@ -190,19 +210,22 @@ export function Masters({ c, reload }: { c: Context; reload: () => Promise<void>
               <option value="false">비활성</option>
             </select>
           </Field>
-        </div>
-        <div className="v2-actions">
-          {writable && <button onClick={() => start(null)}>새 {kinds.find(([key]) => key === kind)?.[1]} 등록</button>}
           <a
+            className="v2-button-link"
             href={`/api/v2/masters/${kind}/export?warehouse_id=${c.warehouse}&q=${encodeURIComponent(query)}${active ? `&active=${active}` : ""}`}
             download
           >
-            <button>현재 필터 CSV 내보내기</button>
+            현재 필터 CSV 내보내기
           </a>
+          {writable && (
+            <button className="v2-primary" onClick={() => start(null)}>
+              새 {kinds.find(([key]) => key === kind)?.[1]} 등록
+            </button>
+          )}
         </div>
         <Note>
-          회사·창고 권한이 적용된 최대 1,000개 후보입니다. 참조 중인 기준정보는 비활성화할 수 없습니다. 바코드의
-          대상·포장수량은 변경하거나 재사용할 수 없습니다.
+          회사·창고 권한이 적용된 목록을 {mastersPerPage}개씩 보여줍니다. 찾는 항목은 검색으로 좁히세요. 참조 중인
+          기준정보는 비활성화할 수 없습니다. 바코드의 대상·포장수량은 변경하거나 재사용할 수 없습니다.
         </Note>
         {error && (
           <p role="alert" className="v2-alert">
@@ -282,7 +305,26 @@ export function Masters({ c, reload }: { c: Context; reload: () => Promise<void>
             </tbody>
           </table>
         </div>
-        {!rows.length && <p className="v2-empty">조건에 맞는 기준정보가 없습니다.</p>}
+        {!loading && !rows.length && <p className="v2-empty">조건에 맞는 기준정보가 없습니다.</p>}
+        {(pageIndex > 0 || nextCursor) && (
+          <div className="v2-pager">
+            <button disabled={loading || pageIndex === 0} onClick={() => setPageIndex(pageIndex - 1)}>
+              이전 {mastersPerPage}개
+            </button>
+            <span>
+              {pageIndex + 1}페이지 · 이번 {rows.length}개
+            </span>
+            <button
+              disabled={loading || !nextCursor}
+              onClick={() => {
+                setCursors((values) => [...values.slice(0, pageIndex + 1), nextCursor]);
+                setPageIndex(pageIndex + 1);
+              }}
+            >
+              다음 {mastersPerPage}개
+            </button>
+          </div>
+        )}
       </section>
       {creating && writable && (
         <section className="v2-card">
@@ -518,37 +560,33 @@ export function Csv({
   return (
     <section className="v2-card">
       <h2>CSV 검증 · 정상 행 선택 적용</h2>
-      <Select
-        label="CSV 대상"
-        disabled={savedApply || busy}
-        value={kind}
-        onChange={(value) => {
-          setKind(value);
-          setCsv("");
-          setPreview(null);
-          setSelected([]);
-          previewRequest.current = null;
-          applyRequest.current = null;
-        }}
-        options={[...kinds, ["receipts", "입고예정"], ["orders", "출고 주문"]].map(([id, title]) => ({
-          id,
-          label: title,
-        }))}
-      />
       <Note>
         최대 1,000행 · 정수 EA · UTF-8 CSV. 필수 열: {headings[kind]?.join(", ")}. 예정·주문은 동일 외부번호의 모든 정상
         행을 함께 선택하세요. 재고 수량 직접 덮어쓰기는 지원하지 않습니다.
       </Note>
-      <button onClick={() => downloadCsv(`wms-${kind}-template.csv`, [headings[kind] || []])}>
-        입력 양식 다운로드
-      </button>
-      <Field label="CSV 파일 업로드">
-        <input
-          type="file"
+      <div className="v2-filter-row">
+        <Select
+          label="CSV 대상"
+          disabled={savedApply || busy}
+          value={kind}
+          onChange={(value) => {
+            setKind(value);
+            setCsv("");
+            setPreview(null);
+            setSelected([]);
+            previewRequest.current = null;
+            applyRequest.current = null;
+          }}
+          options={[...kinds, ["receipts", "입고예정"], ["orders", "출고 주문"]].map(([id, title]) => ({
+            id,
+            label: title,
+          }))}
+        />
+        <FilePicker
+          label="CSV 파일 업로드"
           accept=".csv,text/csv"
           disabled={!writable || busy || savedApply}
-          onChange={async (e) => {
-            const file = e.target.files?.[0];
+          onChange={async (file) => {
             if (file) {
               setCsv(await file.text());
               setPreview(null);
@@ -557,13 +595,16 @@ export function Csv({
             }
           }}
         />
-      </Field>
+        <button onClick={() => downloadCsv(`wms-${kind}-template.csv`, [headings[kind] || []])}>
+          입력 양식 다운로드
+        </button>
+        <button className="v2-primary" disabled={!csv || !writable || busy || savedApply} onClick={() => void check()}>
+          형식·참조·중복 검사
+        </button>
+      </div>
       {csv && (
         <p className="v2-note">{csv.split(/\r?\n/).length - 1}개 데이터 행 · 내용은 서버 검사를 거쳐 적용합니다.</p>
       )}
-      <button disabled={!csv || !writable || busy || savedApply} onClick={() => void check()}>
-        형식·참조·중복 검사
-      </button>
       {error && (
         <p role="alert" className="v2-alert">
           {error}

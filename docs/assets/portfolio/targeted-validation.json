@@ -1,0 +1,9 @@
+{
+  "source_commit": "11e2095",
+  "scope": "portfolio additional read-only feature validation; not full regression",
+  "command": "npm run test:unit -- tests/unit/v2-assistant.test.ts tests/unit/v2-insights.test.ts",
+  "test_files_passed": 2,
+  "tests_passed": 11,
+  "external_ai_api_called": false,
+  "full_verify_rerun": false
+}

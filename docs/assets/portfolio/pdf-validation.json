@@ -1,0 +1,91 @@
+{
+  "page_count": 14,
+  "layout": [
+    {
+      "page": 1,
+      "title": "창고 운영을, 수량에서 업무 흐름으로",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 2,
+      "title": "“재고가 있다”와 “출고할 수 있다”는 다릅니다",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 3,
+      "title": "권한 확인과 업무 규칙을 서버에 모았습니다",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 4,
+      "title": "수령·검수·적치를 별도 실적으로 남깁니다",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 5,
+      "title": "예약한 위치에서 꺼내고, 포장한 물건을 출하합니다",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 6,
+      "title": "실제 인계 시점에 창고 재고를 차감합니다",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 7,
+      "title": "실물·가용·예약·보류를 일곱 지표로 구분합니다",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 8,
+      "title": "재시도는 같은 요청으로, 정정은 연결된 새 기록으로",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 9,
+      "title": "조회 권한과 승인 자격을 별도로 검사합니다",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 10,
+      "title": "위험을 찾고, 처리 화면으로 이어갑니다",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 11,
+      "title": "정상 입력뿐 아니라 중복·지연·오류를 재현합니다",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 12,
+      "title": "통과한 범위와 남은 기준을 구분했습니다",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 13,
+      "title": "AI가 작성한 결과를, 업무 기준으로 확인했습니다",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 14,
+      "title": "입고에서 출하까지, 원장으로 결과를 확인합니다",
+      "overflow": false,
+      "images": true
+    }
+  ],
+  "source_commit": "11e2095",
+  "rendered_at": "2026-10-22T23:55:54.637Z"
+}

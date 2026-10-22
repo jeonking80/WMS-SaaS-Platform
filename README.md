@@ -3,6 +3,7 @@
 여러 회사가 한 서비스에서 각자의 창고를 운영하는 **멀티테넌트 창고관리시스템(WMS)** 입니다. 오퍼레이터가 한 화면에서 창고 상황을 보고, 위험을 먼저 발견하고, 처리 화면으로 바로 이동하는 **운영 관제**를 중심으로 만들었습니다.
 
 - 공개 데모: <https://wms-saa-s-platform.vercel.app/dashboard/v2> (계정은 [운영테스트 접속 안내](docs/운영테스트-접속안내.md) 참고)
+- 포트폴리오: **[스크린샷 포함 PDF](public/portfolio/wms-lite-portfolio.pdf)** · [구성과 촬영 근거](docs/WMS-Lite-포트폴리오-초안.md)
 - 사용자 매뉴얼: [전체 메뉴 (GPT 버전)](docs/WMS-현장운영-사용매뉴얼.md) · [현장 화면 요약 (Claude 버전)](docs/WMS-현장운영-사용매뉴얼-Claude.md)
 - 학습 자료: [docs/학습자료](docs/학습자료/README.md) — 물류 기초부터 설계 결정, 면접 예상 질문까지
 

@@ -1,0 +1,161 @@
+{
+  "source_commit": "11e2095",
+  "captured_at": "2026-10-22T23:51:49.804Z",
+  "environment": "local real API + PostgreSQL; isolated synthetic warehouse; system Korean font for capture build",
+  "warehouse_id": "55c4a4ac-7b46-41ab-bdbc-073b53540457",
+  "files": [
+    "02-inbound-receive",
+    "03-inbound-inspect",
+    "04-inbound-putaway",
+    "05-outbound-picking",
+    "06-outbound-packing",
+    "07-outbound-handover",
+    "09-independent-approval",
+    "08-stock-buckets",
+    "10-ledger-trace",
+    "01-control-tower",
+    "11-assistant",
+    "12-tablet-control",
+    "13-stockout-forecast",
+    "14-master-data"
+  ],
+  "commands": [
+    "receipt.create",
+    "receipt.receive",
+    "receipt.inspect",
+    "receipt.inspect",
+    "receipt.putaway",
+    "order.create",
+    "order.reserve",
+    "order.pick",
+    "package.create",
+    "shipment.create",
+    "order.create",
+    "receipt.create",
+    "receipt.receive",
+    "overage.request"
+  ],
+  "capture_checks": {
+    "stock_snapshot": [
+      {
+        "B": 4,
+        "P": 0,
+        "Q": 10,
+        "R": 0,
+        "S": 0,
+        "item_id": "f57fd24a-c521-4a69-a4cb-34d57486826c",
+        "location_id": "3dcd87e7-a5fb-45d6-b3ea-2884a9723911",
+        "location_kind": "RECEIVING",
+        "reservation_blocked": false,
+        "A": 0,
+        "H": 14,
+        "locked": false
+      },
+      {
+        "B": 0,
+        "P": 0,
+        "Q": 0,
+        "R": 0,
+        "S": 0,
+        "item_id": "3c272331-4e44-46eb-85fe-cdb6c7d6c2b4",
+        "location_id": "3dcd87e7-a5fb-45d6-b3ea-2884a9723911",
+        "location_kind": "RECEIVING",
+        "reservation_blocked": false,
+        "A": 0,
+        "H": 0,
+        "locked": false
+      },
+      {
+        "B": 0,
+        "P": 0,
+        "Q": 0,
+        "R": 0,
+        "S": 46,
+        "item_id": "f57fd24a-c521-4a69-a4cb-34d57486826c",
+        "location_id": "12b8d752-6faf-4517-a271-b3c00cc94460",
+        "location_kind": "STORAGE",
+        "reservation_blocked": false,
+        "A": 46,
+        "H": 46,
+        "locked": false
+      },
+      {
+        "B": 0,
+        "P": 0,
+        "Q": 0,
+        "R": 0,
+        "S": 50,
+        "item_id": "3c272331-4e44-46eb-85fe-cdb6c7d6c2b4",
+        "location_id": "12b8d752-6faf-4517-a271-b3c00cc94460",
+        "location_kind": "STORAGE",
+        "reservation_blocked": false,
+        "A": 50,
+        "H": 50,
+        "locked": false
+      },
+      {
+        "B": 0,
+        "P": 0,
+        "Q": 0,
+        "R": 0,
+        "S": 0,
+        "item_id": "f57fd24a-c521-4a69-a4cb-34d57486826c",
+        "location_id": "ec3b0c31-9553-494c-a3d0-b00211c5cd25",
+        "location_kind": "STAGING",
+        "reservation_blocked": false,
+        "A": 0,
+        "H": 0,
+        "locked": false
+      },
+      {
+        "B": 0,
+        "P": 0,
+        "Q": 0,
+        "R": 0,
+        "S": 0,
+        "item_id": "3c272331-4e44-46eb-85fe-cdb6c7d6c2b4",
+        "location_id": "ec3b0c31-9553-494c-a3d0-b00211c5cd25",
+        "location_kind": "STAGING",
+        "reservation_blocked": false,
+        "A": 0,
+        "H": 0,
+        "locked": false
+      },
+      {
+        "B": 2,
+        "P": 0,
+        "Q": 0,
+        "R": 0,
+        "S": 0,
+        "item_id": "f57fd24a-c521-4a69-a4cb-34d57486826c",
+        "location_id": "5f679c7d-8895-4a7b-8f36-20a1c09be528",
+        "location_kind": "HOLD",
+        "reservation_blocked": false,
+        "A": 0,
+        "H": 2,
+        "locked": false
+      }
+    ],
+    "ledger_count": 20,
+    "shipment_id": "c20eb10c-ff03-4384-8960-d99a75d0fb9e"
+  },
+  "external_ai_api_called": false,
+  "existing_simulator_screens": {
+    "source": "artifacts/v2-settings-smoke/ui-desktop.png",
+    "excerpts": {
+      "15-simulator-settings.png": [
+        0,
+        0,
+        1440,
+        1900
+      ],
+      "16-simulator-timeline.png": [
+        0,
+        1900,
+        1440,
+        3550
+      ]
+    },
+    "scope": "prior local UI test capture, not a fresh run or performance qualification"
+  }
+}

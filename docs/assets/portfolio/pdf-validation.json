@@ -1,5 +1,5 @@
 {
-  "page_count": 15,
+  "page_count": 16,
   "layout": [
     {
       "page": 1,
@@ -27,7 +27,7 @@
     },
     {
       "page": 5,
-      "title": "컨테이너·반출입 지시·CFS로 확장한다면",
+      "title": "지시 접수와 실물 반출입을 분리합니다",
       "overflow": false,
       "images": true
     },
@@ -69,7 +69,7 @@
     },
     {
       "page": 12,
-      "title": "동일 입력의 재현과 명령별 결과를 확인합니다",
+      "title": "명령별 결과를 확인합니다",
       "overflow": false,
       "images": true
     },
@@ -87,11 +87,17 @@
     },
     {
       "page": 15,
+      "title": "같은 키로 재전송해도 재고를 한 번만 반영합니다",
+      "overflow": false,
+      "images": true
+    },
+    {
+      "page": 16,
       "title": "입고에서 출하까지, 원장으로 결과를 확인합니다",
       "overflow": false,
       "images": true
     }
   ],
   "source_commit": "11e2095",
-  "rendered_at": "2026-10-23T01:04:12.882Z"
+  "rendered_at": "2026-10-23T01:21:04.707Z"
 }

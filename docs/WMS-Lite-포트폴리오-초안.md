@@ -1,5 +1,7 @@
 # WMS Lite 포트폴리오 초안
 
+작성자: **전우석** · 개발 기간: **2일**
+
 **[스크린샷 포함 PDF 다운로드](../public/portfolio/wms-lite-portfolio.pdf)** · [오프라인 HTML 원본](../public/portfolio/wms-lite-portfolio.html)
 
 최신 소스 `11e2095`를 기준으로 실제 로컬 화면을 촬영한 14쪽 A4 가로형 초안입니다. 작성일은 2026-10-23(한국 시간)입니다.
@@ -31,7 +33,7 @@
 - Google Fonts 다운로드가 허용되지 않아 캡처 빌드만 시스템 한글 글꼴을 사용했습니다. 캡처 후 앱 소스를 원복했습니다.
 - 시뮬레이터 이미지는 `artifacts/v2-settings-smoke/ui-desktop.png`의 기존 로컬 시험 캡처에서 발췌했습니다. 새 실행이나 성능 합격 자료가 아닙니다.
 - 이전 빌드의 전체 회귀 681개와 이번 관제·도우미 단위 검사 11개를 구분했습니다. 실제 현장 운영·공식 혼잡 시험 합격을 주장하지 않습니다.
-- PDF의 목차는 별도 목록 대신 쪽별 주제를 사용하며 참조 URL은 클릭 가능합니다. 작성자·개발 기간·지원 직무는 최종 제출 시 확정합니다.
+- PDF의 목차는 별도 목록 대신 쪽별 주제를 사용하며 참조 URL은 클릭 가능합니다. 작성자는 전우석, 개발 기간은 2일로 반영했습니다.
 
 근거: [화면 촬영 목록](assets/portfolio/capture-manifest.json), [추가 단위 검사](assets/portfolio/targeted-validation.json), [PDF 레이아웃 검사](assets/portfolio/pdf-validation.json), [기존 전체 회귀](v2-local-regression-latest.json).
 

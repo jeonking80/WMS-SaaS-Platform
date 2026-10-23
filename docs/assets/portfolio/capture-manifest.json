@@ -154,6 +154,12 @@
         1900,
         1440,
         3550
+      ],
+      "18-simulator-run-detail.png": [
+        145,
+        2315,
+        1300,
+        2720
       ]
     },
     "scope": "prior local UI test capture, not a fresh run or performance qualification"

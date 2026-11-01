@@ -1,103 +1,98 @@
 {
-  "page_count": 16,
+  "page_count": 15,
+  "noto_sans_kr_embedded": true,
   "layout": [
     {
       "page": 1,
-      "title": "창고 운영을, 수량에서 업무 흐름으로",
-      "overflow": false,
-      "images": true
+      "title": "WMS Lite",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 2,
-      "title": "“재고가 있다”와 “출고할 수 있다”는 다릅니다",
-      "overflow": false,
-      "images": true
+      "title": "여러 고객사가 한 서비스에서 창고를 운영합니다",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 3,
-      "title": "권한 확인과 업무 규칙을 서버에 모았습니다",
-      "overflow": false,
-      "images": true
+      "title": "업무 규칙과 권한 검사는 모두 서버에 있습니다",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 4,
-      "title": "위험을 찾고, 처리 화면으로 이어갑니다",
-      "overflow": false,
-      "images": true
+      "title": "계층마다 “무엇을 막기 위해” 골랐는지 정리했습니다",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 5,
-      "title": "지시 접수와 실물 반출입을 분리합니다",
-      "overflow": false,
-      "images": true
+      "title": "41개 테이블을 성격에 따라 네 묶음으로 나눴습니다",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 6,
-      "title": "수령·검수·적치를 별도 실적으로 남깁니다",
-      "overflow": false,
-      "images": true
+      "title": "“실물 수령 확정” 요청 하나가 한 트랜잭션 안에서 처리되는 순서",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 7,
-      "title": "예약한 위치에서 꺼내고, 포장한 물건을 출하합니다",
-      "overflow": false,
-      "images": true
+      "title": "검수: “정상”은 적치 대기로, “보류”는 원장에 Q→B로 남깁니다",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 8,
-      "title": "실제 인계 시점에 창고 재고를 차감합니다",
-      "overflow": false,
-      "images": true
+      "title": "회사 → 창고 → 역할 → 승인 자격을 차례로 검사합니다",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 9,
-      "title": "실물·가용·예약·보류를 일곱 지표로 구분합니다",
-      "overflow": false,
-      "images": true
+      "title": "동시 작업과 재시도에도 재고와 원장이 어긋나지 않게",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 10,
-      "title": "재시도는 같은 요청으로, 정정은 연결된 새 기록으로",
-      "overflow": false,
-      "images": true
+      "title": "사람 없이 업무를 흘려 보고, 사람은 설명 없이 쓰게",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 11,
-      "title": "조회 권한과 승인 자격을 별도로 검사합니다",
-      "overflow": false,
-      "images": true
+      "title": "입고: 예정만으로 재고를 만들지 않습니다",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 12,
-      "title": "명령별 결과를 확인합니다",
-      "overflow": false,
-      "images": true
+      "title": "출고: 예약한 곳에서 꺼내 실제 인계 시점에 차감합니다",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 13,
-      "title": "통과한 범위와 남은 기준을 구분했습니다",
-      "overflow": false,
-      "images": true
+      "title": "업무 규칙은 단위로, 격리·동시성은 실제 DB로, 흐름은 실제 브라우저로",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 14,
-      "title": "AI 결과물에서 업무 누락을 찾고, 규칙을 결정했습니다",
-      "overflow": false,
-      "images": true
+      "title": "AI가 구현하고, 사람이 규칙을 정하고 직접 써 보며 결함을 찾았습니다",
+      "images": true,
+      "overflow": false
     },
     {
       "page": 15,
-      "title": "같은 키로 재전송해도 재고를 한 번만 반영합니다",
-      "overflow": false,
-      "images": true
-    },
-    {
-      "page": 16,
-      "title": "입고에서 출하까지, 원장으로 결과를 확인합니다",
-      "overflow": false,
-      "images": true
+      "title": "하지 않은 것을 구분하고, 근거 자료를 함께 제공합니다",
+      "images": true,
+      "overflow": false
     }
   ],
-  "source_commit": "11e2095d84aa0f06cb0277a899d7ac54fd4f6afc",
-  "rendered_at": "2026-10-23T01:35:30.372Z"
+  "source_commit": "ca8c38940ae090f0cba24d36ab03203f2be80d0e",
+  "rendered_at": "2026-11-01T12:28:32.251Z"
 }

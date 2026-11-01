@@ -8,7 +8,6 @@ import {chromium} from '@playwright/test';
 import {execFileSync} from 'node:child_process';
 
 const sourceCommit='ca8c38940ae090f0cba24d36ab03203f2be80d0e';
-const repo='https://github.com/jeonking80/WMS-SaaS-Platform';
 const docsBase='https://github.com/jeonking80/portfolio/blob/main/WMS';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const output=resolve(root,'public/portfolio');await mkdir(output,{recursive:true});
@@ -109,7 +108,7 @@ const lineOf=at=>engine.slice(0,at).split('\n').length;
 const inspectCode=engine.slice(inspectStart,inspectEnd).trimEnd();
 const changeCode=engine.slice(changeStart,changeEnd).trimEnd()+'\n  s.ledger.push({ /* 품목·위치·버킷·증감·명령·작업자·사유 */ });\n}';
 page(7,'핵심 코드','검수: “정상”은 적치 대기로, “보류”는 원장에 Q→B로 남깁니다','실제 코드 발췌 · src/server/v2/workflow/engine.ts · 고정 커밋 '+sourceCommit.slice(0,7),`
-<div class="code-layout"><div><div class="code-label">inspect() · L${lineOf(inspectStart)}</div><pre class="source-code"><code>${esc(inspectCode)}</code></pre><div class="code-label">change() · L${lineOf(changeStart)} (원장 기록부 생략)</div><pre class="source-code"><code>${esc(changeCode)}</code></pre><p class="caption"><a href="${repo}/blob/${sourceCommit}/src/server/v2/workflow/engine.ts#L${lineOf(inspectStart)}">engine.ts 원문 ↗</a></p></div>
+<div class="code-layout"><div><div class="code-label">inspect() · L${lineOf(inspectStart)}</div><pre class="source-code"><code>${esc(inspectCode)}</code></pre><div class="code-label">change() · L${lineOf(changeStart)} (원장 기록부 생략)</div><pre class="source-code"><code>${esc(changeCode)}</code></pre><p class="caption">src/server/v2/workflow/engine.ts 발췌</p></div>
 <div class="code-notes">${point('① 남은 수량을 넘지 못함','lot.pending(수령했지만 검수 전)보다 많이 검수하면 EXCEEDS_PENDING. 화면 검사가 빠져도 서버에서 거절합니다.')}${point('② 정상과 보류의 재고 효과가 다름','정상은 실물이 그대로 수령 위치에 있으므로 Q를 유지하고 적치 단계에서 Q→S로 옮깁니다. 보류는 즉시 Q−q, B+q 두 줄을 원장에 남겨 가용 재고에서 빠집니다.')}${point('③ 모든 증감은 change() 한 곳','비활성 품목, 음수 재고, 예약 R이 정상 S를 넘는 상태를 여기서 막고 원장 행을 만듭니다. 재고를 바꾸는 다른 길이 없습니다.')}${point('④ DB를 모르는 함수','같은 입력이면 같은 결과라 단위 테스트로 검수·적치·보류 해제를 검사하고, 저장·잠금은 6쪽의 트랜잭션이 맡습니다.')}</div></div>`);
 
 /* 8. 보안·권한 구조 */
@@ -183,7 +182,7 @@ page(14,'한계와 자료','하지 않은 것을 구분하고, 근거 자료를 
 <h2 class="h2 gap">다음에 할 일</h2><ol class="next"><li>혼잡 시험의 병목(전체 상태 읽기·잠금 대기)을 분리 계측하고 같은 부하로 재검증</li><li>품목 선택칸을 서버 검색 방식으로 바꿔 품목 수가 늘어도 첫 화면이 느려지지 않게</li><li>PDA·라벨 프린터 SDK 연동과 택배 송장 API는 실제 장비·계약 조건을 받은 뒤 설계</li></ol></div>
 <div><h2 class="h2">저장소·문서</h2><div class="links">
 <a href="${docsBase}">포트폴리오 문서 ↗<small>github.com/jeonking80/portfolio/WMS</small></a>
-<a href="${repo}">소스 코드 ↗<small>${repo.replace('https://','')}</small></a>
+<a href="${docsBase}/docs/user-guide.md">사용자 매뉴얼 ↗<small>화면별 사용 방법</small></a>
 <a href="${docsBase}/docs/system-architecture.md">시스템 구조 ↗<small>구조도 · 요청 처리 순서 · 역할</small></a>
 <a href="${docsBase}/docs/design-decisions.md">핵심 설계 결정 ↗<small>문제 → 선택 → 대안 → 대가</small></a>
 <a href="${docsBase}/docs/data-model.md">데이터 모델 ↗<small>테이블 네 묶음 · 불변식 · RLS</small></a>
